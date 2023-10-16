@@ -240,7 +240,7 @@ g_file_id_counter : s16;
 
 GetFile :: inline (file_id : FileId) -> *YalFile #must
 {
-    return g_files[g_file_id_counter];
+    return g_files[file_id];
 }
 
 AddFile :: (filename : string) -> *YalFile
