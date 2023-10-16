@@ -189,6 +189,40 @@ ScanNextToken :: (using lexer : *YalLexer) -> Token #must
         return tok;
     }
 
+    if text[byte_index] == #char "\"" || text[byte_index] == #char "'"
+    {
+        closing_char := text[byte_index];
+        LexerAdvance (lexer);
+
+        has_newline := false;
+        while !LexerIsAtEnd (lexer) && text[byte_index] != closing_char
+        {
+            if text[byte_index] == #char "\\"
+                LexerAdvance (lexer);
+            if text[byte_index] == #char "\n"
+                has_newline = true;
+
+            LexerAdvance (lexer);
+        }
+
+        unclosed := LexerIsAtEnd (lexer);
+
+        LexerAdvance (lexer);
+
+        tok.kind = ifx closing_char == #char "'"
+            then .Char_Literal
+            else .String_Literal;
+
+        SetEnd (*tok, lexer);
+
+        if unclosed
+            SyntaxError (tok, "unclosed %", Token_Names[tok.kind]);
+        else if has_newline
+            SyntaxError (tok, "newline in %", Token_Names[tok.kind]);
+
+        return tok;
+    }
+
     if Basic.is_alpha (text[byte_index]) || text[byte_index] == #char "_"
     {
         for i : TokenKind.Keywords_Begin + 1..TokenKind.Keywords_End - 1
