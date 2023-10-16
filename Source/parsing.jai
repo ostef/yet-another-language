@@ -134,7 +134,7 @@ NextToken :: (using lexer : *YalLexer, peek := 0) -> Token #must
     while next_token_index + peek >= tokens.count - 1
     {
         tok := ScanNextToken (lexer);
-        if tok.kind == .End_Of_Input && tokens.count > 0 && tokens[tokens.count - 1].kind == .End_Of_Input
+        if tok.kind == .EOI && tokens.count > 0 && tokens[tokens.count - 1].kind == .EOI
             break;
 
         ArrayPush (*tokens, tok);
@@ -244,7 +244,7 @@ ScanNextToken :: (using lexer : *YalLexer) -> Token #must
 
     if LexerIsAtEnd (lexer)
     {
-        tok.kind = .End_Of_Input;
+        tok.kind = .EOI;
         SetEnd (*tok, lexer);
         return tok;
     }
@@ -404,7 +404,7 @@ AddFile :: (filename : string) -> *YalFile
 
 Recover :: (using file : *YalFile, stop_at : ..TokenKind)
 {
-    if MatchToken (*lexer, .End_Of_Input, .Semicolon)
+    if MatchToken (*lexer, .EOI, .Semicolon)
         return;
 
     if NextTokenIs (*lexer, ..stop_at)
@@ -412,7 +412,7 @@ Recover :: (using file : *YalFile, stop_at : ..TokenKind)
 
     ConsumeToken (*lexer);
 
-    while !MatchToken (*lexer, .End_Of_Input)
+    while !MatchToken (*lexer, .EOI)
     {
         if MatchToken (*lexer, .Semicolon)
             break;
@@ -452,7 +452,7 @@ ParseFile :: (using file : *YalFile)
 {
     Println ("File '%':", filename);
 
-    while !MatchToken (*lexer, .End_Of_Input)
+    while !MatchToken (*lexer, .EOI)
     {
         tok := NextToken (*lexer);
         ConsumeToken (*lexer);

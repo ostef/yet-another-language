@@ -118,7 +118,7 @@ Token_Symbols :: string.[
     StringBuilderAppendLine (*builder, "    Float_Literal;");
     StringBuilderAppendLine (*builder, "    String_Literal;");
     StringBuilderAppendLine (*builder, "    Char_Literal;");
-    StringBuilderAppendLine (*builder, "    End_Of_Input;");
+    StringBuilderAppendLine (*builder, "    EOI;");
     StringBuilderAppendLine (*builder, "    Count;");
     StringBuilderAppendLine (*builder, "}");
 
