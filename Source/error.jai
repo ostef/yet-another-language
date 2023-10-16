@@ -57,12 +57,12 @@ PrintTokenLine :: (builder : *StringBuilder, range : TokenRange, print_squiggles
         defer current_line += 1;
 
         line_len := 0;
-        while line_start + line_len < str.count && str[line_start + line_len] && str[line_start + line_len] != #char "\n"
+        while line_start + line_len < str.count && str[line_start + line_len] != #char "\n"
             line_len += 1;
 
         line_str := MakeString (line_len, str.data + line_start);
 
-        if current_line == range.line_end || current_line > range.line_start + g_build_settings.max_reported_lines - 1
+        if current_line == range.line_end || current_line >= range.line_start && current_line < range.line_start + g_build_settings.max_reported_lines - 1
         {
             StringBuilderAppend (builder, " {:*} | ", line_digits, current_line);
 
