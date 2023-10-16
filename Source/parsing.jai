@@ -175,6 +175,66 @@ MatchToken :: (using lexer : *YalLexer, kinds : ..TokenKind) -> bool #must
     return false;
 }
 
+ScanNumber :: (using lexer : *YalLexer, number_base : int) -> is_valid : bool, has_exponent : bool
+{
+    is_valid := true;
+    has_exponent := false;
+
+    while !LexerIsAtEnd (lexer) && Basic.is_alnum (text[byte_index])
+    {
+        // Handle float exponent
+        if number_base == 10 && text[byte_index] == #char "e"
+        {
+            has_exponent = true;
+
+            LexerAdvance (lexer);
+            if LexerIsAtEnd (lexer)
+                return false, true;
+
+            sign := 1;
+            if text[byte_index] == #char "-" || text[byte_index] == #char "+"
+            {
+                sign := ifx text[byte_index] == #char "-" then -1 else 1;
+                LexerAdvance (lexer);
+            }
+
+            if LexerIsAtEnd (lexer)
+                return false, has_exponent;
+
+            while !LexerIsAtEnd (lexer) && Basic.is_alnum (text[byte_index])
+            {
+                if !Basic.is_digit (text[byte_index])
+                    is_valid = false;
+
+                LexerAdvance (lexer);
+            }
+
+            break;
+        }
+
+        valid_digit : bool = ---;
+        digit := text[byte_index];
+        if number_base == 16
+        {
+            valid_digit = digit >= #char "0" && digit <= #char "9"
+                || digit >= #char "A" && digit <= #char "F"
+                || digit >= #char "a" && digit <= #char "f"
+                || digit == #char "_";
+        }
+        else
+        {
+            valid_digit = digit >= #char "0" && digit < #char "0" + number_base || digit == #char "_";
+        }
+
+        if !valid_digit
+            is_valid = false;
+
+        LexerAdvance (lexer);
+    }
+
+    return is_valid, has_exponent;
+}
+
 ScanNextToken :: (using lexer : *YalLexer) -> Token #must
 {
     LexerSkipWhitespacesAndComments (lexer);
@@ -219,6 +279,51 @@ ScanNextToken :: (using lexer : *YalLexer) -> Token #must
             SyntaxError (tok, "unclosed %", Token_Names[tok.kind]);
         else if has_newline
             SyntaxError (tok, "newline in %", Token_Names[tok.kind]);
+
+        return tok;
+    }
+
+    if Basic.is_digit (text[byte_index])
+    {
+        base : int = ---;
+        if LexerMatchString (lexer, "0b")
+            base = 2;
+        else if LexerMatchString (lexer, "0o")
+            base = 8;
+        else if LexerMatchString (lexer, "0x")
+            base = 16;
+        else
+            base = 10;
+
+        decimal_valid, decimal_exp := ScanNumber (lexer, base);
+        if !LexerIsAtEnd (lexer) && text[byte_index] == #char "."
+        {
+            LexerAdvance (lexer);
+
+            fract_valid, fract_exp := ScanNumber (lexer, 10);
+
+            // Can't have a non base 10 number followed by a fractional part
+            // Can't have a number with exponent followed by a fractional part
+            if base != 10 || decimal_exp
+                fract_valid = false;
+
+            tok.kind = .Float_Literal;
+            SetEnd (*tok, lexer);
+
+            if !decimal_valid || !fract_valid
+                SyntaxError (tok, "invalid float literal");
+        }
+        else
+        {
+            tok.kind = ifx decimal_exp
+                then .Float_Literal
+                else .Int_Literal;
+
+            SetEnd (*tok, lexer);
+
+            if !decimal_valid
+                SyntaxError (tok, "invalid %", Token_Names[tok.kind]);
+        }
 
         return tok;
     }
@@ -352,6 +457,9 @@ ParseFile :: (using file : *YalFile)
         tok := NextToken (*lexer);
         ConsumeToken (*lexer);
 
-        Println ("%:%   %", tok.line_start, tok.char_start, tok.kind);
+        Print ("%:%   %", tok.line_start, tok.char_start, tok.kind);
+        if !Token_Lexemes[tok.kind]
+            Print ("    '%'", TokenToString (tok));
+        Print ("\n");
     }
 }
