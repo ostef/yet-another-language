@@ -1,0 +1,4 @@
+proc foo () -> int
+{
+    return a + b * c / d + (e + f) / g;
+}
