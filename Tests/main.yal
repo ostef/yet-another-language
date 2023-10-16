@@ -1,1 +1,6 @@
+import "Math";
 
+proc main (args : []string)
+{
+    Exit (0);
+}

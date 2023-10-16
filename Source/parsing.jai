@@ -450,16 +450,11 @@ Expect :: (file : *YalFile, kinds : ..TokenKind) #expand
 
 ParseFile :: (using file : *YalFile)
 {
-    Println ("File '%'", filename);
+    Println ("File '%':", filename);
 
     while !MatchToken (*lexer, .End_Of_Input)
     {
         tok := NextToken (*lexer);
         ConsumeToken (*lexer);
-
-        Print ("%:%   %", tok.line_start, tok.char_start, tok.kind);
-        if !Token_Lexemes[tok.kind]
-            Print ("    '%'", TokenToString (tok));
-        Print ("\n");
     }
 }

@@ -1,4 +1,31 @@
-proc foo () -> int
+proc Min (a : float, b : float) -> float
 {
-    return a + b * c / d + (e + f) / g;
+    if a < b
+        return a;
+
+    return b;
+}
+
+proc Max (a : float, b : float) -> float
+{
+    if a > b
+        return a;
+
+    return b;
+}
+
+proc Abs (x : float) -> float
+{
+    if x < 0
+        return -x;
+
+    return x;
+}
+
+proc Sign (x : float) -> float
+{
+    if x < 0
+        return -1;
+
+    return 1;
 }
