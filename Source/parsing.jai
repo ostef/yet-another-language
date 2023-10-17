@@ -299,7 +299,7 @@ ParseExpression :: (using file : *YalFile, prec := 0) -> *AstNode #must
                     Token_Names[last_non_associative_tok.kind], Token_Names[next.kind]);
         }
 
-        InfoWithoutSourceCode (next, "use parentheses to fix this");
+        InfoWithoutSourceCode (next, "you might want to use parentheses to fix this");
         Info (last_non_associative_tok, "here is the first occurence of the non associative operator");
     }
 
