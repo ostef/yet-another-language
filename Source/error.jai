@@ -263,6 +263,25 @@ Report :: (range : TokenRange, color : OutputColor, category : string, fmt_str :
     write_string (StringBuilderBuild (*builder), to_standard_error = true);
 }
 
+ReportWithoutSourceCode :: (range : TokenRange, color : OutputColor, category : string, fmt_str : string, args : ..Any)
+{
+    builder : StringBuilder;
+
+    file := GetFile (range.file_id);
+    Assert (file != null);
+
+    StringBuilderAppend (*builder, "%:%:%, ", file.filename, range.line_start, range.char_start);
+
+    SetColor (*builder, color);
+    StringBuilderAppend (*builder, "%: ", category);
+    SetColor (*builder, .None);
+
+    StringBuilderAppend (*builder, fmt_str, ..args);
+    StringBuilderAppend (*builder, "\n");
+
+    write_string (StringBuilderBuild (*builder), to_standard_error = true);
+}
+
 Error :: inline (range : TokenRange, fmt_str : string, args : ..Any)
 {
     Report (range, .Error, "Error", fmt_str, ..args);
@@ -322,6 +341,11 @@ ExpectedError :: (prev : Token, tok : Token, kinds : ..TokenKind)
 Info :: inline (range : TokenRange, fmt_str : string, args : ..Any)
 {
     Report (range, .Info, "Info", fmt_str, ..args);
+}
+
+InfoWithoutSourceCode :: inline (range : TokenRange, fmt_str : string, args : ..Any)
+{
+    ReportWithoutSourceCode (range, .Info, "Info", fmt_str, ..args);
 }
 
 InfoNoSquiggles :: inline (range : TokenRange, fmt_str : string, args : ..Any)
