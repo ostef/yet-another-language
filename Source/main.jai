@@ -4,10 +4,12 @@
 #import "String_Builder";
 
 Basic :: #import "Basic";
+Math :: #import "Math";
 File :: #import "File";
 JaiC :: #import "Compiler";
 
 #load "tokens.jai";
+#load "ast.jai";
 #load "parsing.jai";
 #load "error.jai";
 

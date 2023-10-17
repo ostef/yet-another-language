@@ -119,7 +119,7 @@ Token_Symbols :: string.[
     StringBuilderAppendLine (*builder, "    Float_Literal;");
     StringBuilderAppendLine (*builder, "    String_Literal;");
     StringBuilderAppendLine (*builder, "    Char_Literal;");
-    StringBuilderAppendLine (*builder, "    EOI;");
+    StringBuilderAppendLine (*builder, "    EOF;");
     StringBuilderAppendLine (*builder, "    Count;");
     StringBuilderAppendLine (*builder, "}");
 
@@ -169,7 +169,11 @@ Token_Names :: #insert -> string
         if i != 0
             StringBuilderAppend (*builder, ",\n");
 
-        if Token_Lexemes[i]
+        if i == .EOF
+        {
+            StringBuilderAppend (*builder, "\"end of file\"");
+        }
+        else if Token_Lexemes[i]
         {
             StringBuilderAppend (*builder, "\"'%'\"", Token_Lexemes[i]);
         }
@@ -206,6 +210,18 @@ Token_Names :: #insert -> string
 
     return StringBuilderBuild (*builder);
 }
+
+Tokens_Assignment :: TokenKind.[
+    .Equal,
+    .Plus_Equ,
+    .Minus_Equ,
+    .Star_Equ,
+    .Slash_Equ,
+    .Percent_Equ,
+    .Ampersand_Equ,
+    .Pipe_Equ,
+    .Tilde_Equ,
+];
 
 TokenLocation :: struct
 {
@@ -339,7 +355,7 @@ NextToken :: (using lexer : *YalLexer, peek := 0) -> Token #must
     while next_token_index + peek >= tokens.count - 1
     {
         tok := ScanNextToken (lexer);
-        if tok.kind == .EOI && tokens.count > 0 && tokens[tokens.count - 1].kind == .EOI
+        if tok.kind == .EOF && tokens.count > 0 && tokens[tokens.count - 1].kind == .EOF
             break;
 
         ArrayPush (*tokens, tok);
@@ -449,7 +465,7 @@ ScanNextToken :: (using lexer : *YalLexer) -> Token #must
 
     if LexerIsAtEnd (lexer)
     {
-        tok.kind = .EOI;
+        tok.kind = .EOF;
         SetEnd (*tok, lexer);
         return tok;
     }
