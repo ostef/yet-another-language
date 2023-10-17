@@ -96,13 +96,51 @@ ParseFile :: (using file : *YalFile)
 
 ParseStatement :: (using file : *YalFile) -> *AstNode #must
 {
-    expr := ParseExpression (file);
-    if !expr
+    if NextTokenIs (*lexer, .Open_Curly)
+    {
+        return ParseBlock (file);
+    }
+    else
+    {
+        expr := ParseExpression (file);
+        if !expr
+            return null;
+
+        Expect (file, .Semicolon);
+
+        return expr;
+    }
+
+    return null;
+}
+
+ParseBlock :: (using file : *YalFile) -> *AstNode #must
+{
+    Expect (file, .Open_Curly);
+    open_brace_tok := PrevToken (lexer);
+
+    statements : [..]*AstNode;
+
+    while !MatchToken (*lexer, .EOF, .Close_Curly)
+    {
+        stmt := ParseStatement (file);
+        if !stmt
+        {
+            Recover (file, .Close_Curly);
+            continue;
+        }
+
+        ArrayPush (*statements, stmt);
+    }
+
+    if PrevToken (lexer).kind != .Close_Curly
+    {
+        ExpectedError (PrevToken (lexer, 1), PrevToken (lexer), .Close_Curly);
+
         return null;
+    }
 
-    Expect (file, .Semicolon);
-
-    return expr;
+    return MakeAstBlock (open_brace_tok, PrevToken (lexer), statements);
 }
 
 OperatorInfo :: struct

@@ -4,6 +4,8 @@ AstKind :: enum u8
 
     Statements_Begin;
 
+        Block;
+
         Expressions_Begin;
 
             Identifier;
@@ -33,6 +35,23 @@ IsExpression :: inline (kind : AstKind) -> bool #must
 IsStatement :: inline (kind : AstKind) -> bool #must
 {
     return kind > .Statements_Begin && kind < .Statements_End;
+}
+
+AstBlock :: struct
+{
+    #as using base : AstNode;
+    base.kind = .Block;
+
+    statements : []*AstNode;
+}
+
+MakeAstBlock :: inline (open_brace_tok : Token, close_brace_tok : Token, statements : []*AstNode) -> *AstBlock #must
+{
+    node := Alloc (AstBlock);
+    node.statements = statements;
+    node.range = TokenRangeJoin (open_brace_tok, close_brace_tok);
+
+    return node;
 }
 
 AstIdentifier :: struct
