@@ -8,6 +8,7 @@ AstKind :: enum u8
         Declaration;
 
         Block;
+        Assignment;
 
         Expressions_Begin;
 
@@ -68,6 +69,27 @@ MakeAstBlock :: inline (open_brace_tok : Token, close_brace_tok : Token, stateme
     node := Alloc (AstBlock);
     node.statements = statements;
     node.range = TokenRangeJoin (open_brace_tok, close_brace_tok);
+
+    return node;
+}
+
+AstAssignment :: struct
+{
+    #as using base : AstNode;
+    base.kind = .Assignment;
+
+    op : Token;
+    left : *AstNode;
+    right : *AstNode;
+}
+
+MakeAstAssignment :: inline (op : Token, left : *AstNode, right : *AstNode) -> *AstAssignment #must
+{
+    node := Alloc (AstAssignment);
+    node.op = op;
+    node.left = left;
+    node.right = right;
+    node.range = TokenRangeJoin (left, right);
 
     return node;
 }

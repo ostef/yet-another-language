@@ -156,6 +156,12 @@ PrintAstNode :: (builder : *StringBuilder, node : *AstNode, indent_level := 0)
 
         StringBuilderAppend (builder, "}");
 
+    case .Assignment;
+        assign := cast (*AstAssignment) node;
+        PrintAstNode (builder, assign.left, indent_level);
+        StringBuilderAppend (builder, " % ", TokenToString (assign.op));
+        PrintAstNode (builder, assign.right, indent_level);
+
     case .Expressions_Begin;
     case .Identifier;
         ident := cast (*AstIdentifier) node;

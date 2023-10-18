@@ -123,6 +123,23 @@ ParseStatement :: (using file : *YalFile) -> *AstNode #must
         if !expr
             return null;
 
+        if MatchToken (*lexer, ..Tokens_Assignment)
+        {
+            op := PrevToken (lexer);
+
+            right := ParseExpression (file);
+            if !right
+                return null;
+
+            if MatchToken (*lexer, ..Tokens_Assignment)
+            {
+                SyntaxError (PrevToken (lexer), "chaining of assignment statements");
+                return null;
+            }
+
+            expr = MakeAstAssignment (op, expr, right);
+        }
+
         if !MatchExpect (file, .Semicolon)
         {
             if NextTokenIs (*lexer, .Colon)
