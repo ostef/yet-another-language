@@ -125,6 +125,36 @@ ParseStatement :: (using file : *YalFile) -> *AstNode #must
     {
         return ParseDeclaration (file);
     }
+    else if MatchToken (*lexer, .If)
+    {
+        return ParseIf (file);
+    }
+    else if MatchToken (*lexer, .While)
+    {
+        return ParseWhile (file);
+    }
+    else if MatchToken (*lexer, .Defer)
+    {
+        defer_tok := PrevToken (lexer);
+        stmt := ParseStatement (file);
+        if !stmt
+            return null;
+
+        Expect (file, .Semicolon);
+
+        return MakeAstDefer (defer_tok, stmt);
+    }
+    else if MatchToken (*lexer, .Return)
+    {
+        return ParseReturn (file);
+    }
+    else if MatchToken (*lexer, .Break, .Continue, .Fallthrough)
+    {
+        tok := PrevToken (lexer);
+        Expect (file, .Semicolon);
+
+        return MakeAstFlowControl (tok);
+    }
     else if NextTokenIs (*lexer, .Open_Curly)
     {
         return ParseBlock (file);
@@ -193,6 +223,83 @@ ParseBlock :: (using file : *YalFile) -> *AstBlock #must
     }
 
     return MakeAstBlock (open_brace_tok, PrevToken (lexer), statements);
+}
+
+ParseIf :: (using file : *YalFile) -> *AstIf #must
+{
+    if_tok := PrevToken (lexer);
+
+    condition := ParseExpression (file);
+    if !condition
+        return null;
+
+    body := ParseStatement (file);
+    if !body
+        return null;
+
+    else_stmt : *AstNode;
+    if MatchToken (*lexer, .Else)
+    {
+        else_stmt = ParseStatement (file);
+        if !else_stmt
+            return null;
+    }
+
+    return MakeAstIf (if_tok, condition, body, else_stmt);
+}
+
+ParseWhile :: (using file : *YalFile) -> *AstWhile #must
+{
+    while_tok := PrevToken (lexer);
+
+    condition := ParseExpression (file);
+    if !condition
+        return null;
+
+    body := ParseStatement (file);
+    if !body
+        return null;
+
+    return MakeAstWhile (while_tok, condition, body);
+}
+
+ParseReturn :: (using file : *YalFile) -> *AstReturn #must
+{
+    return_tok := PrevToken (lexer);
+
+    return_values : [..]*AstNode;
+    first := true;
+    while !MatchToken (*lexer, .EOF, .Semicolon)
+    {
+        defer first = false;
+
+        if !first
+        {
+            if !MatchExpect (file, .Comma)
+                return null;
+
+            if MatchToken (*lexer, .Semicolon)
+            {
+                SyntaxError (PrevToken (lexer),
+                    "expected a return value after ',', but got ';' instead");
+                return null;
+            }
+        }
+
+        expr := ParseExpression (file);
+        if !expr
+            return null;
+
+        ArrayPush (*return_values, expr);
+    }
+
+    if PrevToken (lexer).kind != .Semicolon
+    {
+        ExpectedError (PrevToken (lexer, 1), PrevToken (lexer), .Semicolon);
+        return null;
+    }
+
+    return MakeAstReturn (return_tok, return_values);
 }
 
 OperatorInfo :: struct
