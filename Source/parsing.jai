@@ -682,6 +682,8 @@ ParseProcedureDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
     if !signature || !NextTokenIs (*lexer, .Open_Curly)
     {
         ExpectedError (PrevToken (lexer), NextToken (*lexer), .Open_Curly);
+        if NextTokenIs (*lexer, .Comma)
+            Info (NextToken (*lexer), "multiple return values have to be enclosed in parentheses");
 
         // Not recovering and returning null can really fuck up the
         // parsing state, so we do that and return a Bad_Declaration
