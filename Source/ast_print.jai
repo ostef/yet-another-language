@@ -51,15 +51,20 @@ PrintProcedure :: (builder : *StringBuilder, proc : *AstProcedure, name : string
     StringBuilderAppend (builder, ")");
 
     if proc.results.count > 0
-    {
         StringBuilderAppend (builder, " -> ");
-        for proc.results
-        {
-            if it_index != 0
-                StringBuilderAppend (builder, ", ");
-            PrintValueDeclaration (builder, it, indent_level);
-        }
+
+    if proc.results.count > 1
+        StringBuilderAppend (builder, "(");
+
+    for proc.results
+    {
+        if it_index != 0
+            StringBuilderAppend (builder, ", ");
+        PrintValueDeclaration (builder, it, indent_level);
     }
+
+    if proc.results.count > 1
+        StringBuilderAppend (builder, ")");
 
     if proc.body
     {
