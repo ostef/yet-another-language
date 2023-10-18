@@ -334,7 +334,7 @@ ExpectedError :: (prev : Token, tok : Token, kinds : ..TokenKind)
     else
         StringBuilderAppend (*err_builder, ", but got % instead", Token_Names[tok.kind]);
 
-    Report (TokenRangeJoin (prev, tok), .Error, "Syntax Error", StringBuilderBuild (*err_builder));
+    Report (TokenRangeJoin (prev, tok), .Error, "Syntax Error", "%", StringBuilderBuild (*err_builder));
     IncrementErrorCounter ();
 }
 
