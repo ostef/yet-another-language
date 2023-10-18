@@ -9,6 +9,11 @@ AstKind :: enum u8
 
         Block;
         Assignment;
+        If;
+        While;
+        Defer;
+        Return;
+        Flow_Control;   // break, continue, fallthrough
 
         Expressions_Begin;
 
@@ -90,6 +95,100 @@ MakeAstAssignment :: inline (op : Token, left : *AstNode, right : *AstNode) -> *
     node.left = left;
     node.right = right;
     node.range = TokenRangeJoin (left, right);
+
+    return node;
+}
+
+AstIf :: struct
+{
+    #as using base : AstNode;
+    base.kind = .If;
+
+    condition : *AstNode;
+    body : *AstNode;
+    else_stmt : *AstNode;
+}
+
+MakeAstIf :: inline (if_tok : Token, condition : *AstNode, body : *AstNode, else_stmt : *AstNode) -> *AstIf #must
+{
+    node := Alloc (AstIf);
+    node.condition = condition;
+    node.body = body;
+    node.else_stmt = else_stmt;
+    node.range = TokenRangeJoin (if_tok, body);
+
+    return node;
+}
+
+AstWhile :: struct
+{
+    #as using base : AstNode;
+    base.kind = .While;
+
+    condition : *AstNode;
+    body : *AstNode;
+}
+
+MakeAstWhile :: inline (while_tok : Token, condition : *AstNode, body : *AstNode) -> *AstWhile #must
+{
+    node := Alloc (AstWhile);
+    node.condition = condition;
+    node.body = body;
+    node.range = TokenRangeJoin (while_tok, body);
+
+    return node;
+}
+
+AstDefer :: struct
+{
+    #as using base : AstNode;
+    base.kind = .Defer;
+
+    stmt : *AstNode;
+}
+
+MakeAstDefer :: inline (defer_tok : Token, stmt : *AstNode) -> *AstDefer #must
+{
+    node := Alloc (AstDefer);
+    node.stmt = stmt;
+    node.range = TokenRangeJoin (defer_tok, stmt);
+
+    return node;
+}
+
+AstReturn :: struct
+{
+    #as using base : AstNode;
+    base.kind = .Return;
+
+    return_values : []*AstNode;
+}
+
+MakeAstReturn :: inline (return_tok : Token, values : []*AstNode) -> *AstReturn #must
+{
+    node := Alloc (AstReturn);
+    node.return_values = values;
+    if values.count > 0
+        node.range = TokenRangeJoin (return_tok, values[values.count - 1]);
+    else
+        node.range = return_tok;
+
+    return node;
+}
+
+AstFlowControl :: struct
+{
+    #as using base : AstNode;
+    base.kind = .Flow_Control;
+
+    control : TokenKind;
+}
+
+MakeAstFlowControl :: inline (tok : Token) -> *AstFlowControl #must
+{
+    node := Alloc (AstFlowControl);
+    node.control = tok.kind;
+    node.range = tok;
 
     return node;
 }

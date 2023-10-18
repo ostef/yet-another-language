@@ -1,4 +1,4 @@
-PrintValueDeclaration :: (builder : *StringBuilder, decl : *AstDeclaration, indent_level : int)
+PrintValueDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
 {
     if decl.identifier_count == 0
     {
@@ -7,104 +7,101 @@ PrintValueDeclaration :: (builder : *StringBuilder, decl : *AstDeclaration, inde
     }
     else if decl.identifier_count == 1
     {
-        StringBuilderAppend (builder, decl.single_identifier.name);
+        Append (builder, decl.single_identifier.name);
     }
     else
     {
         for decl.identifiers
         {
             if it_index != 0
-               StringBuilderAppend (builder, ", ");
-            StringBuilderAppend (builder, it.name);
+               Append (builder, ", ");
+            Append (builder, it.name);
         }
     }
 
-    StringBuilderAppend (builder, " :");
+    Append (builder, " :");
     if decl.type_node
     {
-        StringBuilderAppend (builder, " ");
+        Append (builder, " ");
         PrintAstNode (builder, decl.type_node);
         if decl.expr
-            StringBuilderAppend (builder, " ");
+            Append (builder, " ");
     }
 
     if decl.expr
     {
-        StringBuilderAppend (builder, "= ");
-        PrintAstNode (builder, decl.expr, indent_level);
+        Append (builder, "= ");
+        PrintAstNode (builder, decl.expr);
     }
 }
 
-PrintProcedure :: (builder : *StringBuilder, proc : *AstProcedure, name : string, indent_level : int)
+PrintProcedure :: (builder : *SourceCodeBuilder, proc : *AstProcedure, name : string)
 {
-    StringBuilderAppend (builder, "proc ");
+    Append (builder, "proc ");
     if name
-        StringBuilderAppend (builder, name);
+        Append (builder, name);
 
-    StringBuilderAppend (builder, " (");
+    Append (builder, " (");
     for proc.parameters
     {
         if it_index != 0
-            StringBuilderAppend (builder, ", ");
-        PrintValueDeclaration (builder, it, indent_level);
+            Append (builder, ", ");
+        PrintValueDeclaration (builder, it);
     }
-    StringBuilderAppend (builder, ")");
+    Append (builder, ")");
 
     if proc.results.count > 0
-        StringBuilderAppend (builder, " -> ");
+        Append (builder, " -> ");
 
     if proc.results.count > 1
-        StringBuilderAppend (builder, "(");
+        Append (builder, "(");
 
     for proc.results
     {
         if it_index != 0
-            StringBuilderAppend (builder, ", ");
-        PrintValueDeclaration (builder, it, indent_level);
+            Append (builder, ", ");
+        PrintValueDeclaration (builder, it);
     }
 
     if proc.results.count > 1
-        StringBuilderAppend (builder, ")");
+        Append (builder, ")");
 
     if proc.body
     {
-        StringBuilderAppend (builder, "\n");
-        PrintStatement (builder, proc.body, indent_level);
+        Append (builder, "\n");
+        PrintStatement (builder, proc.body);
     }
 }
 
-PrintStatement :: (builder : *StringBuilder, node : *AstNode, indent_level := 0)
+ShouldStatementEndInSemicolon :: inline (node : *AstNode) -> bool #must
 {
-    ShouldStatementEndInSemicolon :: inline (node : *AstNode) -> bool #must
+    if node.kind == .Block || node.kind == .If || node.kind == .While
+        return false;
+    if node.kind == .Declaration
     {
-        if node.kind == .Block
+        decl := cast (*AstDeclaration) node;
+        if decl.decl_kind == .Procedure
             return false;
-        if node.kind == .Declaration
-        {
-            decl := cast (*AstDeclaration) node;
-            if decl.decl_kind == .Procedure
-                return false;
-        }
-
-        return true;
     }
 
-    for 0..indent_level - 1
-        StringBuilderAppend (builder, "    ");
+    return true;
+}
 
-    PrintAstNode (builder, node, indent_level);
+PrintStatement :: (builder : *SourceCodeBuilder, node : *AstNode)
+{
+    PrintAstNode (builder, node);
 
     if ShouldStatementEndInSemicolon (node)
-        StringBuilderAppend (builder, ";");
+        Append (builder, ";");
 }
 
-PrintAstNode :: (builder : *StringBuilder, node : *AstNode, indent_level := 0)
+PrintAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
 {
     if node.is_parenthesized
-        StringBuilderAppend (builder, "(");
+        Append (builder, "(");
 
     defer if node.is_parenthesized
-        StringBuilderAppend (builder, ")");
+        Append (builder, ")");
 
     if #complete node.kind ==
     {
@@ -118,110 +115,174 @@ PrintAstNode :: (builder : *StringBuilder, node : *AstNode, indent_level := 0)
         {
         case .Invalid;
         case .Variable;
-            StringBuilderAppend (builder, "var ");
-            PrintValueDeclaration (builder, decl, indent_level);
+            Append (builder, "var ");
+            PrintValueDeclaration (builder, decl);
         case .Constant;
-            StringBuilderAppend (builder, "const ");
-            PrintValueDeclaration (builder, decl, indent_level);
+            Append (builder, "const ");
+            PrintValueDeclaration (builder, decl);
         case .Field;
-            PrintValueDeclaration (builder, decl, indent_level);
+            PrintValueDeclaration (builder, decl);
         case .Procedure;
             if decl.identifier_count == 0
-                PrintProcedure (builder, cast (*AstProcedure) decl.expr, "", indent_level);
+                PrintProcedure (builder, cast (*AstProcedure) decl.expr, "");
             else
-                PrintProcedure (builder, cast (*AstProcedure) decl.expr, decl.single_identifier.name, indent_level);
+                PrintProcedure (builder, cast (*AstProcedure) decl.expr, decl.single_identifier.name);
         }
 
     case .Block;
         block := cast (*AstBlock) node;
 
-        StringBuilderAppend (builder, "{\n");
+        Append (builder, "{\n");
+        Indent (builder);
         for block.statements
         {
-            more_newlines := it.kind == .Declaration && (cast (*AstDeclaration) it).decl_kind == .Procedure;
+            more_newlines := !ShouldStatementEndInSemicolon (it);
 
             if it_index != 0 && more_newlines
-                StringBuilderAppend (builder, "\n");
+                Append (builder, "\n");
 
-            PrintStatement (builder, it, indent_level + 1);
+            PrintStatement (builder, it);
 
-            StringBuilderAppend (builder, "\n");
+            Append (builder, "\n");
 
-            if it_index != block.statements.count -1 && more_newlines
-                StringBuilderAppend (builder, "\n");
+            if it_index != block.statements.count - 1 && more_newlines
+                Append (builder, "\n");
         }
 
-        for 0..indent_level - 1
-            StringBuilderAppend (builder, "    ");
+        Unindent (builder);
+        Append (builder, "}");
 
-        StringBuilderAppend (builder, "}");
+    case .If;
+        if_stmt := cast (*AstIf) node;
+        Append (builder, "if ");
+        PrintAstNode (builder, if_stmt.condition);
+        Append (builder, "\n");
+
+        if ShouldStatementEndInSemicolon (if_stmt.body)
+            Indent (builder);
+
+        PrintStatement (builder, if_stmt.body);
+
+        if ShouldStatementEndInSemicolon (if_stmt.body)
+            Unindent (builder);
+
+        if if_stmt.else_stmt
+        {
+            Append (builder, "\nelse ");
+
+            if if_stmt.else_stmt.kind != .If && if_stmt.else_stmt.kind != .While
+                Append (builder, "\n");
+
+            if ShouldStatementEndInSemicolon (if_stmt.else_stmt)
+                Indent (builder);
+
+            PrintStatement (builder, if_stmt.else_stmt);
+
+            if ShouldStatementEndInSemicolon (if_stmt.else_stmt)
+                Unindent (builder);
+        }
+
+    case .While;
+        while_stmt := cast (*AstWhile) node;
+        Append (builder, "while ");
+        PrintAstNode (builder, while_stmt.condition);
+        Append (builder, "\n");
+
+        if ShouldStatementEndInSemicolon (while_stmt.body)
+            Indent (builder);
+
+        PrintStatement (builder, while_stmt.body);
+
+        if ShouldStatementEndInSemicolon (while_stmt.body)
+            Unindent (builder);
+
+    case .Defer;
+        def := cast (*AstDefer) node;
+        Append (builder, "defer");
+        PrintStatement (builder, def.stmt);
+
+    case .Return;
+        ret := cast (*AstReturn) node;
+        Append (builder, "return");
+        for ret.return_values
+        {
+            if it_index == 0
+                Append (builder, " ");
+            else
+                Append (builder, ", ");
+
+            PrintAstNode (builder, it);
+        }
+
+    case .Flow_Control;
+        Append (builder, "%", TokenRangeToString (node.range));
 
     case .Assignment;
         assign := cast (*AstAssignment) node;
-        PrintAstNode (builder, assign.left, indent_level);
-        StringBuilderAppend (builder, " % ", TokenToString (assign.op));
-        PrintAstNode (builder, assign.right, indent_level);
+        PrintAstNode (builder, assign.left);
+        Append (builder, " % ", TokenToString (assign.op));
+        PrintAstNode (builder, assign.right);
 
     case .Expressions_Begin;
     case .Identifier;
         ident := cast (*AstIdentifier) node;
-        StringBuilderAppend (builder, ident.name);
+        Append (builder, ident.name);
 
     case .Literal;
-        StringBuilderAppend (builder, TokenRangeToString (node.range));
+        Append (builder, TokenRangeToString (node.range));
 
     case .Binary;
         binary := cast (*AstBinary) node;
-        PrintAstNode (builder, binary.left, indent_level);
-        StringBuilderAppend (builder, " % ", TokenToString (binary.op));
-        PrintAstNode (builder, binary.right, indent_level);
+        PrintAstNode (builder, binary.left);
+        Append (builder, " % ", TokenToString (binary.op));
+        PrintAstNode (builder, binary.right);
 
     case .Unary;
         unary := cast (*AstUnary) node;
         info := UnaryOperatorInfo (unary.op);
 
         if info.flags & .Prefix
-            StringBuilderAppend (builder, "%", TokenToString (unary.op));
+            Append (builder, "%", TokenToString (unary.op));
 
-        PrintAstNode (builder, unary.expr, indent_level);
+        PrintAstNode (builder, unary.expr);
 
         if info.flags & .Postfix
-            StringBuilderAppend (builder, "%", TokenToString (unary.op));
+            Append (builder, "%", TokenToString (unary.op));
 
     case .Expressions_End;
     case .Statements_End;
     case .Types_Begin;
     case .Type_Pointer;
         pointer := cast (*AstTypePointer) node;
-        StringBuilderAppend (builder, "*");
-        PrintAstNode (builder, pointer.pointed_type, indent_level);
+        Append (builder, "*");
+        PrintAstNode (builder, pointer.pointed_type);
 
     case .Type_Array;
         array := cast (*AstTypeArray) node;
 
-        StringBuilderAppend (builder, "[");
+        Append (builder, "[");
 
         if array.array_kind ==
         {
         case .Dynamic;
-            StringBuilderAppend (builder, "..");
+            Append (builder, "..");
         case .Static;
-            PrintAstNode (builder, array.element_count, indent_level);
+            PrintAstNode (builder, array.element_count);
         }
 
-        StringBuilderAppend (builder, "]");
+        Append (builder, "]");
 
-        PrintAstNode (builder, array.element_type, indent_level);
+        PrintAstNode (builder, array.element_type);
 
     case .Type_Named;
         named := cast (*AstTypeNamed) node;
-        StringBuilderAppend (builder, named.identifier.name);
+        Append (builder, named.identifier.name);
 
     case .Type_Primitive;
-        StringBuilderAppend (builder, TokenRangeToString (node));
+        Append (builder, TokenRangeToString (node));
 
     case .Procedure;
-        PrintProcedure (builder, cast (*AstProcedure) node, "", indent_level);
+        PrintProcedure (builder, cast (*AstProcedure) node, "");
     case .Struct;
     case .Enum;
     case .Types_End;
