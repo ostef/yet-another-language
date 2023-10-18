@@ -1,5 +1,8 @@
 //import "Math";
 
+var a := 10;
+var b := "Hello World";
+
 proc Main (args : []string)
 {
     proc ProcInsideProc (a : int, b : string) -> (float, ok : bool)
@@ -7,7 +10,31 @@ proc Main (args : []string)
         a + b == c;
     }
 
-    a = b = c;
+    //a = b = c;
+    if a
+        b = c;
+
+    if false
+        do_this;
+    else if true
+        do_that;
+    else
+    {
+        a_block;
+    }
+
+    return a;
+    return a, b, c;
+
+    while false
+        heyo;
+
+    while true
+    {
+        do;
+        something;
+    }
+
     a = 1 * 2 + (3 * 5 / 6) - 10;
     a += 10;
     a *= 0.5;
