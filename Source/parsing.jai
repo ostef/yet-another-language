@@ -679,11 +679,16 @@ ParseProcedureDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
     ident := MakeAstIdentifier (PrevToken (lexer));
 
     signature := ParseProcedureSignature (file, proc_tok);
-    if !signature
+    if !signature || !NextTokenIs (*lexer, .Open_Curly)
     {
+        ExpectedError (PrevToken (lexer), NextToken (*lexer), .Open_Curly);
+
         // Not recovering and returning null can really fuck up the
         // parsing state, so we do that and return a Bad_Declaration
         Recover (file, .Open_Curly);
+
+        if !NextTokenIs (*lexer, .Open_Curly)
+            return null;
     }
 
     body := ParseBlock (file);
