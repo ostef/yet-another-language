@@ -5,6 +5,7 @@ FileId :: s16;
 YalFile :: struct
 {
     using lexer : YalLexer;
+    declarations : [..]*AstDeclaration;
 }
 
 g_files : [..]*YalFile;
@@ -85,18 +86,34 @@ ParseFile :: (using file : *YalFile)
 {
     while !MatchToken (*lexer, .EOF)
     {
-        statement := ParseStatement (file);
-        if !statement
+        decl := ParseDeclaration (file);
+        if !decl
         {
             Recover (file);
             continue;
         }
+
+        ArrayPush (*declarations, decl);
     }
+
+    builder : StringBuilder;
+    for declarations
+    {
+        PrintStatement (*builder, it);
+        StringBuilderAppend (*builder, "\n\n");
+    }
+
+    Println ("File %:", filename);
+    Print (StringBuilderBuild (*builder));
 }
 
 ParseStatement :: (using file : *YalFile) -> *AstNode #must
 {
-    if NextTokenIs (*lexer, .Open_Curly)
+    if NextTokenIs (*lexer, .Var, .Const, .Proc)
+    {
+        return ParseDeclaration (file);
+    }
+    else if NextTokenIs (*lexer, .Open_Curly)
     {
         return ParseBlock (file);
     }
@@ -114,7 +131,7 @@ ParseStatement :: (using file : *YalFile) -> *AstNode #must
     return null;
 }
 
-ParseBlock :: (using file : *YalFile) -> *AstNode #must
+ParseBlock :: (using file : *YalFile) -> *AstBlock #must
 {
     Expect (file, .Open_Curly);
     open_brace_tok := PrevToken (lexer);
@@ -394,4 +411,280 @@ ParsePrimaryExpression :: (using file : *YalFile) -> *AstNode #must
     SyntaxError (tok, "expected an expression, but got % instead", Token_Names[tok.kind]);
 
     return null;
+}
+
+ParseType :: (using file : *YalFile) -> *AstNode #must
+{
+    if MatchToken (*lexer, .Star)
+    {
+        star_tok := PrevToken (lexer);
+        pointed_type := ParseType (file);
+        if !pointed_type
+            return null;
+
+        return MakeAstTypePointer (star_tok, pointed_type);
+    }
+
+    if MatchToken (*lexer, .Open_Bracket)
+    {
+        open_bracket_tok := PrevToken (lexer);
+
+        is_dynamic := false;
+        element_count : *AstNode;
+
+        if MatchToken (*lexer, .Dot_Dot)
+        {
+            is_dynamic = true;
+        }
+        else if !NextTokenIs (*lexer, .Close_Bracket)
+        {
+            element_count = ParseExpression (file);
+            if !element_count
+                return null;
+        }
+
+        Expect (file, .Close_Bracket);
+
+        element_type := ParseType (file);
+        if !element_type
+            return null;
+
+        return MakeAstTypeArray (open_bracket_tok, element_type, element_count, is_dynamic);
+    }
+
+    if MatchToken (*lexer, .Proc)
+        return ParseProcedureSignature (file, PrevToken (lexer));
+
+    // @Todo
+    // if MatchToken (*lexer, .Struct)
+    //     return ParseStruct (file, PrevToken (lexer));
+
+    // if MatchToken (*lexer, .Enum)
+    //     return ParseEnum (file, PrevToken (lexer));
+
+    if MatchToken (*lexer, .Identifier)
+        return MakeAstTypeNamed (MakeAstIdentifier (PrevToken (lexer)));
+
+    if !MatchToken (*lexer, .Void, .Int, .Uint,
+        .U8, .S8, .U16, .S16, .U32, .S32, .U64, .S64,
+        .Float, .F32, .F64,
+        .Bool, .String
+    )
+    {
+        SyntaxError (NextToken (*lexer),
+            "expected a type, but got % instead", Token_Names[NextToken (*lexer).kind]);
+
+        return null;
+    }
+
+    return MakeAstTypePrimitive (PrevToken (lexer));
+}
+
+ParseProcedureSignature :: (using file : *YalFile, proc_tok : Token) -> *AstProcedure #must
+{
+    parameters : [..]*AstDeclaration;
+
+    Expect (file, .Open_Paren);
+    if !ParseFieldList (file, *parameters)
+        return null;
+
+    close_paren := PrevToken (lexer);
+
+    results : [..]*AstDeclaration;
+
+    if MatchToken (*lexer, .Arrow)
+    {
+        if MatchToken (*lexer, .Open_Paren)
+        {
+            if !ParseFieldList (file, *results)
+                return null;
+        }
+        else
+        {
+            decl := ParseFieldDeclaration (file);
+            if !decl
+                return null;
+
+            ArrayPush (*results, decl);
+        }
+    }
+
+    return MakeAstProcedure (proc_tok, close_paren, parameters, results);
+}
+
+ParseDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
+{
+    if MatchToken (*lexer, .Var)
+    {
+        decl := ParseValueDeclaration (file, .Variable);
+        if !decl
+            return null;
+
+        Expect (file, .Semicolon);
+
+        return decl;
+    }
+    else if MatchToken (*lexer, .Const)
+    {
+        decl := ParseValueDeclaration (file, .Constant);
+        if !decl
+            return null;
+
+        Expect (file, .Semicolon);
+
+        return decl;
+    }
+    else if MatchToken (*lexer, .Proc)
+    {
+        return ParseProcedureDeclaration (file);
+    }
+    else
+    {
+        SyntaxError (NextToken (*lexer), "expected a declaration");
+    }
+
+    return null;
+}
+
+ParseValueDeclaration :: (using file : *YalFile, kind : DeclarationKind) -> *AstDeclaration #must
+{
+    begin_tok : Token;
+
+    if kind == .Variable || kind == .Constant
+        begin_tok = PrevToken (lexer);
+
+    Expect (file, .Identifier);
+
+    if kind != .Variable && kind != .Constant
+        begin_tok = PrevToken (lexer);
+
+    first_ident := MakeAstIdentifier (PrevToken (lexer));
+
+    multiple_decls := false;
+    identifiers : [..]*AstIdentifier;
+
+    while MatchToken (*lexer, .Comma)
+    {
+        if !multiple_decls
+        {
+            ArrayPush (*identifiers, first_ident);
+            multiple_decls = true;
+        }
+
+        Expect (file, .Identifier);
+        ident := MakeAstIdentifier (PrevToken (lexer));
+        ArrayPush (*identifiers, ident);
+    }
+
+    Expect (file, .Colon);
+
+    type_node : *AstNode;
+    if !NextTokenIs (*lexer, .Equal)
+    {
+        type_node = ParseType (file);
+        if !type_node
+            return null;
+    }
+
+    expr : *AstNode;
+    if MatchToken (*lexer, .Equal)
+    {
+        expr = ParseExpression (file);
+        if !expr
+            return null;
+    }
+
+    if multiple_decls
+        return MakeAstDeclarationMultiple (begin_tok, identifiers, type_node, expr, kind);
+
+    return MakeAstDeclaration (begin_tok, first_ident, type_node, expr, kind);
+}
+
+ParseFieldDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
+{
+    if NextToken (*lexer, 1).kind != .Colon
+    {
+        begin_tok := NextToken (*lexer);
+
+        type_node := ParseType (file);
+        if !type_node
+            return null;
+
+        return MakeAstDeclaration (begin_tok, null, type_node, null, .Field);
+    }
+
+    return ParseValueDeclaration (file, .Field);
+}
+
+ParseFieldList :: (using file : *YalFile, results : *[..]*AstDeclaration) -> bool #must
+{
+    first := true;
+    while !MatchToken (*lexer, .EOF, .Close_Paren)
+    {
+        defer first = false;
+
+        if !first
+        {
+            if !MatchExpect (file, .Comma)
+            {
+                Recover (file, .Comma, .Close_Paren);
+                continue;
+            }
+
+            if MatchToken (*lexer, .Close_Paren)
+            {
+                SyntaxError (PrevToken (lexer),
+                    "expected a field declaration after ',', but got ')' instead");
+
+                // This is a minor error so we return true so as to not fuck up the state of the parser
+                return true;
+            }
+        }
+
+        decl := ParseFieldDeclaration (file);
+        if !decl
+        {
+            Recover (file, .Comma, .Close_Paren);
+            continue;
+        }
+
+        ArrayPush (results, decl);
+    }
+
+    if PrevToken (lexer).kind != .Close_Paren
+    {
+        ExpectedError (PrevToken (lexer, 1), PrevToken (lexer), .Close_Paren);
+
+        return false;
+    }
+
+    return true;
+}
+
+ParseProcedureDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
+{
+    proc_tok := PrevToken (lexer);
+
+    Expect (file, .Identifier);
+    ident := MakeAstIdentifier (PrevToken (lexer));
+
+    signature := ParseProcedureSignature (file, proc_tok);
+    if !signature
+    {
+        // Not recovering and returning null can really fuck up the
+        // parsing state, so we do that and return a Bad_Declaration
+        Recover (file, .Open_Curly);
+    }
+
+    body := ParseBlock (file);
+    if !body
+        return null;
+
+    if !signature
+        return MakeAstBadDeclaration (TokenRangeJoin (proc_tok, body));
+
+    signature.body = body;
+    signature.range = TokenRangeJoin (signature, body);
+
+    return MakeAstDeclaration (proc_tok, ident, null, signature, .Procedure);
 }

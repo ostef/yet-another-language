@@ -10,6 +10,7 @@ JaiC :: #import "Compiler";
 
 #load "tokens.jai";
 #load "ast.jai";
+#load "ast_print.jai";
 #load "parsing.jai";
 #load "error.jai";
 
