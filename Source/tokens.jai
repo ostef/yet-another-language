@@ -479,7 +479,12 @@ ScanNextToken :: (using lexer : *YalLexer) -> Token #must
         while !LexerIsAtEnd (lexer) && text[byte_index] != closing_char
         {
             if text[byte_index] == #char "\\"
+            {
                 LexerAdvance (lexer);
+                if LexerIsAtEnd (lexer)
+                    break;
+            }
+
             if text[byte_index] == #char "\n"
                 has_newline = true;
 
