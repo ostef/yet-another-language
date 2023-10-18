@@ -123,7 +123,13 @@ ParseStatement :: (using file : *YalFile) -> *AstNode #must
         if !expr
             return null;
 
-        Expect (file, .Semicolon);
+        if !MatchExpect (file, .Semicolon)
+        {
+            if NextTokenIs (*lexer, .Colon)
+                Info (NextToken (*lexer), "this looks like a variable or constant declaration, but the 'var' or 'const' keyword is missing");
+
+            return null;
+        }
 
         return expr;
     }
@@ -541,6 +547,10 @@ ParseDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
     else
     {
         SyntaxError (NextToken (*lexer), "expected a declaration");
+
+        // @Todo: maybe catch compound declarations where the 'var' keyword is missing?
+        if NextTokenIs (*lexer, .Identifier) && NextToken (*lexer, 1).kind == .Colon
+            Info (NextToken (*lexer), "this looks like a variable or constant declaration, but the 'var' or 'const' keyword is missing");
     }
 
     return null;
