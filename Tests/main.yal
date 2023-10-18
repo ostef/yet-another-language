@@ -2,11 +2,15 @@
 
 proc Main (args : []string)
 {
-
-    proc ProcInsideProc (a : int, b : string) -> float
+    proc ProcInsideProc (a : int, b : string) -> (float, ok : bool)
     {
         a + b == c;
     }
+
+    a = b = c;
+    a = 1 * 2 + (3 * 5 / 6) - 10;
+    a += 10;
+    a *= 0.5;
     a + b + c;
     1 * 2 + (3 * 5 / 6) - 10;
 }
