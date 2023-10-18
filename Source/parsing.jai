@@ -458,7 +458,24 @@ ParseExpression :: (using file : *YalFile, prec := 0) -> *AstNode #must
             if !right
                 return null;
 
-            expr = MakeAstBinary (tok, expr, right);
+            if op.tok == .Dot
+                expr = MakeAstFieldAccess (expr, right);
+            else
+                expr = MakeAstBinary (tok, expr, right);
+        }
+        else if op.tok == .Open_Bracket   // Subscript
+        {
+            index_expr := ParseExpression (file);
+            if !index_expr
+                return null;
+
+            Expect (file, .Close_Bracket);
+
+            expr = MakeAstSubscript (expr, index_expr, PrevToken (lexer));
+        }
+        else if op.tok == .Open_Paren   // Procedure call
+        {
+            return ParseProcedureCall (file, expr);
         }
         else
         {
@@ -553,6 +570,46 @@ ParsePrimaryExpression :: (using file : *YalFile) -> *AstNode #must
     SyntaxError (tok, "expected an expression, but got % instead", Token_Names[tok.kind]);
 
     return null;
+}
+
+ParseProcedureCall :: (using file : *YalFile, callee : *AstNode) -> *AstProcedureCall #must
+{
+    open_paren_tok := PrevToken (lexer);
+
+    arguments : [..]*AstNode;
+    first := true;
+    while !MatchToken (*lexer, .EOF, .Close_Paren)
+    {
+        defer first = false;
+
+        if !first
+        {
+            if !MatchExpect (file, .Comma)
+                return null;
+
+            if MatchToken (*lexer, .Close_Paren)
+            {
+                SyntaxError (PrevToken (lexer),
+                    "expected expression after ',', but got ')' instead");
+
+                return null;
+            }
+        }
+
+        arg := ParseExpression (file);
+        if !arg
+            return null;
+
+        ArrayPush (*arguments, arg);
+    }
+
+    if PrevToken (lexer).kind != .Close_Paren
+    {
+        ExpectedError (PrevToken (lexer, 1), PrevToken (lexer), .Close_Paren);
+        return null;
+    }
+
+    return MakeAstProcedureCall (callee, arguments, PrevToken (lexer));
 }
 
 ParseType :: (using file : *YalFile) -> *AstNode #must

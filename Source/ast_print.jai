@@ -249,6 +249,37 @@ PrintAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
         if info.flags & .Postfix
             Append (builder, "%", TokenToString (unary.op));
 
+    case .Subscript;
+        subscript := cast (*AstSubscript) node;
+
+        PrintAstNode (builder, subscript.subscripted);
+        Append (builder, "[");
+        PrintAstNode (builder, subscript.index);
+        Append (builder, "]");
+
+    case .Field_Access;
+        access := cast (*AstFieldAccess) node;
+
+        PrintAstNode (builder, access.left);
+        Append (builder, ".");
+        PrintAstNode (builder, access.right);
+
+    case .Procedure_Call;
+        call := cast (*AstProcedureCall) node;
+
+        PrintAstNode (builder, call.callee);
+        Append (builder, " (");
+
+        for call.passed_arguments
+        {
+            if it_index != 0
+                Append (builder, ", ");
+
+            PrintAstNode (builder, it);
+        }
+
+        Append (builder, ")");
+
     case .Expressions_End;
     case .Statements_End;
     case .Types_Begin;

@@ -29,6 +29,11 @@ proc Main (args : []string)
     while false
         heyo;
 
+    Foo (bar);
+    Bar ();
+
+    var result := Baz (a, (b.foobar + 5), c[index], d + 10);
+
     while true
     {
         do;

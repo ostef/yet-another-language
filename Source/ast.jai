@@ -21,6 +21,9 @@ AstKind :: enum u8
             Literal;
             Binary;
             Unary;
+            Field_Access;
+            Procedure_Call;
+            Subscript;
 
         Expressions_End;
 
@@ -344,6 +347,63 @@ MakeAstBinary :: inline (op : Token, left : *AstNode, right : *AstNode) -> *AstB
     return node;
 }
 
+AstFieldAccess :: struct
+{
+    #as using base : AstNode;
+    base.kind = .Field_Access;
+
+    left : *AstNode;
+    right : *AstNode;
+}
+
+MakeAstFieldAccess :: inline (left : *AstNode, right : *AstNode) -> *AstFieldAccess #must
+{
+    node := Alloc (AstFieldAccess);
+    node.left = left;
+    node.right = right;
+    node.range = TokenRangeJoin (left, right);
+
+    return node;
+}
+
+AstProcedureCall :: struct
+{
+    #as using base : AstNode;
+    base.kind = .Procedure_Call;
+
+    callee : *AstNode;
+    passed_arguments : []*AstNode;
+}
+
+MakeAstProcedureCall :: inline (callee : *AstNode, passed_arguments : []*AstNode, close_paren_tok : Token) -> *AstProcedureCall #must
+{
+    node := Alloc (AstProcedureCall);
+    node.callee = callee;
+    node.passed_arguments = passed_arguments;
+    node.range = TokenRangeJoin (callee, close_paren_tok);
+
+    return node;
+}
+
+AstSubscript :: struct
+{
+    #as using base : AstNode;
+    base.kind = .Subscript;
+
+    subscripted : *AstNode;
+    index : *AstNode;
+}
+
+MakeAstSubscript :: inline (subscripted : *AstNode, index : *AstNode, close_bracket_tok : Token) -> *AstSubscript #must
+{
+    node := Alloc (AstSubscript);
+    node.subscripted = subscripted;
+    node.index = index;
+    node.range = TokenRangeJoin (subscripted, close_bracket_tok);
+
+    return node;
+}
+
 AstTypePointer :: struct
 {
     #as using base : AstNode;
@@ -404,7 +464,6 @@ AstTypeNamed :: struct
 
     identifier : *AstIdentifier;
 }
-
 
 MakeAstTypeNamed :: inline (ident : *AstIdentifier) -> *AstTypeNamed #must
 {
