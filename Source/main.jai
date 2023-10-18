@@ -15,6 +15,7 @@ JaiC :: #import "Compiler";
 #load "parsing.jai";
 #load "error.jai";
 #load "constant_eval.jai";
+#load "checking.jai";
 
 BuildSettings :: struct
 {

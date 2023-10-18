@@ -69,6 +69,8 @@ AstBlock :: struct
     #as using base : AstNode;
     base.kind = .Block;
 
+    scope : *Scope;
+
     statements : []*AstNode;
 }
 
@@ -279,6 +281,7 @@ AstIdentifier :: struct
     base.kind = .Identifier;
 
     name : string;
+    symbol : *Symbol;
 }
 
 MakeAstIdentifier :: inline (tok : Token) -> *AstIdentifier #must
@@ -532,6 +535,7 @@ AstProcedure :: struct
     #as using base : AstNode;
     base.kind = .Procedure;
 
+    scope : *Scope;
     parameters : []*AstDeclaration;
     results : []*AstDeclaration;
     body : *AstBlock;

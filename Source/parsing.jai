@@ -5,7 +5,7 @@ FileId :: s16;
 YalFile :: struct
 {
     using lexer : YalLexer;
-    declarations : [..]*AstDeclaration;
+    using, only (declarations) scope : *Scope;
 }
 
 g_files : [..]*YalFile;
@@ -29,6 +29,7 @@ AddFile :: (filename : string) -> *YalFile
     file.file_id = g_file_id_counter;
     file.filename = filename;
     file.text = contents;
+    ScopeCreate (file);
 
     ArrayPush (*g_files, file);
     g_file_id_counter += 1;
