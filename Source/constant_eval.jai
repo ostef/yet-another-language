@@ -24,7 +24,7 @@ ConstantValue :: struct
     kind : ConstantKind;
 }
 
-MakeConstantValue :: (token : Token) -> ConstantValue, bool
+MakeConstantValue :: (token : Token) -> ConstantValue, *YalType, bool
 {
     if token.kind ==
     {
@@ -34,7 +34,7 @@ MakeConstantValue :: (token : Token) -> ConstantValue, bool
         ok : bool;
         val.string_value, ok = ParseStringLiteral (token);
 
-        return val, true;
+        return val, g_type_string, true;
 
     case .Char_Literal;
         val : ConstantValue = ---;
@@ -42,7 +42,7 @@ MakeConstantValue :: (token : Token) -> ConstantValue, bool
         ok : bool;
         val.int_value, ok = ParseCharLiteral (token);
 
-        return val, true;
+        return val, g_type_s64, true;
 
     case .Int_Literal;
         val : ConstantValue = ---;
@@ -50,7 +50,7 @@ MakeConstantValue :: (token : Token) -> ConstantValue, bool
         ok : bool;
         val.int_value, ok = ParseIntLiteral (token);
 
-        return val, true;
+        return val, g_type_s64, true;
 
     case .Float_Literal;
         val : ConstantValue = ---;
@@ -58,32 +58,32 @@ MakeConstantValue :: (token : Token) -> ConstantValue, bool
         ok : bool;
         val.float_value, ok = ParseFloatLiteral (token);
 
-        return val, true;
+        return val, g_type_f32, true;
 
     case .True;
         val : ConstantValue = ---;
         val.kind = .Boolean;
         val.bool_value = true;
 
-        return val, true;
+        return val, g_type_bool, true;
 
     case .False;
         val : ConstantValue = ---;
         val.kind = .Boolean;
         val.bool_value = false;
 
-        return val, true;
+        return val, g_type_bool, true;
 
     case .Null;
         val : ConstantValue = ---;
         val.kind = .Pointer;
         val.pointer_value = 0;
 
-        return val, true;
+        return val, g_type_void_ptr, true;
 
     case;
         Panic ("Invalid token kind % for literal", token.kind);
-        return .{}, false;
+        return .{}, null, false;
     }
 }
 

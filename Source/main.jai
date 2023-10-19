@@ -16,6 +16,7 @@ JaiC :: #import "Compiler";
 #load "error.jai";
 #load "constant_eval.jai";
 #load "checking.jai";
+#load "types.jai";
 
 BuildSettings :: struct
 {
@@ -118,6 +119,8 @@ main :: ()
         PrintUsage ();
         Basic.exit (1);
     }
+
+    InitBuiltinTypes ();
 
     file_error := false;
     for filenames
