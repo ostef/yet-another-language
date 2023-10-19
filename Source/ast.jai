@@ -46,6 +46,7 @@ AstNode :: struct
 {
     #as using range : TokenRange;
     #as kind : AstKind;
+    enclosing_scope : *Scope;
     is_parenthesized : bool;
 }
 

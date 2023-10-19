@@ -238,6 +238,8 @@ CollectDeclaredSymbols :: (scope : *Scope, node : *$T)
     if !node
         return;
 
+    node.enclosing_scope = scope;
+
     #if T == AstNode
     {
         inline CollectDeclaredSymbolsForUntypedNode (scope, node);
