@@ -172,15 +172,17 @@ ScopeInsert :: (using scope : *Scope, symbol_kind : SymbolKind, ident : *AstIden
     return symbol;
 }
 
-ScopeInsert :: (using scope : *Scope, decl : *AstDeclaration)
+ScopeInsert :: (scope : *Scope, decl : *AstDeclaration)
 {
-    ArrayPush (*declarations, decl);
+    // File scope declarations array was filled during parsing
+    if scope.kind != .File
+        ArrayPush (*scope.declarations, decl);
 
     if !decl || decl.identifier_count == 0
         return;
 
     symbol_kind : SymbolKind;
-    if decl.decl_kind ==
+    if #complete decl.decl_kind ==
     {
     case .Variable; #through;
     case .Field;
@@ -192,18 +194,18 @@ ScopeInsert :: (using scope : *Scope, decl : *AstDeclaration)
     case .Procedure;
         symbol_kind = .Procedure;
 
-    case;
-        Assert (false, "Invalid declaration kind %", decl.decl_kind);
+    case .Invalid;
+        Panic ("Invalid declaration kind %", decl.decl_kind);
     }
 
-    if decl.identifier_count > 1
+    if decl.identifier_count == 1
     {
-        for decl.identifiers
-            ScopeInsert (scope, symbol_kind, it, decl);
+        ScopeInsert (scope, symbol_kind, decl.single_identifier, decl);
     }
     else
     {
-        ScopeInsert (scope, symbol_kind, decl.single_identifier, decl);
+        for decl.identifiers
+            ScopeInsert (scope, symbol_kind, it, decl);
     }
 }
 
