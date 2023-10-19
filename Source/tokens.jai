@@ -285,7 +285,7 @@ TokenRangeJoin :: (a : TokenRange, b : TokenRange) -> TokenRange #must
     else
         start = *b;
 
-    if CompareLineColumnPairs (a.line_end, a.char_end, b.line_end, b.char_end) < 0
+    if CompareLineColumnPairs (a.line_end, a.char_end, b.line_end, b.char_end) > 0
         end = *a;
     else
         end = *b;
