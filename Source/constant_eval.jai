@@ -1,3 +1,5 @@
+// @Todo: handle unsigned numbers
+
 ConstantKind :: enum u8
 {
     Invalid;
@@ -229,14 +231,14 @@ ParseIntLiteral :: (token : Token) -> s64, bool
 
     // @Todo: handle overflow and underflow
     result : s64;
-    for < i : str.count - 1..0
+    for i : 0..str.count - 1
     {
         if str[i] == #char "_"
             continue;
 
         digit := CharToDigit (str[i]);
-        result += digit;
         result *= base;
+        result += digit;
     }
 
     return result, true;
