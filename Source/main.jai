@@ -146,14 +146,37 @@ main :: ()
 
     for g_files
     {
-        Println ("Declared symbols in file %:", it.filename);
-        symbol := it.scope.first_symbol;
-        while symbol
+        PrintScope :: (scope : *Scope, indent_level := 0)
         {
-            defer symbol = symbol.next;
+            symbol := scope.first_symbol;
+            while symbol
+            {
+                for 0..indent_level - 1
+                    Print ("  ");
 
-            Println ("% : % (%)", symbol.name, symbol.kind, symbol.flags);
+                Println ("% : % (%)", symbol.name, symbol.kind, symbol.flags);
+
+                symbol = symbol.next;
+            }
+
+            for 0..indent_level - 1
+                Print ("  ");
+            Println ("{");
+
+            child := scope.first_child;
+            while child
+            {
+                PrintScope (child, indent_level + 1);
+                child = child.next;
+            }
+
+            for 0..indent_level - 1
+                Print ("  ");
+            Println ("}");
         }
+
+        Println ("Declared symbols in file %:", it.filename);
+        PrintScope (it.scope);
         Print ("\n");
     }
 
