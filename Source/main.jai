@@ -141,6 +141,7 @@ main :: ()
     for g_files
     {
         CollectAllSymbolsInFile (it);
+        ResolveAllIdentifiersInFile (it);
     }
 
     for g_files

@@ -264,7 +264,6 @@ CollectDeclaredSymbols :: (scope : *Scope, node : *$T)
             {
                 for note : member.notes
                 {
-
                     if note == "NoCollectSymbols"
                     {
                         StringBuilderAppend (*builder, "// % is ignored\n", member.name);
@@ -355,4 +354,136 @@ CollectAllSymbolsInFile :: (file : *YalFile)
 {
     for file.declarations
         CollectDeclaredSymbols (file.scope, it);
+}
+
+ResolveIdentifiers :: (scope : *Scope, node : *$T)
+#modify { return TypeIsAstNode (cast (*Type_Info) T); }
+{
+    if !node
+        return;
+
+    #if T == AstNode
+    {
+        inline ResolveIdentifiersForUntypedNode (scope, node);
+    }
+    #if T == AstIdentifier
+    {
+        if node.symbol
+            return;
+
+        node.symbol = ScopeLookup (scope, node.name);
+        if !node.symbol
+        {
+            Error (node, "undeclared identifier '%'", node.name);
+        }
+    }
+    else
+    {
+        #insert -> string
+        {
+            info := type_info (T);
+
+            builder : StringBuilder;
+
+            StringBuilderAppend (*builder, "// ResolveIdentifiers for %\n", T);
+            for member : info.members
+            {
+                if member.name == "scope" && member.type == type_info (*Scope)
+                    StringBuilderAppend (*builder, "scope = node.scope;\n");
+            }
+
+            for member : info.members
+            {
+                for note : member.notes
+                {
+                    if note == "NoResolveIdentifiers"
+                    {
+                        StringBuilderAppend (*builder, "// % is ignored\n", member.name);
+                        continue member;
+                    }
+                }
+
+                if member.type.type == .POINTER
+                {
+                    pointed_type := (cast (*Type_Info_Pointer) member.type).pointer_to;
+                    if TypeIsAstNode (pointed_type)
+                        StringBuilderAppend (*builder, "ResolveIdentifiers (scope, node.%);\n", member.name);
+                }
+                else if member.type.type == .ARRAY
+                {
+                    element_type := (cast (*Type_Info_Array) member.type).element_type;
+                    pointed_type : *Type_Info;
+                    if element_type.type == .POINTER
+                        pointed_type = (cast (*Type_Info_Pointer) element_type).pointer_to;
+
+                    if pointed_type && TypeIsAstNode (pointed_type)
+                    {
+                        StringBuilderAppend (*builder, "for node.%\n", member.name);
+                        StringBuilderAppend (*builder, "    ResolveIdentifiers (scope, it);\n");
+                    }
+                }
+            }
+
+            return StringBuilderBuild (*builder);
+        }
+    }
+}
+
+ResolveIdentifiersForUntypedNode :: (scope : *Scope, node : *AstNode)
+{
+    Ignore_Kinds :: AstKind.[
+        .Invalid,
+        .Statements_Begin,
+        .Bad_Declaration,
+        .Expressions_Begin,
+        .Expressions_End,
+        .Statements_End,
+        .Types_Begin,
+        .Types_End,
+        .Count
+    ];
+
+    #insert -> string
+    {
+        AppendAstStructName :: (builder : *StringBuilder, kind : AstKind)
+        {
+            StringBuilderAppend (builder, "Ast");
+
+            name := type_info (AstKind).names[kind];
+            for i : 0..name.count - 1
+            {
+                if name[i] == #char "_"
+                    continue;
+
+                StringBuilderAppendByte (builder, name[i]);
+            }
+        }
+
+        builder : StringBuilder;
+
+        StringBuilderAppend (*builder, "if node.kind ==\n{\n");
+        for i : 0..AstKind.Count - 1
+        {
+            kind := cast (AstKind) i;
+            for Ignore_Kinds
+            {
+                if it == kind
+                    continue i;
+            }
+
+            StringBuilderAppend (*builder, "case .%;\n", kind);
+            StringBuilderAppend (*builder, "    ResolveIdentifiers (scope, cast (*");
+            AppendAstStructName (*builder, kind);
+            StringBuilderAppend (*builder, ") node);\n");
+        }
+        StringBuilderAppend (*builder, "}");
+
+        return StringBuilderBuild (*builder);
+    };
+}
+
+ResolveAllIdentifiersInFile :: (file : *YalFile)
+{
+    for file.declarations
+        ResolveIdentifiers (file.scope, it);
 }
