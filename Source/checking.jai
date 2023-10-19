@@ -264,10 +264,12 @@ CollectDeclaredSymbols :: (scope : *Scope, node : *$T)
             {
                 for note : member.notes
                 {
-                    StringBuilderAppend (*builder, "// % is ignored\n", member.name);
 
                     if note == "NoCollectSymbols"
+                    {
+                        StringBuilderAppend (*builder, "// % is ignored\n", member.name);
                         continue member;
+                    }
                 }
 
                 if member.type.type == .POINTER
