@@ -47,6 +47,9 @@ AstNode :: struct
     #as using range : TokenRange;
     #as kind : AstKind;
     enclosing_scope : *Scope;
+    type : *YalType;
+    semantic_meaning : SemanticMeaning;
+    value : ConstantValue;
     is_parenthesized : bool;
 }
 
