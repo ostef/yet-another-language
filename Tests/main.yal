@@ -1,7 +1,7 @@
 //import "Math";
 
 var a := 10;
-var a := "redeclared";
+//var a := "redeclared";
 var b := "Hello World";
 
 proc Main (args : []string)
@@ -9,8 +9,17 @@ proc Main (args : []string)
     proc ProcInsideProc (a : int, b : string) -> (float, ok : bool)
     {
         var c := 10.0;
-        undeclared;
+        //undeclared;
 
-        return a + b * c, false;
+        //return a + b * c, false;
     }
+
+    const Index := 9;
+    //Index[1] = 2;
+    const const_array : [10]int = "";
+    var index := 10;
+    var array : [10]int;
+    var value := array[Index];
+    var value2 := array[array[Index]];
+    array[index] = 10;
 }

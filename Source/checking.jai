@@ -3,8 +3,8 @@ SemanticMeaning :: enum u8
     Invalid;
     Type;
     Value;
+    Constant;
     Mutable;
-    Immutable;
 }
 
 // @Note: I would like to be able to have the check context in
@@ -488,4 +488,510 @@ ResolveAllIdentifiersInFile :: (file : *YalFile)
 {
     for file.declarations
         ResolveIdentifiers (file.scope, it);
+}
+
+SetDeclarationType :: (decl : *AstDeclaration, type : *YalType)
+{
+    Assert (decl.type == null);
+
+    decl.type = type;
+    if decl.identifier_count > 1
+    {
+        for decl.identifiers
+            it.type = type;
+    }
+    else if decl.single_identifier
+    {
+        decl.single_identifier.type = type;
+    }
+}
+
+CheckDeclaration :: (decl : *AstDeclaration)
+{
+    defer if !decl.type then SetDeclarationType (decl, g_type_invalid);
+
+    if #complete decl.decl_kind ==
+    {
+    case .Invalid;
+        decl.type = g_type_invalid;
+
+    case .Variable; #through;
+    case .Constant; #through;
+    case .Field;
+        if decl.type_node
+        {
+            CheckType (decl.type_node);
+            SetDeclarationType (decl, decl.type_node.type);
+        }
+
+        if decl.expr
+        {
+            CheckExpression (decl.expr);
+
+            if decl.expr.type != g_type_invalid
+            {
+                if !decl.type_node
+                    SetDeclarationType (decl, decl.expr.type);
+                else
+                    CheckInitAssignment (decl);
+            }
+        }
+        else if decl.decl_kind == .Constant
+        {
+            Error (decl, "uninitialized constant");
+        }
+
+    case .Procedure;
+        CheckProcedureDeclaration (decl);
+    }
+}
+
+CheckInitAssignment :: (decl : *AstDeclaration)
+{
+    if decl.expr.semantic_meaning == .Type
+    {
+        Error (decl.expr, "assignment of a type");
+        return;
+    }
+
+    if decl.decl_kind == .Constant && decl.expr.semantic_meaning != .Constant
+    {
+        Error (decl.expr, "expression is not constant");
+        return;
+    }
+
+    if !TypeCanImplicitlyCastTo (decl.expr.type, decl.type)
+    {
+        Error (decl.expr, "invalid type for assignment (left type: %, right type: %)",
+            decl.type.as_string, decl.expr.type.as_string);
+        return;
+    }
+}
+
+CheckProcedureSignature :: (proc : *AstProcedure)
+{
+    proc.type = g_type_invalid;
+
+    parameters : [..]*YalType;
+    results : [..]*YalType;
+
+    for proc.parameters
+    {
+        CheckDeclaration (it);
+        if it.type == g_type_invalid
+            return;
+
+        ArrayPush (*parameters, it.type);
+    }
+
+    for proc.results
+    {
+        CheckDeclaration (it);
+        if it.type == g_type_invalid
+            return;
+
+        ArrayPush (*results, it.type);
+    }
+
+    proc.type = MakeTypeProcedure (proc, parameters, results);
+}
+
+CheckProcedureDeclaration :: (decl : *AstDeclaration)
+{
+    proc := cast (*AstProcedure) decl.expr;
+
+    CheckProcedureSignature (proc);
+    SetDeclarationType (decl, proc.type);
+
+    if decl.type == g_type_invalid
+        return;
+
+    CheckBlock (proc.body);
+}
+
+CheckType :: (type : *AstNode)
+{
+    type.type = g_type_invalid;
+
+    if type.kind ==
+    {
+    case .Type_Pointer;
+        type_pointer := cast (*AstTypePointer) type;
+
+        CheckType (type_pointer.pointed_type);
+
+        if type_pointer.pointed_type.type == g_type_invalid
+            return;
+
+        type.type = MakeTypePointer (type_pointer.pointed_type.type);
+
+    case .Type_Array;
+        type_array := cast (*AstTypeArray) type;
+
+        CheckType (type_array.element_type);
+
+        if type_array.element_type.type == g_type_invalid
+            return;
+
+        array_count := -1;
+        if type_array.element_count
+        {
+            count := type_array.element_count;
+
+            CheckExpression (count);
+
+            if count.type == g_type_invalid
+                return;
+
+            if count.type.kind != .Integer
+            {
+                Error (count, "array count must be a positive constant integer");
+                return;
+            }
+
+            if count.semantic_meaning != .Constant
+            {
+                Error (count, "array count must be constant");
+                return;
+            }
+
+            if count.value.int_value < 0
+            {
+                Error (count, "array count must be a positive integer (is %)", count.value.int_value);
+                // @Todo: handle number signedness
+                InfoWithoutSourceCode (count, "for now, we only handle 64-bit signed integer values");
+                return;
+            }
+
+            array_count = count.value.int_value;
+        }
+
+        type.type = MakeTypeArray (type_array.array_kind, type_array.element_type.type, array_count);
+
+    case .Type_Named;
+        type_named := cast (*AstTypeNamed) type;
+        if !type_named.identifier.symbol
+            return;
+
+        CheckIdentifier (type_named.identifier);
+        type.type = type_named.identifier.type;
+
+    case .Type_Primitive;
+        type_primitive := cast (*AstTypePrimitive) type;
+        if type_primitive.primitive_kind ==
+        {
+        case .S8; type.type = g_type_s8;
+        case .U8; type.type = g_type_u8;
+        case .S16; type.type = g_type_s16;
+        case .U16; type.type = g_type_u16;
+        case .S32; type.type = g_type_s32;
+        case .U32; type.type = g_type_u32;
+        case .S64; type.type = g_type_s64;
+        case .U64; type.type = g_type_u64;
+        case .Int; type.type = g_type_s64;
+        case .Uint; type.type = g_type_u64;
+        case .Float; type.type = g_type_f32;
+        case .F32; type.type = g_type_f32;
+        case .F64; type.type = g_type_f64;
+        case .Bool; type.type = g_type_bool;
+        case .String; type.type = g_type_string;
+        case .Void; type.type = g_type_void;
+        }
+
+    case .Procedure;
+        CheckProcedureSignature (cast (*AstProcedure) type);
+
+    case .Struct;
+    case .Enum;
+    case;
+        Panic ("Invalid ast kind (%)", type.kind);
+    }
+}
+
+CheckBinary :: (binary : *AstBinary)
+{
+    Error (binary, "not yet handled");
+    binary.type = g_type_invalid;
+}
+
+CheckUnary :: (unary : *AstUnary)
+{
+    Error (unary, "not yet handled");
+    unary.type = g_type_invalid;
+}
+
+CheckIdentifier :: (ident : *AstIdentifier)
+{
+    ident.type = g_type_invalid;
+
+    if !ident.symbol
+        return;
+
+    if !ident.symbol.decl.type
+        CheckDeclaration (ident.symbol.decl);
+
+    ident.type = ident.symbol.decl.type;
+
+    if #complete ident.symbol.kind ==
+    {
+    case .Invalid;
+    case .Variable;
+        ident.semantic_meaning = .Mutable;
+
+    case .Constant;
+        ident.semantic_meaning = .Constant;
+        ident.value = ident.symbol.decl.expr.value;
+
+    case .Procedure;
+        ident.semantic_meaning = .Constant;
+        ident.value = .{
+            procedure_node = cast (*AstProcedure) ident.symbol.decl.expr,
+            kind = .Procedure
+        };
+
+    case .Type;
+        ident.semantic_meaning = .Type;
+    }
+}
+
+CheckLiteral :: inline (lit : *AstLiteral)
+{
+    lit.semantic_meaning = .Constant;
+    lit.value, lit.type = MakeConstantValue (.{range=lit.range, kind=lit.literal_kind});
+}
+
+CheckProcedureCall :: (call : *AstProcedureCall)
+{
+    call.type = g_type_invalid;
+
+    CheckExpression (call.callee);
+    if call.callee.type == g_type_invalid
+        return;
+
+    if call.callee.type.kind != .Procedure
+    {
+        Error (call.callee, "callee in procedure call expression is not a procedure (type is: %)", call.callee.type.as_string);
+        return;
+    }
+
+    proc_type := cast (*YalTypeProcedure) call.callee.type;
+    if call.passed_arguments.count != proc_type.parameters.count
+    {
+        Error (call,
+            "mismatching number of arguments passed in procedure call. Expected % but got %",
+            proc_type.parameters.count, call.passed_arguments.count
+        );
+
+        if proc_type.node
+            Info (proc_type.node, "here is the declaration of the procedure being called");
+    }
+
+    for i : 0..call.passed_arguments.count - 1
+    {
+        arg := call.passed_arguments[i];
+
+        CheckExpression (arg);
+        if arg.type == g_type_invalid
+            continue;
+
+        param := proc_type.parameters[i];
+        if !TypeCanImplicitlyCastTo (arg.type, param)
+        {
+            Error (arg, "type mismatch for argument %.\n    Expected % but got %", i + 1, param.as_string, arg.type.as_string);
+        }
+    }
+
+    // @Todo: handle multiple results
+    if proc_type.results.count == 0
+        call.type = g_type_void;
+    else
+        call.type = proc_type.results[0];
+}
+
+CheckSubscript :: (subscript : *AstSubscript)
+{
+    subscript.type = g_type_invalid;
+
+    CheckExpression (subscript.subscripted);
+    if subscript.subscripted.type == g_type_invalid
+        return;
+
+    subscript_type := subscript.subscripted.type;
+    if subscript_type.kind != .Array && subscript_type.kind != .Pointer && subscript_type.kind != .String
+    {
+        Error (subscript.subscripted,
+            "invalid type for subscript operator. Expected an array, a pointer or a string but got %",
+            subscript_type.as_string
+        );
+        return;
+    }
+
+    if subscript_type.kind ==
+    {
+    case .Array;
+        subscript.type = (cast (*YalTypeArray) subscript_type).element_type;
+    case .Pointer;
+        subscript.type = (cast (*YalTypePointer) subscript_type).pointed_type;
+    case .String;
+        subscript.type = g_type_u8;
+    }
+
+    CheckExpression (subscript.index);
+    if subscript.index.type == g_type_invalid
+        return;
+
+    index_type := subscript.index.type;
+    if index_type.kind != .Integer
+    {
+        Error (subscript.index,
+            "invalid type for index of subscript operator. Expected an integer but got %",
+            index_type.as_string
+        );
+        return;
+    }
+
+    subscript.semantic_meaning = subscript.subscripted.semantic_meaning;
+
+    if subscript.index.semantic_meaning == .Constant
+    && subscript_type.kind == .Array && (cast (*YalTypeArray) subscript_type).array_kind == .Static
+    {
+        array_count := (cast (*YalTypeArray) subscript_type).count;
+        index_value := subscript.index.value.int_value;
+        Info (subscript.index, "indexing static array with a constant % %", array_count, index_value);
+
+        if array_count == 0
+        {
+           Error (subscript.index,
+                "static array subscript index out of bounds. Array is empty so no index is valid");
+        }
+
+        if index_value < 0 || index_value >= array_count
+        {
+            Error (subscript.index,
+                "static array subscript index out of bounds. Expected [0; %] but got %",
+                array_count - 1, index_value
+            );
+        }
+    }
+}
+
+CheckFieldAccess :: (access : *AstFieldAccess)
+{
+    Error (access, "not yet handled");
+    access.type = g_type_invalid;
+}
+
+CheckExpression :: (expr : *AstNode)
+{
+    expr.type = g_type_invalid;
+
+    if expr.kind ==
+    {
+    case .Binary;
+        CheckBinary (cast (*AstBinary) expr);
+    case .Unary;
+        CheckUnary (cast (*AstUnary) expr);
+    case .Literal;
+        CheckLiteral (cast (*AstLiteral) expr);
+    case .Identifier;
+        CheckIdentifier (cast (*AstIdentifier) expr);
+    case .Procedure_Call;
+        CheckProcedureCall (cast (*AstProcedureCall) expr);
+    case .Subscript;
+        CheckSubscript (cast (*AstSubscript) expr);
+    case .Field_Access;
+        CheckFieldAccess (cast (*AstFieldAccess) expr);
+
+    case;
+        Panic ("Invalid expression kind (%)", expr.kind);
+    }
+}
+
+CheckBlock :: (block : *AstBlock)
+{
+    for block.statements
+    {
+        CheckStatement (it);
+    }
+}
+
+CheckAssignment :: (assign : *AstAssignment)
+{
+    CheckExpression (assign.left);
+    if assign.left.type == g_type_invalid
+        return;
+
+    CheckExpression (assign.right);
+    if assign.right.type == g_type_invalid
+        return;
+
+    if assign.left.semantic_meaning ==
+    {
+    case .Type;
+        Error (assign.left,
+            "assigning to a non addressable expression (expression is a type)"
+        );
+        return;
+    case .Value;
+        Error (assign.left,
+            "assigning to a non addressable expression (expression is an r-value)"
+        );
+        return;
+    case .Constant;
+        Error (assign.left, "assigning to a constant");
+        return;
+    }
+
+    if assign.right.semantic_meaning == .Type
+    {
+        Error (assign.right, "rhs of assignment is a type");
+        return;
+    }
+
+    if !TypeCanImplicitlyCastTo (assign.right.type, assign.left.type)
+    {
+        Error (assign.right, "invalid type for assignment (left type: %, right type: %)",
+            assign.left.type.as_string, assign.right.type.as_string);
+        return;
+    }
+}
+
+CheckStatement :: (stmt : *AstNode)
+{
+    if IsExpression (stmt.kind)
+    {
+        CheckExpression (stmt);
+        return;
+    }
+
+    if stmt.kind ==
+    {
+    case .Declaration;
+        CheckDeclaration (cast (*AstDeclaration) stmt);
+
+    case .Block;
+        CheckBlock (cast (*AstBlock) stmt);
+
+    case .Assignment;
+        CheckAssignment (cast (*AstAssignment) stmt);
+
+    case;
+        Error (stmt, "not yet handled");
+    /*
+    case .If;
+        CheckIf (cast (*AstIf) stmt);
+    case .While;
+        CheckIf (cast (*AstWhile) stmt);
+    case .Defer;
+        CheckStatment ((cast (*AstDefer) stmt).stmt);
+    case .Return;
+        CheckReturn (cast (*AstReturn) stmt);
+    */
+    }
+}
+
+CheckAllDeclarationsInFile :: (file : *YalFile)
+{
+    for file.declarations
+        CheckDeclaration (it);
 }

@@ -144,9 +144,17 @@ main :: ()
     for g_files
     {
         CollectAllSymbolsInFile (it);
+
+        ExitIfError ();
+
         ResolveAllIdentifiersInFile (it);
+
+        ExitIfError ();
+
+        CheckAllDeclarationsInFile (it);
     }
 
+    /*
     for g_files
     {
         PrintScope :: (scope : *Scope, indent_level := 0)
@@ -182,6 +190,7 @@ main :: ()
         PrintScope (it.scope);
         Print ("\n");
     }
+    */
 
     ExitIfError ();
 }

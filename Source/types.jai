@@ -307,3 +307,8 @@ TypesAreEqual :: (a : *YalType, b : *YalType) -> bool #must
         return true;
     }
 }
+
+TypeCanImplicitlyCastTo :: (type : *YalType, to : *YalType) -> bool #must
+{
+    return TypesAreEqual (type, to);
+}
