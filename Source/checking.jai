@@ -859,12 +859,14 @@ CheckSubscript :: (subscript : *AstSubscript)
     {
         array_count := (cast (*YalTypeArray) subscript_type).count;
         index_value := subscript.index.value.int_value;
-        Info (subscript.index, "indexing static array with a constant % %", array_count, index_value);
 
         if array_count == 0
         {
-           Error (subscript.index,
-                "static array subscript index out of bounds. Array is empty so no index is valid");
+            Error (
+                subscript.index,
+                "static array subscript index out of bounds. Array is empty so no index is valid, the index is %",
+                index_value
+            );
         }
 
         if index_value < 0 || index_value >= array_count
