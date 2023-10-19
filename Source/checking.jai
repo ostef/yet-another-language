@@ -77,7 +77,7 @@ Symbol :: struct
 ScopeCreate :: (parent : *Scope, kind : ScopeKind) -> *Scope #must
 {
     scope := Alloc (Scope);
-    scope.kind = .Block;
+    scope.kind = kind;
 
     scope.parent = parent;
     if parent
