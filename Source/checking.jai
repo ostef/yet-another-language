@@ -976,6 +976,21 @@ CheckIf :: (using if_stmt : *AstIf)
         CheckStatement (else_stmt);
 }
 
+CheckWhile :: (using while_stmt : *AstWhile)
+{
+    CheckExpression (condition);
+    if condition.type == g_type_invalid
+        return;
+
+    if !TypeCanImplicitlyCastTo (condition.type, g_type_bool)
+    {
+        Error (condition, "invalid type for condition in while statement. Expected a bool but got %", condition.type.as_string);
+        return;
+    }
+
+    CheckStatement (body);
+}
+
 CheckStatement :: (stmt : *AstNode)
 {
     if IsExpression (stmt.kind)
@@ -994,12 +1009,12 @@ CheckStatement :: (stmt : *AstNode)
         CheckAssignment (cast (*AstAssignment) stmt);
     case .If;
         CheckIf (cast (*AstIf) stmt);
-    /*
     case .While;
-        CheckIf (cast (*AstWhile) stmt);
+        CheckWhile (cast (*AstWhile) stmt);
+
+    /*
     case .Defer;
         CheckStatment ((cast (*AstDefer) stmt).stmt);
-
     case .Return;
         CheckReturn (cast (*AstReturn) stmt);
     */
