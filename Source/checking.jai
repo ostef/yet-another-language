@@ -960,6 +960,24 @@ CheckAssignment :: (assign : *AstAssignment)
     }
 }
 
+CheckIf :: (using if_stmt : *AstIf)
+{
+    CheckExpression (condition);
+    if condition.type == g_type_invalid
+        return;
+
+    if !TypeCanImplicitlyCastTo (condition.type, g_type_bool)
+    {
+        Error (condition, "invalid type for condition in if statement. Expected a bool but got %", condition.type.as_string);
+        return;
+    }
+
+    CheckStatement (body);
+
+    if else_stmt
+        CheckStatement (else_stmt);
+}
+
 CheckStatement :: (stmt : *AstNode)
 {
     if IsExpression (stmt.kind)
@@ -972,25 +990,24 @@ CheckStatement :: (stmt : *AstNode)
     {
     case .Declaration;
         CheckDeclaration (cast (*AstDeclaration) stmt);
-
     case .Block;
         CheckBlock (cast (*AstBlock) stmt);
-
     case .Assignment;
         CheckAssignment (cast (*AstAssignment) stmt);
-
-    case;
-        Error (stmt, "not yet handled");
-    /*
     case .If;
         CheckIf (cast (*AstIf) stmt);
+    /*
     case .While;
         CheckIf (cast (*AstWhile) stmt);
     case .Defer;
         CheckStatment ((cast (*AstDefer) stmt).stmt);
+
     case .Return;
         CheckReturn (cast (*AstReturn) stmt);
     */
+
+    case;
+        Error (stmt, "not yet handled");
     }
 }
 
