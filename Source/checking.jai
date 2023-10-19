@@ -851,6 +851,8 @@ CheckSubscript :: (subscript : *AstSubscript)
     }
 
     subscript.semantic_meaning = subscript.subscripted.semantic_meaning;
+    if subscript.semantic_meaning == .Constant && subscript.index.semantic_meaning != .Constant
+        subscript.semantic_meaning = .Value;
 
     if subscript.index.semantic_meaning == .Constant
     && subscript_type.kind == .Array && (cast (*YalTypeArray) subscript_type).array_kind == .Static
