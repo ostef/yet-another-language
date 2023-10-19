@@ -116,8 +116,8 @@ ParseFile :: (using file : *YalFile)
             Append (*builder, "\n");
     }
 
-    Println ("File %:", filename);
-    Print (Build (*builder));
+    Println ("Ast print-back for file %:", filename);
+    Println (Build (*builder));
 }
 
 ParseStatement :: (using file : *YalFile) -> *AstNode #must

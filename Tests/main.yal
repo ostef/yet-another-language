@@ -1,6 +1,7 @@
 //import "Math";
 
 var a := 10;
+var a := "redeclared";
 var b := "Hello World";
 
 proc Main (args : []string)

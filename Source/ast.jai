@@ -64,6 +64,26 @@ IsStatement :: inline (kind : AstKind) -> bool #must
     return kind > .Statements_Begin && kind < .Statements_End;
 }
 
+TypeIsAstNode :: (info : *Type_Info) -> bool #must
+{
+    if info == type_info (AstNode)
+        return true;
+
+    if info.type != .STRUCT
+        return false;
+
+    info_struct := cast (*Type_Info_Struct) info;
+
+    for info_struct.members
+    {
+        if it.name == "base" && it.type == type_info (AstNode)
+        && it.flags & .USING && it.flags & .AS
+            return true;
+    }
+
+    return false;
+}
+
 AstBlock :: struct
 {
     #as using base : AstNode;
@@ -213,10 +233,10 @@ AstDeclaration :: struct
     base.kind = .Declaration;
 
     identifier_count : s64;
-    single_identifier : *AstIdentifier;
+    single_identifier : *AstIdentifier; @NoCollectSymbols
 
     #place identifier_count;
-    identifiers : []*AstIdentifier;
+    identifiers : []*AstIdentifier; @NoCollectSymbols
 
     type_node : *AstNode;
     expr : *AstNode;

@@ -64,6 +64,17 @@ PrintUsage :: ()
     write_string ("  -no_colors: disable ANSI terminal colors\n", to_standard_error = true);
 }
 
+ExitIfError :: ()
+{
+    if g_error_counter > 0
+    {
+        SetOutputColor (.Error);
+        write_string ("There were errors, exiting...\n", to_standard_error = true);
+        SetOutputColor (.None);
+        Basic.exit (1);
+    }
+}
+
 main :: ()
 {
     context.allocator = Temp;
@@ -125,13 +136,27 @@ main :: ()
         ParseFile (it);
     }
 
-    if g_error_counter > 0
+    ExitIfError ();
+
+    for g_files
     {
-        SetOutputColor (.Error);
-        write_string ("There were errors, exiting...\n", to_standard_error = true);
-        SetOutputColor (.None);
-        Basic.exit (1);
+        CollectAllSymbolsInFile (it);
     }
+
+    for g_files
+    {
+        Println ("Declared symbols in file %:", it.filename);
+        symbol := it.scope.first_symbol;
+        while symbol
+        {
+            defer symbol = symbol.next;
+
+            Println ("% : % (%)", symbol.name, symbol.kind, symbol.flags);
+        }
+        Print ("\n");
+    }
+
+    ExitIfError ();
 }
 
 #run
