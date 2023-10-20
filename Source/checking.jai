@@ -588,6 +588,58 @@ CheckBinary :: (using binary : *AstBinary)
     type = g_type_invalid;
 }
 
+CheckNegation :: (using unary : *AstUnary)
+{
+    if expr.semantic_meaning == .Constant
+        semantic_meaning = .Constant;
+    else
+        semantic_meaning = .Value;
+
+    if expr.type.kind ==
+    {
+    case .Integer;
+        type_int := cast (*YalTypeInteger) expr.type;
+        if !type_int.is_signed
+        {
+            Error (unary, "cannot negate an unsigned integer (type is: %)", expr.type.as_string);
+            return;
+        }
+
+        if expr.semantic_meaning == .Constant
+            value = NegateValue (expr.value);
+
+        type = expr.type;
+
+    case .Float;
+        if expr.semantic_meaning == .Constant
+            value = NegateValue (expr.value);
+
+        type = expr.type;
+    case;
+        Error (unary, "invalid type for unary operator % (type is: %)", Token_Names[op.kind], expr.type.as_string);
+    }
+}
+
+CheckNot :: (using unary : *AstUnary)
+{
+    if expr.semantic_meaning == .Constant
+        semantic_meaning = .Constant;
+    else
+        semantic_meaning = .Value;
+
+    if expr.type.kind ==
+    {
+    case .Bool;
+        if expr.semantic_meaning == .Constant
+            value = NotValue (expr.value);
+
+        type = expr.type;
+
+    case;
+        Error (unary, "invalid type for unary operator % (type is: %)", Token_Names[op.kind], expr.type.as_string);
+    }
+}
+
 CheckUnary :: (using unary : *AstUnary)
 {
     type = g_type_invalid;
@@ -599,35 +651,9 @@ CheckUnary :: (using unary : *AstUnary)
     if op.kind ==
     {
     case .Minus;
-        if expr.semantic_meaning == .Constant
-            semantic_meaning = .Constant;
-        else
-            semantic_meaning = .Value;
-
-        if expr.type.kind ==
-        {
-        case .Integer;
-            type_int := cast (*YalTypeInteger) expr.type;
-            if !type_int.is_signed
-            {
-                Error (unary, "cannot negate an unsigned integer (type is: %)", expr.type.as_string);
-                return;
-            }
-
-            if expr.semantic_meaning == .Constant
-                value = NegateValue (expr.value);
-
-            type = expr.type;
-
-        case .Float;
-            if expr.semantic_meaning == .Constant
-                value = NegateValue (expr.value);
-
-            type = expr.type;
-        case;
-            Error (unary, "invalid type for unary operator - (type is: %)", expr.type.as_string);
-        }
-
+        CheckNegation (unary);
+    case .Bang;
+        CheckNot (unary);
     case;
         Error (op, "unhandled operator type");
     }

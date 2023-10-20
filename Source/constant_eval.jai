@@ -286,3 +286,20 @@ NegateValue :: (val : ConstantValue) -> ConstantValue #must
 
     return result;
 }
+
+NotValue :: (val : ConstantValue) -> ConstantValue #must
+{
+    result : ConstantValue;
+    result.kind = val.kind;
+
+    // @Todo: handle underflow
+    if val.kind ==
+    {
+    case .Boolean;
+        result.bool_value = !val.bool_value;
+    case;
+        Panic ("invalid type for negation %", val.kind);
+    }
+
+    return result;
+}

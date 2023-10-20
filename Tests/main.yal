@@ -19,6 +19,9 @@ proc Main (args : []string)
     const Index := 9;
     var index := -10;
 
+    const Negated := !Index;
+    const Boolean := !true;
+
     const Foo : int = Index;
     //Index[1] = 2;
     const const_array : [10]int = "";
