@@ -590,8 +590,47 @@ CheckBinary :: (using binary : *AstBinary)
 
 CheckUnary :: (using unary : *AstUnary)
 {
-    Error (unary, "not yet handled");
     type = g_type_invalid;
+
+    CheckExpression (expr);
+    if expr.type == g_type_invalid
+        return;
+
+    if op.kind ==
+    {
+    case .Minus;
+        if expr.semantic_meaning == .Constant
+            semantic_meaning = .Constant;
+        else
+            semantic_meaning = .Value;
+
+        if expr.type.kind ==
+        {
+        case .Integer;
+            type_int := cast (*YalTypeInteger) expr.type;
+            if !type_int.is_signed
+            {
+                Error (unary, "cannot negate an unsigned integer (type is: %)", expr.type.as_string);
+                return;
+            }
+
+            if expr.semantic_meaning == .Constant
+                value = NegateValue (expr.value);
+
+            type = expr.type;
+
+        case .Float;
+            if expr.semantic_meaning == .Constant
+                value = NegateValue (expr.value);
+
+            type = expr.type;
+        case;
+            Error (unary, "invalid type for unary operator - (type is: %)", expr.type.as_string);
+        }
+
+    case;
+        Error (op, "unhandled operator type");
+    }
 }
 
 CheckIdentifier :: (using ident : *AstIdentifier)

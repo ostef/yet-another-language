@@ -267,3 +267,22 @@ ParseFloatLiteral :: (token : Token) -> float64, bool
 
     return result, ok;
 }
+
+NegateValue :: (val : ConstantValue) -> ConstantValue #must
+{
+    result : ConstantValue;
+    result.kind = val.kind;
+
+    // @Todo: handle underflow
+    if val.kind ==
+    {
+    case .Integer;
+        result.int_value = -val.int_value;
+    case .Float;
+        result.float_value = -val.float_value;
+    case;
+        Panic ("invalid type for negation %", val.kind);
+    }
+
+    return result;
+}
