@@ -530,10 +530,10 @@ CheckDeclaration :: (using decl : *AstDeclaration)
 
             if expr.type != g_type_invalid
             {
+                CheckInitAssignment (decl);
+
                 if !type_node
                     SetDeclarationType (decl, expr.type);
-                else
-                    CheckInitAssignment (decl);
             }
         }
         else if decl_kind == .Constant
@@ -560,7 +560,7 @@ CheckInitAssignment :: (using decl : *AstDeclaration)
         return;
     }
 
-    if !TypeCanImplicitlyCastTo (expr.type, type)
+    if type_node && !TypeCanImplicitlyCastTo (expr.type, type)
     {
         Error (expr, "invalid type for assignment (left type: %, right type: %)",
             type.as_string, expr.type.as_string);
