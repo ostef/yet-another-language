@@ -141,8 +141,6 @@ ParseStatement :: (using file : *YalFile) -> *AstNode #must
         if !stmt
             return null;
 
-        Expect (file, .Semicolon);
-
         return MakeAstDefer (defer_tok, stmt);
     }
     else if MatchToken (*lexer, .Return)
