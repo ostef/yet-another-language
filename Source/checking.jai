@@ -7,13 +7,12 @@ SemanticMeaning :: enum u8
     Mutable;
 }
 
-// @Note: I would like to be able to have the check context in
-// the Jai context, but since we generate TokenKind via a #insert,
-// and the Check_Context indirectly depends on TokenKind, the #insert
-// never gets executed because it needs the context to be finalized
-// before doing so, which requires TokenKind to be declared (circular
-// dependency situation)
-// #add_context using check : CheckContext;
+CheckContext :: struct
+{
+    enclosing_proc : *AstProcedure;
+}
+
+#add_context check : CheckContext;
 
 ScopeKind :: enum u8
 {
@@ -477,7 +476,10 @@ CheckProcedureDeclaration :: (decl : *AstDeclaration)
     if decl.type == g_type_invalid
         return;
 
+    enclosing_proc := context.check.enclosing_proc;
+    context.check.enclosing_proc = proc;
     CheckBlock (proc.body);
+    context.check.enclosing_proc = enclosing_proc;
 }
 
 CheckType :: (type : *AstNode)
@@ -866,6 +868,43 @@ CheckWhile :: (using while_stmt : *AstWhile)
     CheckStatement (body);
 }
 
+CheckReturn :: (using return_stmt : *AstReturn)
+{
+    using context.check;
+
+    if !enclosing_proc
+    {
+        Error (return_stmt, "return statements are only allowed in procedures");
+        return;
+    }
+
+    if return_stmt.return_values.count != enclosing_proc.results.count
+    {
+        Error (return_stmt,
+            "invalid number of return values. Expected % but got %",
+            enclosing_proc.results.count, return_stmt.return_values.count
+        );
+        return;
+    }
+
+    for it, i : return_stmt.return_values
+    {
+        CheckExpression (it);
+        if it.type == g_type_invalid
+            return;
+
+        if !TypeCanImplicitlyCastTo (it.type, enclosing_proc.results[i].type)
+        {
+            Error (it,
+                "invalid type for return value %. Expected % but got %",
+                i + 1,
+                enclosing_proc.results[i].type.as_string,
+                it.type.as_string
+            );
+        }
+    }
+}
+
 CheckStatement :: (stmt : *AstNode)
 {
     if IsExpression (stmt.kind)
@@ -889,10 +928,8 @@ CheckStatement :: (stmt : *AstNode)
     case .Flow_Control;
     case .Defer;
         CheckStatement ((cast (*AstDefer) stmt).stmt);
-    /*
     case .Return;
         CheckReturn (cast (*AstReturn) stmt);
-    */
 
     case;
         Error (stmt, "not yet handled");
