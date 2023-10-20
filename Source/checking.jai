@@ -376,6 +376,9 @@ SetDeclarationType :: (decl : *AstDeclaration, type : *YalType)
 
 CheckDeclaration :: (using decl : *AstDeclaration)
 {
+    if type
+        return;
+
     defer if !type then SetDeclarationType (decl, g_type_invalid);
 
     if #complete decl_kind ==
