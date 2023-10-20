@@ -10,6 +10,7 @@ SemanticMeaning :: enum u8
 CheckContext :: struct
 {
     enclosing_proc : *AstProcedure;
+    enclosing_while : *AstWhile;
 }
 
 #add_context check : CheckContext;
@@ -865,7 +866,10 @@ CheckWhile :: (using while_stmt : *AstWhile)
         return;
     }
 
+    enclosing_while := context.check.enclosing_while;
+    context.check.enclosing_while = while_stmt;
     CheckStatement (body);
+    context.check.enclosing_while = enclosing_while;
 }
 
 CheckReturn :: (using return_stmt : *AstReturn)
@@ -926,6 +930,17 @@ CheckStatement :: (stmt : *AstNode)
     case .While;
         CheckWhile (cast (*AstWhile) stmt);
     case .Flow_Control;
+        flow_control := (cast (*AstFlowControl) stmt).control;
+        if flow_control ==
+        {
+        case .Break; #through;
+        case .Continue;
+            if !context.check.enclosing_while
+                Error (stmt, "% is only allowed in while loops", Token_Names[flow_control]);
+        case .Fallthrough;
+            Error (stmt, "'fallthrough' is only allowed in case statements");
+        }
+
     case .Defer;
         CheckStatement ((cast (*AstDefer) stmt).stmt);
     case .Return;
