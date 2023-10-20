@@ -886,10 +886,10 @@ CheckStatement :: (stmt : *AstNode)
         CheckIf (cast (*AstIf) stmt);
     case .While;
         CheckWhile (cast (*AstWhile) stmt);
-
-    /*
+    case .Flow_Control;
     case .Defer;
-        CheckStatment ((cast (*AstDefer) stmt).stmt);
+        CheckStatement ((cast (*AstDefer) stmt).stmt);
+    /*
     case .Return;
         CheckReturn (cast (*AstReturn) stmt);
     */
