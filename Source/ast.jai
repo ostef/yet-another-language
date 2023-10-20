@@ -559,6 +559,7 @@ AstProcedure :: struct
     #as using base : AstNode;
     base.kind = .Procedure;
 
+    signature_range : TokenRange;
     scope : *Scope;
     parameters : []*AstDeclaration;
     results : []*AstDeclaration;
@@ -571,6 +572,11 @@ MakeAstProcedure :: inline (proc_tok : Token, close_paren_tok : Token, parameter
     node.parameters = parameters;
     node.results = results;
     node.body = body;
+
+    if results.count > 0
+        node.signature_range = TokenRangeJoin (proc_tok, results[results.count - 1]);
+    else
+        node.signature_range = TokenRangeJoin (proc_tok, close_paren_tok);
 
     if body
         node.range = TokenRangeJoin (proc_tok, body);

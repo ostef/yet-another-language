@@ -888,6 +888,7 @@ CheckReturn :: (using return_stmt : *AstReturn)
             "invalid number of return values. Expected % but got %",
             enclosing_proc.results.count, return_stmt.return_values.count
         );
+        Info (enclosing_proc.signature_range, "here is the signature of the enclosing procedure");
         return;
     }
 
@@ -905,6 +906,7 @@ CheckReturn :: (using return_stmt : *AstReturn)
                 enclosing_proc.results[i].type.as_string,
                 it.type.as_string
             );
+            Info (enclosing_proc.signature_range, "here is the signature of the enclosing procedure");
         }
     }
 }
