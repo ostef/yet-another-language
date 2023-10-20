@@ -147,10 +147,6 @@ main :: ()
 
         ExitIfError ();
 
-        ResolveAllIdentifiersInFile (it);
-
-        ExitIfError ();
-
         CheckAllDeclarationsInFile (it);
     }
 
