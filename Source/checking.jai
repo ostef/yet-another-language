@@ -582,6 +582,61 @@ CheckType :: (type : *AstNode)
     }
 }
 
+CheckLogicalComposition :: (using binary : *AstBinary)
+{
+    Assert (op.kind == .Ampersand_Ampersand || op.kind == .Pipe_Pipe);
+
+    if !TypeCanImplicitlyCastTo (left.type, g_type_bool)
+    || !TypeCanImplicitlyCastTo (right.type, g_type_bool)
+    {
+        Error (binary.left, "invalid type for binary operator % (left is: %, right is: %)", Token_Names[op.kind], left.type.as_string, right.type.as_string);
+        return;
+    }
+
+    if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
+        semantic_meaning = .Constant;
+    else
+        semantic_meaning = .Value;
+
+    type = g_type_bool;
+}
+
+CheckEquality :: (using binary : *AstBinary)
+{
+    Assert (op.kind == .Equ_Equ || op.kind == .Bang_Equ);
+
+    if !TypeCanImplicitlyCastTo (left.type, right.type)
+    {
+        Error (binary.left, "invalid type for comparison (left is: %, right is: %)", left.type.as_string, right.type.as_string);
+        return;
+    }
+
+    if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
+        semantic_meaning = .Constant;
+    else
+        semantic_meaning = .Value;
+
+    type = g_type_bool;
+}
+
+CheckArithmeticComparison :: (using binary : *AstBinary)
+{
+    Assert (op.kind == .Less || op.kind == .Less_Equ || op.kind == .Greater || op.kind == .Greater_Equ);
+
+    if !TypeCanImplicitlyCastTo (left.type, right.type)
+    {
+        Error (binary.left, "invalid type for comparison (left is: %, right is: %)", left.type.as_string, right.type.as_string);
+        return;
+    }
+
+    if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
+        semantic_meaning = .Constant;
+    else
+        semantic_meaning = .Value;
+
+    type = g_type_bool;
+}
+
 CheckBinary :: (using binary : *AstBinary)
 {
     type = g_type_invalid;
@@ -594,6 +649,20 @@ CheckBinary :: (using binary : *AstBinary)
 
     if op.kind ==
     {
+    case .Pipe_Pipe; #through;
+    case .Ampersand_Ampersand;
+        CheckLogicalComposition (binary);
+
+    case .Equ_Equ; #through;
+    case .Bang_Equ;
+        CheckEquality (binary);
+
+    case .Less; #through;
+    case .Greater; #through;
+    case .Greater_Equ; #through;
+    case .Less_Equ;
+        CheckArithmeticComparison (binary);
+
     case;
         Error (op, "unhandled binary operator");
     }

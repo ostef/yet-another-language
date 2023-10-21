@@ -64,5 +64,19 @@ proc Main (args : []string)
         ^non_int;
     }
 
+    {
+        const A := true;
+        const B := true;
+        const C := A && B;
+
+        if "Hello Sailor!" {}
+
+        if A <= B
+        {
+        }
+
+        var equals := A == B;
+    }
+
     return;
 }

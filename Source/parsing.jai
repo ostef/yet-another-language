@@ -322,10 +322,10 @@ Operators :: OperatorInfo.[
 
     .{ .Ampersand_Ampersand, 3, 0 },  // logical and
 
-    .{ .Equ_Equ,   4, .Non_Associative },
+    .{ .Equ_Equ,     4, .Non_Associative },
     .{ .Bang_Equ,    4, .Non_Associative },
-    .{ .Less,          4, .Non_Associative },
-    .{ .Greater,       4, .Non_Associative },
+    .{ .Less,        4, .Non_Associative },
+    .{ .Greater,     4, .Non_Associative },
     .{ .Less_Equ,    4, .Non_Associative },
     .{ .Greater_Equ, 4, .Non_Associative },
 
