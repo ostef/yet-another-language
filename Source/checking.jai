@@ -779,11 +779,15 @@ CheckAddressOf :: (using unary : *AstUnary)
 
 CheckDeref :: (using unary : *AstUnary)
 {
-    Assert (expr.semantic_meaning != .Constant, "This probably should not happen. If it ever does, I should investigate...");
-
     if expr.type.kind != .Pointer
     {
         Error (unary, "expected a pointer for dereference but got %", expr.type.as_string);
+        return;
+    }
+
+    if expr.semantic_meaning == .Constant
+    {
+        Error (unary, "cannot dereference a constant");
         return;
     }
 
