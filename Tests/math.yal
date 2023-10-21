@@ -16,7 +16,7 @@ proc Max (a : float, b : float) -> float
 
 proc Abs (x : float) -> float
 {
-    if x < 0
+    if x < 0.0
         return -x;
 
     return x;
@@ -24,8 +24,8 @@ proc Abs (x : float) -> float
 
 proc Sign (x : float) -> float
 {
-    if x < 0
-        return -1;
+    if x < 0.0
+        return -1.0;
 
-    return 1;
+    return 1.0;
 }
