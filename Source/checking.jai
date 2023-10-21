@@ -113,7 +113,7 @@ ScopeCreate :: inline (file : *YalFile) -> *Scope
 
 ScopeCreate :: inline (parent : *Scope, block : *AstBlock) -> *Scope
 {
-    Assert (block.scope == null);
+    Assert (block, block.scope == null, "block scope has already been created");
 
     scope := ScopeCreate (parent, .Block);
     scope.block = block;
@@ -124,7 +124,7 @@ ScopeCreate :: inline (parent : *Scope, block : *AstBlock) -> *Scope
 
 ScopeCreate :: inline (parent : *Scope, procedure : *AstProcedure) -> *Scope
 {
-    Assert (procedure.scope == null);
+    Assert (procedure, procedure.scope == null, "procedure scope has already been created");
 
     scope := ScopeCreate (parent, .Procedure);
     scope.procedure = procedure;
@@ -360,7 +360,7 @@ CollectAllSymbolsInFile :: (file : *YalFile)
 
 SetDeclarationType :: (decl : *AstDeclaration, type : *YalType)
 {
-    Assert (decl.type == null);
+    Assert (decl, decl.type == null, "declaration alread has a type");
 
     decl.type = type;
     if decl.identifier_count > 1
@@ -584,7 +584,7 @@ CheckType :: (type : *AstNode)
 
 CheckLogicalComposition :: (using binary : *AstBinary)
 {
-    Assert (op.kind == .Ampersand_Ampersand || op.kind == .Pipe_Pipe);
+    Assert (binary, op.kind == .Ampersand_Ampersand || op.kind == .Pipe_Pipe, "invalid op");
 
     if !TypeCanImplicitlyCastTo (left.type, g_type_bool)
     || !TypeCanImplicitlyCastTo (right.type, g_type_bool)
@@ -608,7 +608,7 @@ CheckLogicalComposition :: (using binary : *AstBinary)
 
 CheckEquality :: (using binary : *AstBinary)
 {
-    Assert (op.kind == .Equ_Equ || op.kind == .Bang_Equ);
+    Assert (binary, op.kind == .Equ_Equ || op.kind == .Bang_Equ, "invalid op");
 
     if !TypeCanImplicitlyCastTo (left.type, right.type)
     {
@@ -630,7 +630,7 @@ CheckEquality :: (using binary : *AstBinary)
 
 CheckArithmeticComparison :: (using binary : *AstBinary)
 {
-    Assert (op.kind == .Less || op.kind == .Less_Equ || op.kind == .Greater || op.kind == .Greater_Equ);
+    Assert (binary, op.kind == .Less || op.kind == .Less_Equ || op.kind == .Greater || op.kind == .Greater_Equ, "invalid op");
 
     if left.type.kind != .Integer || left.type.kind != .Float
     || !TypeCanImplicitlyCastTo (left.type, right.type)
@@ -685,7 +685,7 @@ CheckBinary :: (using binary : *AstBinary)
 
     if semantic_meaning == .Constant
     {
-        Assert (value.kind != .Invalid, "It seems a constant binary operation did not get constant evaluated");
+        Assert (binary, value.kind != .Invalid, "It seems a constant binary operation did not get constant evaluated");
         Info (binary, "result is constant: left is %, right is %, result is %", ToString (left.value), ToString (right.value), ToString (value));
     }
 }
@@ -822,7 +822,7 @@ CheckUnary :: (using unary : *AstUnary)
 
     if semantic_meaning == .Constant
     {
-        Assert (value.kind != .Invalid, "It seems a constant unary operation did not get constant evaluated");
+        Assert (unary, value.kind != .Invalid, "It seems a constant unary operation did not get constant evaluated");
         Info (unary, "result is constant: expr is %, result is %", ToString (expr.value), ToString (value));
     }
 }

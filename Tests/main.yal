@@ -65,6 +65,11 @@ proc Main (args : []string)
     }
 
     {
+        const Ptr := null;
+        *Ptr;
+    }
+
+    {
         const A := true;
         const B := true;
         const C := A && B;

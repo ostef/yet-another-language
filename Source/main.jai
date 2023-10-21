@@ -79,6 +79,7 @@ ExitIfError :: ()
 main :: ()
 {
     context.allocator = Temp;
+    context.assertion_failed = AssertionFailed;
 
     PlatformInit ();
 

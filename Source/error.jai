@@ -355,3 +355,117 @@ InfoNoSquiggles :: inline (range : TokenRange, fmt_str : string, args : ..Any)
     Info (range, fmt_str, ..args);
     context.print_squiggles = prev;
 }
+
+AssertionFailed :: (location : Source_Code_Location, message : string)
+{
+    print_stack_trace :: (node: *Stack_Trace_Node) {  // @Cutnpaste from modules/Basic, but wihtout calling print.
+        while node {
+            // There are two different line numbers available.
+            // node.info.location has a line number, but this is the location of
+            // the start of the procedure. That may be useful in some cases, but often
+            // what we really want is the line number of the procedure call, which is
+            // stored in node.line_number. That's what we print in this case.
+
+            if node.info {
+                write_string(node.info.location.fully_pathed_filename, to_standard_error = true);
+                write_string(":", to_standard_error = true);
+                write_nonnegative_number(node.line_number, to_standard_error = true);
+                write_string(": ", to_standard_error = true);
+                if node.info.name write_string(node.info.name, to_standard_error = true);
+                else write_string("(anonymous procedure)", to_standard_error = true);
+                write_string("\n", to_standard_error = true);
+            }
+
+            node = node.next;
+        }
+    }
+
+    SetOutputColor (.Fatal_Error);
+
+    if context.panicking
+        write_string ("Panic at file ", to_standard_error = true);
+    else
+        write_string ("Assertion failed at file ", to_standard_error = true);
+
+    write_strings (location.fully_pathed_filename, ":", to_standard_error = true);
+    write_number (location.line_number, to_standard_error = true);
+    write_string (",", to_standard_error = true);
+    write_number (location.character_number, to_standard_error = true);
+
+    write_string ("\n", to_standard_error = true);
+    SetOutputColor (.None);
+
+    write_string (message, to_standard_error = true);
+    write_string ("\n", to_standard_error = true);
+
+    if context.stack_trace
+    {
+        write_string ("Stack trace:\n", to_standard_error = true);
+        print_stack_trace (context.stack_trace);
+    }
+
+    __runtime_support_disable_stack_trace = true;
+    debug_break();
+}
+
+#scope_file
+
+AppendAssertFailureOrPanicMessage :: (builder : *StringBuilder, range : TokenRange, fmt_str : string, args : ..Any)
+{
+    file := GetFile (range.file_id);
+    if !file
+        StringBuilderAppend (builder, "<invalid file>, ");
+    else
+        StringBuilderAppend (builder, "%:%:%, ", file.filename, range.line_start, range.char_start);
+
+    SetColor (builder, .Fatal_Error);
+    StringBuilderAppend (builder, "Fatal Error: ");
+    SetColor (builder, .None);
+
+    StringBuilderAppend (builder, fmt_str, ..args);
+    StringBuilderAppend (builder, "\n");
+
+    if file
+        PrintTokenLine (builder, range);
+    else
+        StringBuilderAppend (builder, "<cannot print token line because the file is invalid>\n");
+}
+
+#scope_export
+
+Assert :: (range : TokenRange, assertion : bool, fmt_str : string, args : ..Any, location := #caller_location)
+{
+    if !assertion && !context.handling_assertion_failure
+    {
+        context.handling_assertion_failure = true;
+        defer context.handling_assertion_failure = false;
+
+        builder : StringBuilder;
+
+        AppendAssertFailureOrPanicMessage (*builder, range, fmt_str, ..args);
+
+        message := StringBuilderBuild (*builder);
+
+        context.assertion_failed (location, message);
+    }
+}
+
+Panic :: (range : TokenRange, fmt_str : string, args : ..Any, location := #caller_location)
+{
+    if !context.handling_assertion_failure
+    {
+        context.handling_assertion_failure = true;
+        defer context.handling_assertion_failure = false;
+
+        context.panicking = true;
+        defer context.panicking = false;
+
+        builder : StringBuilder;
+
+        AppendAssertFailureOrPanicMessage (*builder, range, fmt_str, ..args);
+
+        message := StringBuilderBuild (*builder);
+
+        context.assertion_failed (location, message);
+    }
+}
