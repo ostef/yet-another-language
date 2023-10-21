@@ -194,6 +194,56 @@ ConstantEvaluate :: (left : ConstantValue, right : ConstantValue, op : TokenKind
         case .Float;
             return .{bool_value = left.float_value >= right_casted.float_value, kind = .Boolean};
         }
+    case .Plus;
+        if left.kind ==
+        {
+        case .Integer;
+            return .{int_value = left.int_value + right_casted.int_value, kind = .Integer};
+        case .Float;
+            return .{float_value = left.float_value + right_casted.float_value, kind = .Float};
+        }
+    case .Minus;
+        if left.kind ==
+        {
+        case .Integer;
+            return .{int_value = left.int_value - right_casted.int_value, kind = .Integer};
+        case .Float;
+            return .{float_value = left.float_value - right_casted.float_value, kind = .Float};
+        }
+    case .Star;
+        if left.kind ==
+        {
+        case .Integer;
+            return .{int_value = left.int_value * right_casted.int_value, kind = .Integer};
+        case .Float;
+            return .{float_value = left.float_value * right_casted.float_value, kind = .Float};
+        }
+    case .Slash;
+        if left.kind ==
+        {
+        case .Integer;
+            return .{int_value = left.int_value / right_casted.int_value, kind = .Integer};
+        case .Float;
+            return .{float_value = left.float_value / right_casted.float_value, kind = .Float};
+        }
+    case .Pipe;
+        if left.kind ==
+        {
+        case .Integer;
+            return .{int_value = left.int_value | right_casted.int_value, kind = .Integer};
+        }
+    case .Caret;
+        if left.kind ==
+        {
+        case .Integer;
+            return .{int_value = left.int_value ^ right_casted.int_value, kind = .Integer};
+        }
+    case .Ampersand;
+        if left.kind ==
+        {
+        case .Integer;
+            return .{int_value = left.int_value & right_casted.int_value, kind = .Integer};
+        }
     }
 
     if node_for_debug

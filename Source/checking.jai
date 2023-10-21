@@ -652,6 +652,59 @@ CheckArithmeticComparison :: (using binary : *AstBinary)
     }
 }
 
+CheckBitOperation :: (using binary : *AstBinary)
+{
+    Assert (binary, op.kind == .Pipe || op.kind == .Ampersand || op.kind == .Caret, "invalid op");
+
+    if left.type.kind != .Integer || !TypeCanImplicitlyCastTo (right.type, left.type)
+    {
+        Error (binary, "invalid type for bit operation (left is: %, right is: %)", left.type.as_string, right.type.as_string);
+        return;
+    }
+
+    type = left.type;
+
+    if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
+    {
+        semantic_meaning = .Constant;
+        value = ConstantEvaluate (left.value, right.value, op, binary);
+    }
+    else
+    {
+        semantic_meaning = .Value;
+    }
+}
+
+CheckArithmeticOperation :: (using binary : *AstBinary)
+{
+    Assert (binary, op.kind == .Plus || op.kind == .Minus || op.kind == .Star || op.kind == .Slash, "invalid op");
+
+    if left.type.kind != .Integer && left.type.kind != .Float
+    || !TypeCanImplicitlyCastTo (right.type, left.type)
+    {
+        Error (binary, "invalid type for arithmetic operation (left is: %, right is: %)", left.type.as_string, right.type.as_string);
+        return;
+    }
+
+    if op.kind == .Minus && left.type.kind == .Integer && !(cast (*YalTypeInteger) left.type).is_signed
+    {
+        Error (binary, "cannot subtract unsigned integers (left is: %, right is: %)", left.type.as_string, right.type.as_string);
+        return;
+    }
+
+    type = left.type;
+
+    if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
+    {
+        semantic_meaning = .Constant;
+        value = ConstantEvaluate (left.value, right.value, op, binary);
+    }
+    else
+    {
+        semantic_meaning = .Value;
+    }
+}
+
 CheckBinary :: (using binary : *AstBinary)
 {
     type = g_type_invalid;
@@ -677,6 +730,17 @@ CheckBinary :: (using binary : *AstBinary)
     case .Greater; #through;
     case .Greater_Equ;
         CheckArithmeticComparison (binary);
+
+    case .Pipe; #through;
+    case .Caret; #through;
+    case .Ampersand;
+        CheckBitOperation (binary);
+
+    case .Plus; #through;
+    case .Minus; #through;
+    case .Star; #through;
+    case .Slash;
+        CheckArithmeticOperation (binary);
 
     case;
         Error (op, "unhandled binary operator");
