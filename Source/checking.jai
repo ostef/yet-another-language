@@ -1081,6 +1081,130 @@ CheckSubscript :: (using subscript : *AstSubscript)
     }
 }
 
+CheckArrayFieldAccess :: (using access : *AstFieldAccess)
+{
+    type_array := cast (*YalTypeArray) left.type;
+    ident := cast (*AstIdentifier) right;
+    if ident.name ==
+    {
+    case "count";
+        type = g_type_s64;
+
+        if type_array.array_kind == .Static
+        {
+            semantic_meaning = .Constant;
+            value = .{int_value = type_array.count, kind = .Integer};
+        }
+        else if left.semantic_meaning == .Constant
+        {
+            Warning (access, "this expression should be constant but we don't yet handle constant array values. The result of this expression is 0 for now");
+            semantic_meaning = .Constant;
+            value = .{int_value = 0, kind = .Integer};
+        }
+        else if left.semantic_meaning == .Mutable
+        {
+            semantic_meaning = .Mutable;
+        }
+        else
+        {
+            semantic_meaning = .Value;
+        }
+
+    case "capacity";
+        if type_array.array_kind != .Dynamic
+        {
+            Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
+            return;
+        }
+
+        type = g_type_s64;
+        if left.semantic_meaning == .Constant
+        {
+            Warning (access, "this expression should be constant but we don't yet handle constant array values. The result of this expression is 0 for now");
+            semantic_meaning = .Constant;
+            value = .{int_value = 0, kind = .Integer};
+        }
+        else if left.semantic_meaning == .Mutable
+        {
+            semantic_meaning = .Mutable;
+        }
+        else
+        {
+            semantic_meaning = .Value;
+        }
+
+    case "allocator";
+        if type_array.array_kind != .Dynamic
+        {
+            Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
+            return;
+        }
+
+        Warning (access, "the type for this expression does not exist yet, so it is *void for now");
+
+        type = g_type_void_ptr;
+        if left.semantic_meaning == .Constant
+        {
+            Warning (access, "this expression should be constant but we don't yet handle constant array values, so it is set to null for now");
+            semantic_meaning = .Constant;
+            value = .{pointer_value = 0, kind = .Pointer};
+        }
+        else if left.semantic_meaning == .Mutable
+        {
+            semantic_meaning = .Mutable;
+        }
+        else
+        {
+            semantic_meaning = .Value;
+        }
+
+    case "data";
+        type = MakeTypePointer (type_array.element_type);
+
+    case;
+        Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
+        return;
+    }
+}
+
+CheckStringFieldAccess :: (using access : *AstFieldAccess)
+{
+    ident := cast (*AstIdentifier) right;
+    if ident.name ==
+    {
+    case "count";
+        type = g_type_s64;
+        if left.semantic_meaning == .Constant
+        {
+            semantic_meaning = .Constant;
+            value = .{int_value = left.value.string_value.count, kind = .Integer};
+        }
+        else if left.semantic_meaning == .Mutable
+        {
+            semantic_meaning = .Mutable;
+        }
+        else
+        {
+            semantic_meaning = .Value;
+        }
+
+    case "data";
+        type = g_type_u8_ptr;
+        if left.semantic_meaning == .Mutable
+        {
+            semantic_meaning = .Mutable;
+        }
+        else
+        {
+            semantic_meaning = .Value;
+        }
+
+    case;
+        Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
+        return;
+    }
+}
+
 CheckFieldAccess :: (using access : *AstFieldAccess)
 {
     type = g_type_invalid;
@@ -1103,121 +1227,16 @@ CheckFieldAccess :: (using access : *AstFieldAccess)
     if left.type.kind ==
     {
     case .Array;
-        type_array := cast (*YalTypeArray) left.type;
-        if ident.name ==
-        {
-        case "count";
-            type = g_type_s64;
+        CheckArrayFieldAccess (access);
 
-            if type_array.array_kind == .Static
-            {
-                semantic_meaning = .Constant;
-                value = .{int_value = type_array.count, kind = .Integer};
-            }
-            else if left.semantic_meaning == .Constant
-            {
-                Warning (access, "this expression should be constant but we don't yet handle constant array values. The result of this expression is 0 for now");
-                semantic_meaning = .Constant;
-                value = .{int_value = 0, kind = .Integer};
-            }
-            else if left.semantic_meaning == .Mutable
-            {
-                semantic_meaning = .Mutable;
-            }
-            else
-            {
-                semantic_meaning = .Value;
-            }
-
-        case "capacity";
-            if type_array.array_kind != .Dynamic
-            {
-                Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
-                return;
-            }
-
-            type = g_type_s64;
-            if left.semantic_meaning == .Constant
-            {
-                Warning (access, "this expression should be constant but we don't yet handle constant array values. The result of this expression is 0 for now");
-                semantic_meaning = .Constant;
-                value = .{int_value = 0, kind = .Integer};
-            }
-            else if left.semantic_meaning == .Mutable
-            {
-                semantic_meaning = .Mutable;
-            }
-            else
-            {
-                semantic_meaning = .Value;
-            }
-
-        case "allocator";
-            if type_array.array_kind != .Dynamic
-            {
-                Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
-                return;
-            }
-
-            Warning (access, "the type for this expression does not exist yet, so it is *void for now");
-
-            type = g_type_void_ptr;
-            if left.semantic_meaning == .Constant
-            {
-                Warning (access, "this expression should be constant but we don't yet handle constant array values, so it is set to null for now");
-                semantic_meaning = .Constant;
-                value = .{pointer_value = 0, kind = .Pointer};
-            }
-            else if left.semantic_meaning == .Mutable
-            {
-                semantic_meaning = .Mutable;
-            }
-            else
-            {
-                semantic_meaning = .Value;
-            }
-
-        case "data";
-            type = MakeTypePointer (type_array.element_type);
-        case;
-            Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
+        if type == g_type_invalid
             return;
-        }
 
     case .String;
-        if ident.name ==
-        {
-        case "count";
-            type = g_type_s64;
-            if left.semantic_meaning == .Constant
-            {
-                semantic_meaning = .Constant;
-                value = .{int_value = left.value.string_value.count, kind = .Integer};
-            }
-            else if left.semantic_meaning == .Mutable
-            {
-                semantic_meaning = .Mutable;
-            }
-            else
-            {
-                semantic_meaning = .Value;
-            }
+        CheckStringFieldAccess (access);
 
-        case "data";
-            type = g_type_u8_ptr;
-            if left.semantic_meaning == .Mutable
-            {
-                semantic_meaning = .Mutable;
-            }
-            else
-            {
-                semantic_meaning = .Value;
-            }
-
-        case;
-            Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
+        if type == g_type_invalid
             return;
-        }
 
     case;
         Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
