@@ -85,6 +85,8 @@ Expect :: (file : *YalFile, kinds : ..TokenKind) #expand
 
 ParseFile :: (using file : *YalFile)
 {
+    ProfileBlock ();
+
     while !MatchToken (*lexer, .EOF)
     {
         decl := ParseDeclaration (file);
@@ -97,6 +99,7 @@ ParseFile :: (using file : *YalFile)
         ArrayPush (*declarations, decl);
     }
 
+    /*
     builder : SourceCodeBuilder;
     for declarations
     {
@@ -118,6 +121,7 @@ ParseFile :: (using file : *YalFile)
 
     Println ("Ast print-back for file %:", filename);
     Println (Build (*builder));
+    */
 }
 
 ParseStatement :: (using file : *YalFile) -> *AstNode #must

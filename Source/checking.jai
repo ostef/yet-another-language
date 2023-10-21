@@ -359,6 +359,8 @@ CollectDeclaredSymbolsForUntypedNode :: (scope : *Scope, node : *AstNode)
 
 CollectAllSymbolsInFile :: (file : *YalFile)
 {
+    ProfileBlock ();
+
     for file.declarations
         CollectDeclaredSymbols (file.scope, it);
 }
@@ -1484,6 +1486,8 @@ CheckStatement :: (stmt : *AstNode)
 
 CheckAllDeclarationsInFile :: (file : *YalFile)
 {
+    ProfileBlock ();
+
     for file.declarations
         CheckDeclaration (it);
 }

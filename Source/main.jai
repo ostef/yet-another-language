@@ -1,7 +1,10 @@
+// @Todo: handle circular dependencies
+
 #import "Common";
 #import "Array";
 #import "Hash_Map";
 #import "String_Builder";
+#import "Profiling" (Enable_Profiling = false);
 
 Basic :: #import "Basic";
 using, only (.["+", "-", "*", "/"]) Basic;
@@ -67,6 +70,24 @@ PrintUsage :: ()
     write_string ("  -no_colors: disable ANSI terminal colors\n", to_standard_error = true);
 }
 
+#scope_file
+
+PrintProfilingResults :: ()
+{
+    AddGlobalProfilingData (*context.profiling_entries);
+    entries := LockGlobalProfilingData ();
+    defer UnlockGlobalProfilingData ();
+
+    if entries.count > 0
+    {
+        builder : StringBuilder;
+        PrintProfilingData (*builder, entries);
+        LogMessage ("\nProfiling results:\n%", StringBuilderBuild (*builder));
+    }
+}
+
+#scope_export
+
 ExitIfError :: ()
 {
     if g_error_counter > 0
@@ -74,6 +95,9 @@ ExitIfError :: ()
         SetOutputColor (.Error);
         write_string ("There were errors, exiting...\n", to_standard_error = true);
         SetOutputColor (.None);
+
+        PrintProfilingResults ();
+
         Basic.exit (1);
     }
 }
@@ -84,6 +108,9 @@ main :: ()
     context.assertion_failed = AssertionFailed;
 
     PlatformInit ();
+    ProfilingInit ();
+
+    defer PrintProfilingResults ();
 
     filenames : [..]string;
 
