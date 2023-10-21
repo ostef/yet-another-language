@@ -117,10 +117,10 @@ proc Main (args : []string)
         dyn_array.capacity;
         dyn_array.count;
 
-        var static_array : [112]int;
+        var static_array : [112][10]int;
         const Count := static_array.count;
 
-        static_array.2;
+        static_array[10].count;
     }
 
     return;
