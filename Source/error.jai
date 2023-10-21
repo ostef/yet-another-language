@@ -296,6 +296,11 @@ ErrorNoSquiggles :: inline (range : TokenRange, fmt_str : string, args : ..Any)
     context.print_squiggles = prev;
 }
 
+Warning :: inline (range : TokenRange, fmt_str : string, args : ..Any)
+{
+    Report (range, .Warning, "Warning", fmt_str, ..args);
+}
+
 SyntaxError :: inline (range : TokenRange, fmt_str : string, args : ..Any)
 {
     Report (range, .Error, "Syntax Error", fmt_str, ..args);
