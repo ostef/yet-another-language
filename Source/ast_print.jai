@@ -75,7 +75,7 @@ PrintProcedure :: (builder : *SourceCodeBuilder, proc : *AstProcedure, name : st
 
 ShouldStatementEndInSemicolon :: inline (node : *AstNode) -> bool #must
 {
-    if node.kind == .Block || node.kind == .If || node.kind == .While
+    if node.kind == .Block || node.kind == .If || node.kind == .While || node.kind == .Defer
         return false;
     if node.kind == .Declaration
     {
@@ -198,7 +198,7 @@ PrintAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
 
     case .Defer;
         def := cast (*AstDefer) node;
-        Append (builder, "defer");
+        Append (builder, "defer ");
         PrintStatement (builder, def.stmt);
 
     case .Return;
