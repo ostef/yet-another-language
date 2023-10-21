@@ -175,7 +175,7 @@ main :: ()
     }
 
     parsing_end := Basic.current_time_monotonic ();
-    total_parsing_time := Basic.to_float64_seconds (parsing_end - parsing_start);
+    parsing_time := Basic.to_float64_seconds (parsing_end - parsing_start);
 
     ExitIfError ();
 
@@ -191,27 +191,39 @@ main :: ()
     }
 
     checking_end := Basic.current_time_monotonic ();
-    total_checking_time := Basic.to_float64_seconds (checking_end - checking_start);
+    checking_time := Basic.to_float64_seconds (checking_end - checking_start);
 
     ExitIfError ();
 
     {
+        ChooseTimeUnit :: (value : float64) -> multiplier : float64, unit : string
+        {
+            if value < 1 / (1000.0 * 1000.0)
+                return 1000 * 1000 * 1000, "ns";
+            if value < 1 / 1000.0
+                return 1000 * 1000, "μs";
+            if value < 1
+                return 1000, "ms";
+
+            return value, " s";
+        }
+
         // We don't sample the total time so the percentages add up to 1
-        total_time := total_parsing_time + total_checking_time;
-        total_time_ms := total_time * 1000.0;
+        total_time := parsing_time + checking_time;
+        parsing_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else parsing_time / total_time) * 100;
+        checking_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else checking_time / total_time) * 100;
 
-        parsing_time_ms := total_parsing_time * 1000.0;
-        parsing_time_percent := ifx total_time_ms < 0.00001 then 0.0 else parsing_time_ms / total_time_ms;
+        time_unit_mult, time_unit := ChooseTimeUnit (total_time);
+        parsing_time *= time_unit_mult;
+        checking_time *= time_unit_mult;
+        total_time *= time_unit_mult;
 
-        checking_time_ms := total_checking_time * 1000.0;
-        checking_time_percent := ifx total_time_ms < 0.00001 then 0.0 else checking_time_ms / total_time_ms;
-
-        max_leading_digits := DecimalLength (cast (u64) Max (Max (parsing_time_ms, checking_time_ms), total_time_ms));
+        max_leading_digits := DecimalLength (cast (u64) Max (Max (parsing_time, checking_time), total_time));
 
         Println ("Timing information (processed % lines of code):", total_lines_of_code);
-        Println ("  Parsing:  {:*.2} ms, {:6.2}%% of total time", max_leading_digits + 3, parsing_time_ms, 100 * parsing_time_percent);
-        Println ("  Checking: {:*.2} ms, {:6.2}%% of total time", max_leading_digits + 3, checking_time_ms, 100 * checking_time_percent);
-        Println ("  Total:    {:*.2} ms", max_leading_digits + 3, total_time_ms);
+        Println ("  Parsing:  {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, parsing_time, time_unit, Round (parsing_time_percent));
+        Println ("  Checking: {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, checking_time, time_unit, Round (checking_time_percent));
+        Println ("  Total:    {:~*.2} %", max_leading_digits + 3, total_time, time_unit);
 
         memory_usage := context.temporary_storage.high_water_mark;
         if memory_usage < 1000
