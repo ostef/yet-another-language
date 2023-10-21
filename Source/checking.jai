@@ -598,7 +598,7 @@ CheckLogicalComposition :: (using binary : *AstBinary)
     if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
     {
         semantic_meaning = .Constant;
-        value = ConstantEvaluate (left.value, right.value, op);
+        value = ConstantEvaluate (left.value, right.value, op, binary);
     }
     else
     {
@@ -620,7 +620,7 @@ CheckEquality :: (using binary : *AstBinary)
     if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
     {
         semantic_meaning = .Constant;
-        value = ConstantEvaluate (left.value, right.value, op);
+        value = ConstantEvaluate (left.value, right.value, op, binary);
     }
     else
     {
@@ -644,7 +644,7 @@ CheckArithmeticComparison :: (using binary : *AstBinary)
     if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
     {
         semantic_meaning = .Constant;
-        value = ConstantEvaluate (left.value, right.value, op);
+        value = ConstantEvaluate (left.value, right.value, op, binary);
     }
     else
     {
@@ -714,7 +714,7 @@ CheckNegation :: (using unary : *AstUnary)
     if expr.semantic_meaning == .Constant
     {
         semantic_meaning = .Constant;
-        value = ConstantEvaluate (expr.value, op);
+        value = ConstantEvaluate (expr.value, op, unary);
     }
     else
     {
@@ -735,7 +735,7 @@ CheckLogicalNot :: (using unary : *AstUnary)
     if expr.semantic_meaning == .Constant
     {
         semantic_meaning = .Constant;
-        value = ConstantEvaluate (expr.value, op);
+        value = ConstantEvaluate (expr.value, op, unary);
     }
     else
     {
@@ -757,7 +757,7 @@ CheckBitNot :: (using unary : *AstUnary)
     if expr.semantic_meaning == .Constant
     {
         semantic_meaning = .Constant;
-        value = ConstantEvaluate (expr.value, op);
+        value = ConstantEvaluate (expr.value, op, unary);
     }
     else
     {

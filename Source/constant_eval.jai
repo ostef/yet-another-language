@@ -116,7 +116,7 @@ ConstantCast :: (value : ConstantValue, to_kind : ConstantKind) -> ConstantValue
     return .{};
 }
 
-ConstantEvaluate :: (left : ConstantValue, right : ConstantValue, op : TokenKind) -> ConstantValue #must
+ConstantEvaluate :: (left : ConstantValue, right : ConstantValue, op : TokenKind, node_for_debug : *AstNode = null) -> ConstantValue #must
 {
     right_casted := ConstantCast (right, left.kind);
 
@@ -196,11 +196,14 @@ ConstantEvaluate :: (left : ConstantValue, right : ConstantValue, op : TokenKind
         }
     }
 
-    Panic ("Invalid or unhandled case in constant eval (% % %)", left.kind, Token_Lexemes[op], right.kind);
+    if node_for_debug
+        Panic (node_for_debug, "Invalid or unhandled case in constant eval (% % %)", left.kind, Token_Lexemes[op], right.kind);
+    else
+        Panic ("Invalid or unhandled case in constant eval (% % %)", left.kind, Token_Lexemes[op], right.kind);
     return .{};
 }
 
-ConstantEvaluate :: (value : ConstantValue, op : TokenKind) -> ConstantValue #must
+ConstantEvaluate :: (value : ConstantValue, op : TokenKind, node_for_debug : *AstNode = null) -> ConstantValue #must
 {
     if op ==
     {
@@ -226,7 +229,10 @@ ConstantEvaluate :: (value : ConstantValue, op : TokenKind) -> ConstantValue #mu
         }
     }
 
-    Panic ("Invalid or unhandled case in constant eval (% %)", Token_Lexemes[op], value.kind);
+    if node_for_debug
+        Panic (node_for_debug, "Invalid or unhandled case in constant eval (% %)", Token_Lexemes[op], value.kind);
+    else
+        Panic ("Invalid or unhandled case in constant eval (% %)", Token_Lexemes[op], value.kind);
     return .{};
 }
 
