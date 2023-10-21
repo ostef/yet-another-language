@@ -654,7 +654,8 @@ CheckArithmeticComparison :: (using binary : *AstBinary)
 
 CheckBitOperation :: (using binary : *AstBinary)
 {
-    Assert (binary, op.kind == .Pipe || op.kind == .Ampersand || op.kind == .Caret, "invalid op");
+    Assert (binary, op.kind == .Pipe || op.kind == .Ampersand || op.kind == .Caret
+        || op.kind == .Less_Less || op.kind == .Greater_Greater, "invalid op");
 
     if left.type.kind != .Integer || !TypeCanImplicitlyCastTo (right.type, left.type)
     {
@@ -756,7 +757,9 @@ CheckBinary :: (using binary : *AstBinary)
 
     case .Pipe; #through;
     case .Caret; #through;
-    case .Ampersand;
+    case .Ampersand; #through;
+    case .Less_Less; #through;
+    case .Greater_Greater;
         CheckBitOperation (binary);
 
     case .Plus; #through;

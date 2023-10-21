@@ -250,6 +250,18 @@ ConstantEvaluate :: (left : ConstantValue, right : ConstantValue, op : TokenKind
         case .Integer;
             return .{int_value = left.int_value & right_casted.int_value, kind = .Integer};
         }
+    case .Less_Less;
+        if left.kind ==
+        {
+        case .Integer;
+            return .{int_value = left.int_value << right_casted.int_value, kind = .Integer};
+        }
+    case .Greater_Greater;
+        if left.kind ==
+        {
+        case .Integer;
+            return .{int_value = left.int_value >> right_casted.int_value, kind = .Integer};
+        }
     }
 
     if node_for_debug
