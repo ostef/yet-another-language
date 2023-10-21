@@ -396,6 +396,10 @@ AssertionFailed :: (location : Source_Code_Location, message : string)
     SetOutputColor (.None);
 
     write_string (message, to_standard_error = true);
+
+    if message.count > 0 && message[message.count - 1] != #char "\n"
+        write_string ("\n", to_standard_error = true);
+
     write_string ("\n", to_standard_error = true);
 
     if context.stack_trace
