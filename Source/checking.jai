@@ -139,6 +139,7 @@ ScopeInsert :: (using scope : *Scope, symbol_kind : SymbolKind, ident : *AstIden
     Assert (ident != null);
 
     if StringStartsWith (ident.name, "Yal__")
+    {
         Error (ident, "identifiers starting with Yal__ are reserved");
     }
 
