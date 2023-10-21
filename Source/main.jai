@@ -209,7 +209,8 @@ main :: ()
         }
 
         // We don't sample the total time so the percentages add up to 1
-        total_time := parsing_time + checking_time;
+        total_time_sec := parsing_time + checking_time;
+        total_time := total_time_sec;
         parsing_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else parsing_time / total_time) * 100;
         checking_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else checking_time / total_time) * 100;
 
@@ -223,7 +224,7 @@ main :: ()
         Println ("Timing information (processed % lines of code):", total_lines_of_code);
         Println ("  Parsing:  {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, parsing_time, time_unit, Round (parsing_time_percent));
         Println ("  Checking: {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, checking_time, time_unit, Round (checking_time_percent));
-        Println ("  Total:    {:~*.2} %", max_leading_digits + 3, total_time, time_unit);
+        Println ("  Total:    {:~*.2} %, {:.0} lines of code per second", max_leading_digits + 3, total_time, time_unit, total_lines_of_code / total_time_sec);
 
         memory_usage := context.temporary_storage.high_water_mark;
         if memory_usage < 1000
