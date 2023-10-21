@@ -26,6 +26,210 @@ ConstantValue :: struct
     kind : ConstantKind;
 }
 
+ToString :: (value : ConstantValue) -> string #must
+{
+    if #complete value.kind ==
+    {
+    case .Invalid;
+        return StringClone ("<invalid>");
+    case .Integer;
+        return FormatString ("%", value.int_value);
+    case .Float;
+        return FormatString ("%", value.float_value);
+    case .Boolean;
+        return FormatString ("%", value.bool_value);
+    case .String;
+        return FormatString ("{:'}", value.string_value);
+    case .Pointer;
+        return FormatString ("%", cast (*void) value.pointer_value);
+    case .Procedure;
+        return FormatString ("%", value.procedure_node);
+    }
+}
+
+// @Cleanup: the way we do constant eval and casting can have different results from runtime stuff
+// We might want to look at a better and less error-prone way of doing things down the line
+
+ConstantCast :: (value : ConstantValue, to_kind : ConstantKind) -> ConstantValue #must
+{
+    if to_kind ==
+    {
+    case .Integer;
+        if value.kind ==
+        {
+        case .Integer;
+            return value;
+        case .Boolean;
+            return .{int_value = cast (int) value.bool_value, kind = .Integer};
+        case .Float;
+            return .{int_value = cast (int) value.float_value, kind = .Integer};
+        case .Pointer;
+            return .{int_value = value.pointer_value, kind = .Integer};
+        }
+
+    case .Boolean;
+        if value.kind ==
+        {
+        case .Integer;
+            return .{bool_value = value.int_value != 0, kind = .Boolean};
+        case .Boolean;
+            return value;
+        case .Float;
+            return .{bool_value = value.float_value != 0, kind = .Boolean};
+        case .String;
+            return .{bool_value = value.string_value.count != 0, kind = .Boolean};
+        case .Pointer;
+            return .{bool_value = value.pointer_value != 0, kind = .Boolean};
+        case .Procedure;
+            return .{bool_value = true, kind = .Boolean};
+        }
+
+    case .Float;
+        if value.kind ==
+        {
+        case .Integer;
+            return .{float_value = cast (float64) value.int_value, kind = .Float};
+        case .Boolean;
+            return .{float_value = cast (float64) value.bool_value, kind = .Float};
+        case .Float;
+            return value;
+        }
+
+    case .String;
+        if value.kind ==
+        {
+        case .String;
+            return value;
+        }
+
+    case .Pointer;
+        if value.kind ==
+        {
+        case .Integer;
+            return .{pointer_value = value.int_value, kind = .Pointer};
+        case .Pointer;
+            return value;
+        }
+    }
+
+    Panic ("Cannot constant cast % to %", value.kind, to_kind);
+    return .{};
+}
+
+ConstantEvaluate :: (left : ConstantValue, right : ConstantValue, op : TokenKind) -> ConstantValue #must
+{
+    right_casted := ConstantCast (right, left.kind);
+
+    if op ==
+    {
+    case .Equ_Equ;
+        if #complete left.kind ==
+        {
+        case .Invalid;
+        case .Integer;
+            return .{bool_value = left.int_value == right_casted.int_value, kind = .Boolean};
+        case .Float;
+            return .{bool_value = left.float_value == right_casted.float_value, kind = .Boolean};
+        case .Boolean;
+            return .{bool_value = left.bool_value == right_casted.bool_value, kind = .Boolean};
+        case .String;
+            return .{bool_value = left.string_value == right_casted.string_value, kind = .Boolean};
+        case .Pointer;
+            return .{bool_value = left.pointer_value == right_casted.pointer_value, kind = .Boolean};
+        case .Procedure;
+            return .{bool_value = left.procedure_node == right_casted.procedure_node, kind = .Boolean};
+        }
+    case .Bang_Equ;
+        if #complete left.kind ==
+        {
+        case .Invalid;
+        case .Integer;
+            return .{bool_value = left.int_value != right_casted.int_value, kind = .Boolean};
+        case .Float;
+            return .{bool_value = left.float_value != right_casted.float_value, kind = .Boolean};
+        case .Boolean;
+            return .{bool_value = left.bool_value != right_casted.bool_value, kind = .Boolean};
+        case .String;
+            return .{bool_value = left.string_value != right_casted.string_value, kind = .Boolean};
+        case .Pointer;
+            return .{bool_value = left.pointer_value != right_casted.pointer_value, kind = .Boolean};
+        case .Procedure;
+            return .{bool_value = left.procedure_node != right_casted.procedure_node, kind = .Boolean};
+        }
+    case .Pipe_Pipe;
+        Assert (left.kind == .Boolean);
+        return .{bool_value = left.bool_value || right.bool_value, kind = .Boolean};
+    case .Ampersand_Ampersand;
+        Assert (left.kind == .Boolean);
+        return .{bool_value = left.bool_value && right.bool_value, kind = .Boolean};
+    case .Less;
+        if left.kind ==
+        {
+        case .Integer;
+            return .{bool_value = left.int_value < right_casted.int_value, kind = .Boolean};
+        case .Float;
+            return .{bool_value = left.float_value < right_casted.float_value, kind = .Boolean};
+        }
+    case .Less_Equ;
+        if left.kind ==
+        {
+        case .Integer;
+            return .{bool_value = left.int_value <= right_casted.int_value, kind = .Boolean};
+        case .Float;
+            return .{bool_value = left.float_value <= right_casted.float_value, kind = .Boolean};
+        }
+    case .Greater;
+        if left.kind ==
+        {
+        case .Integer;
+            return .{bool_value = left.int_value > right_casted.int_value, kind = .Boolean};
+        case .Float;
+            return .{bool_value = left.float_value > right_casted.float_value, kind = .Boolean};
+        }
+    case .Greater_Equ;
+        if left.kind ==
+        {
+        case .Integer;
+            return .{bool_value = left.int_value >= right_casted.int_value, kind = .Boolean};
+        case .Float;
+            return .{bool_value = left.float_value >= right_casted.float_value, kind = .Boolean};
+        }
+    }
+
+    Panic ("Invalid or unhandled case in constant eval (% % %)", left.kind, Token_Lexemes[op], right.kind);
+    return .{};
+}
+
+ConstantEvaluate :: (value : ConstantValue, op : TokenKind) -> ConstantValue #must
+{
+    if op ==
+    {
+    case .Minus;
+        if value.kind ==
+        {
+        case .Integer;
+            return .{int_value = -value.int_value, kind = .Integer};
+        case .Float;
+            return .{float_value = -value.float_value, kind = .Float};
+        }
+    case .Bang;
+        if value.kind ==
+        {
+        case .Boolean;
+            return .{bool_value = !value.bool_value, kind = .Boolean};
+        }
+    case .Caret;
+        if value.kind ==
+        {
+        case .Integer;
+            return .{int_value = ~value.int_value, kind = .Integer};
+        }
+    }
+
+    Panic ("Invalid or unhandled case in constant eval (% %)", Token_Lexemes[op], value.kind);
+    return .{};
+}
+
 MakeConstantValue :: (token : Token) -> ConstantValue, *YalType, bool
 {
     if token.kind ==
@@ -266,40 +470,4 @@ ParseFloatLiteral :: (token : Token) -> float64, bool
         SyntaxError (token, "invalid float literal");
 
     return result, ok;
-}
-
-NegateValue :: (val : ConstantValue) -> ConstantValue #must
-{
-    result : ConstantValue;
-    result.kind = val.kind;
-
-    // @Todo: handle underflow
-    if val.kind ==
-    {
-    case .Integer;
-        result.int_value = -val.int_value;
-    case .Float;
-        result.float_value = -val.float_value;
-    case;
-        Panic ("invalid type for negation %", val.kind);
-    }
-
-    return result;
-}
-
-NotValue :: (val : ConstantValue) -> ConstantValue #must
-{
-    result : ConstantValue;
-    result.kind = val.kind;
-
-    // @Todo: handle underflow
-    if val.kind ==
-    {
-    case .Boolean;
-        result.bool_value = !val.bool_value;
-    case;
-        Panic ("invalid type for negation %", val.kind);
-    }
-
-    return result;
 }

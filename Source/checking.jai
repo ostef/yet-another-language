@@ -593,12 +593,17 @@ CheckLogicalComposition :: (using binary : *AstBinary)
         return;
     }
 
-    if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
-        semantic_meaning = .Constant;
-    else
-        semantic_meaning = .Value;
-
     type = g_type_bool;
+
+    if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
+    {
+        semantic_meaning = .Constant;
+        value = ConstantEvaluate (left.value, right.value, op);
+    }
+    else
+    {
+        semantic_meaning = .Value;
+    }
 }
 
 CheckEquality :: (using binary : *AstBinary)
@@ -611,30 +616,40 @@ CheckEquality :: (using binary : *AstBinary)
         return;
     }
 
-    if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
-        semantic_meaning = .Constant;
-    else
-        semantic_meaning = .Value;
-
     type = g_type_bool;
+    if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
+    {
+        semantic_meaning = .Constant;
+        value = ConstantEvaluate (left.value, right.value, op);
+    }
+    else
+    {
+        semantic_meaning = .Value;
+    }
 }
 
 CheckArithmeticComparison :: (using binary : *AstBinary)
 {
     Assert (op.kind == .Less || op.kind == .Less_Equ || op.kind == .Greater || op.kind == .Greater_Equ);
 
-    if !TypeCanImplicitlyCastTo (left.type, right.type)
+    if left.type.kind != .Integer || left.type.kind != .Float
+    || !TypeCanImplicitlyCastTo (left.type, right.type)
     {
         Error (binary.left, "invalid type for comparison (left is: %, right is: %)", left.type.as_string, right.type.as_string);
         return;
     }
 
-    if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
-        semantic_meaning = .Constant;
-    else
-        semantic_meaning = .Value;
-
     type = g_type_bool;
+
+    if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
+    {
+        semantic_meaning = .Constant;
+        value = ConstantEvaluate (left.value, right.value, op);
+    }
+    else
+    {
+        semantic_meaning = .Value;
+    }
 }
 
 CheckBinary :: (using binary : *AstBinary)
@@ -658,23 +673,24 @@ CheckBinary :: (using binary : *AstBinary)
         CheckEquality (binary);
 
     case .Less; #through;
+    case .Less_Equ; #through;
     case .Greater; #through;
-    case .Greater_Equ; #through;
-    case .Less_Equ;
+    case .Greater_Equ;
         CheckArithmeticComparison (binary);
 
     case;
         Error (op, "unhandled binary operator");
+        return;
+    }
+
+    if semantic_meaning == .Constant
+    {
+        Info (binary, "result is constant: left is %, right is %, result is %", ToString (left.value), ToString (right.value), ToString (value));
     }
 }
 
 CheckNegation :: (using unary : *AstUnary)
 {
-    if expr.semantic_meaning == .Constant
-        semantic_meaning = .Constant;
-    else
-        semantic_meaning = .Value;
-
     if expr.type.kind ==
     {
     case .Integer;
@@ -685,38 +701,44 @@ CheckNegation :: (using unary : *AstUnary)
             return;
         }
 
-        if expr.semantic_meaning == .Constant
-            value = NegateValue (expr.value);
-
         type = expr.type;
 
     case .Float;
-        if expr.semantic_meaning == .Constant
-            value = NegateValue (expr.value);
-
         type = expr.type;
     case;
         Error (unary, "invalid type for unary operator % (type is: %)", Token_Names[op.kind], expr.type.as_string);
+        return;
+    }
+
+    if expr.semantic_meaning == .Constant
+    {
+        semantic_meaning = .Constant;
+        value = ConstantEvaluate (expr.value, op);
+    }
+    else
+    {
+        semantic_meaning = .Value;
     }
 }
 
 CheckLogicalNot :: (using unary : *AstUnary)
 {
-    if expr.semantic_meaning == .Constant
-        semantic_meaning = .Constant;
-    else
-        semantic_meaning = .Value;
-
-    if expr.type.kind ==
+    if expr.type.kind != .Bool
     {
-    case .Bool;
-        if expr.semantic_meaning == .Constant
-            value = NotValue (expr.value);
-
-        type = expr.type;
-
-    case;
         Error (unary, "invalid type for unary operator % (type is: %)", Token_Names[op.kind], expr.type.as_string);
+        return;
+    }
+
+    type = expr.type;
+
+    if expr.semantic_meaning == .Constant
+    {
+        semantic_meaning = .Constant;
+        value = ConstantEvaluate (expr.value, op);
+    }
+    else
+    {
+        semantic_meaning = .Value;
     }
 }
 
@@ -729,12 +751,17 @@ CheckBitNot :: (using unary : *AstUnary)
         return;
     }
 
-    if expr.semantic_meaning == .Constant
-        semantic_meaning = .Constant;
-    else
-        semantic_meaning = .Value;
-
     type = expr.type;
+
+    if expr.semantic_meaning == .Constant
+    {
+        semantic_meaning = .Constant;
+        value = ConstantEvaluate (expr.value, op);
+    }
+    else
+    {
+        semantic_meaning = .Value;
+    }
 }
 
 CheckAddressOf :: (using unary : *AstUnary)
@@ -785,6 +812,12 @@ CheckUnary :: (using unary : *AstUnary)
         CheckDeref (unary);
     case;
         Error (op, "unhandled unary operator");
+        return;
+    }
+
+    if semantic_meaning == .Constant
+    {
+        Info (unary, "result is constant: expr is %, result is %", ToString (expr.value), ToString (value));
     }
 }
 
