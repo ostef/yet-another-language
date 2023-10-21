@@ -105,5 +105,21 @@ proc Main (args : []string)
         1 << -2;
     }
 
+    {
+        const Length := "Hello Sailor!".count; // Should be 13
+        var array : []int;
+        var data := array.data;
+        array.allocator;
+
+        var dyn_array : [..]int;
+        data = array.data;
+        dyn_array.allocator;
+        dyn_array.capacity;
+        dyn_array.count;
+
+        var static_array : [112]int;
+        const Count := static_array.count;
+    }
+
     return;
 }

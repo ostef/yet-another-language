@@ -128,6 +128,7 @@ g_type_s16 : *YalType;
 g_type_u16 : *YalType;
 g_type_s8 : *YalType;
 g_type_u8 : *YalType;
+g_type_u8_ptr : *YalType;
 g_type_f32 : *YalType;
 g_type_f64 : *YalType;
 g_type_bool : *YalType;
@@ -146,6 +147,7 @@ InitBuiltinTypes :: ()
     g_type_u16 = MakeTypeInteger (2, false);
     g_type_s8 = MakeTypeInteger (1, true);
     g_type_u8 = MakeTypeInteger (1, false);
+    g_type_u8_ptr = MakeTypePointer (g_type_u8);
     g_type_f64 = MakeType (.Float, 8);
     g_type_f32 = MakeType (.Float, 4);
     g_type_bool = MakeType (.Bool, 1);
