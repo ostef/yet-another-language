@@ -584,8 +584,19 @@ CheckType :: (type : *AstNode)
 
 CheckBinary :: (using binary : *AstBinary)
 {
-    Error (binary, "not yet handled");
     type = g_type_invalid;
+
+    CheckExpression (left);
+    CheckExpression (right);
+
+    if left.type == g_type_invalid || right.type == g_type_invalid
+        return;
+
+    if op.kind ==
+    {
+    case;
+        Error (op, "unhandled binary operator");
+    }
 }
 
 CheckNegation :: (using unary : *AstUnary)
@@ -640,6 +651,32 @@ CheckNot :: (using unary : *AstUnary)
     }
 }
 
+CheckAddressOf :: (using unary : *AstUnary)
+{
+    if expr.semantic_meaning != .Mutable
+    {
+        Error (unary, "taking address of non-addressable expression");
+        return;
+    }
+
+    semantic_meaning = .Value;
+    type = MakeTypePointer (expr.type);
+}
+
+CheckDeref :: (using unary : *AstUnary)
+{
+    Assert (expr.semantic_meaning != .Constant, "This probably should not happen. If it ever does, I should investigate...");
+
+    if expr.type.kind != .Pointer
+    {
+        Error (unary, "expected a pointer for dereference but got %", expr.type.as_string);
+        return;
+    }
+
+    semantic_meaning = .Mutable;
+    type = (cast (*YalTypePointer) expr.type).pointed_type;
+}
+
 CheckUnary :: (using unary : *AstUnary)
 {
     type = g_type_invalid;
@@ -654,8 +691,12 @@ CheckUnary :: (using unary : *AstUnary)
         CheckNegation (unary);
     case .Bang;
         CheckNot (unary);
+    case .Ampersand;
+        CheckAddressOf (unary);
+    case .Star;
+        CheckDeref (unary);
     case;
-        Error (op, "unhandled operator type");
+        Error (op, "unhandled unary operator");
     }
 }
 

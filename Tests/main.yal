@@ -12,25 +12,49 @@ proc Main (args : []string)
         //undeclared;
 
         return 10.0, 1;
+        return 10.0, true;
     }
 
-    defer index = 10;
+    {
+        defer index = 10;
 
-    const Index := 9;
-    var index := -10;
+        const Index := 9;
+        var index := -10;
 
-    const Negated := !Index;
-    const Boolean := !true;
+        const Negated := !Index;
+        const Boolean := !true;
 
-    const Foo : int = Index;
-    //Index[1] = 2;
-    const const_array : [10]int = "";
-    var array : [10]int;
-    const const_value := array[index];
-    var value := array[Index];
-    var value1 := array[-Index];
-    var value2 := array[array[Index]];
-    array[index] = 10;
+        const Foo : int = Index;
+        //Index[1] = 2;
+        const const_array : [10]int = "";
+        var array : [10]int;
+        const const_value := array[index];
+        var value := array[Index];
+        var value1 := array[-Index];
+        var value2 := array[array[Index]];
+        array[index] = 10;
+    }
+
+    {
+        var addressable := 10;
+        var ptr := &addressable;
+        *ptr = 11;
+
+        ptr = &10;
+        ptr = &addressable;
+    }
+
+    {
+        var non_ptr : int;
+        *non_ptr;
+
+        var ptr : *void;
+        *ptr;
+        *ptr = 10;
+
+        var int_ptr : *int;
+        *int_ptr = 10;
+    }
 
     return;
 }

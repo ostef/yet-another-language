@@ -329,8 +329,8 @@ Operators :: OperatorInfo.[
     .{ .Less_Equ,    4, .Non_Associative },
     .{ .Greater_Equ, 4, .Non_Associative },
 
-    .{ .Less_Less,       5, 0 },
-    .{ .Greater_Greater, 5, 0 },
+    .{ .Less_Less,       5, 0 }, // bitshift left
+    .{ .Greater_Greater, 5, 0 }, // bitshift right
 
     .{ .Pipe, 6, 0 },
 
