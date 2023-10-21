@@ -362,7 +362,7 @@ MakeConstantValue :: (token : Token) -> ConstantValue, *YalType, bool
         return val, g_type_void_ptr, true;
 
     case;
-        Panic ("Invalid token kind % for literal", token.kind);
+        Panic (token, "Invalid token kind % for literal", token.kind);
         return .{}, null, false;
     }
 }

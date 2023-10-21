@@ -195,7 +195,7 @@ ScopeInsert :: (scope : *Scope, decl : *AstDeclaration)
         symbol_kind = .Procedure;
 
     case .Invalid;
-        Panic ("Invalid declaration kind %", decl.decl_kind);
+        Panic (decl, "Invalid declaration kind %", decl.decl_kind);
     }
 
     if decl.identifier_count == 1
@@ -578,7 +578,7 @@ CheckType :: (type : *AstNode)
     case .Struct;
     case .Enum;
     case;
-        Panic ("Invalid ast kind (%)", type.kind);
+        Panic (type, "Invalid ast kind (%)", type.kind);
     }
 }
 
@@ -1083,8 +1083,14 @@ CheckSubscript :: (using subscript : *AstSubscript)
 
 CheckFieldAccess :: (using access : *AstFieldAccess)
 {
-    Error (access, "not yet handled");
+    CheckExpression (left);
+    CheckExpression (right);
+
+    if left.type == g_type_invalid || right.type == g_type_invalid
+        return;
+
     type = g_type_invalid;
+    Error (access, "not yet handled");
 }
 
 CheckExpression :: (expr : *AstNode)
@@ -1109,7 +1115,7 @@ CheckExpression :: (expr : *AstNode)
         CheckFieldAccess (cast (*AstFieldAccess) expr);
 
     case;
-        Panic ("Invalid expression kind (%)", expr.kind);
+        Panic (expr, "Invalid expression kind (%)", expr.kind);
     }
 }
 
