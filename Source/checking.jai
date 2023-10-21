@@ -138,6 +138,10 @@ ScopeInsert :: (using scope : *Scope, symbol_kind : SymbolKind, ident : *AstIden
     Assert (scope != null);
     Assert (ident != null);
 
+    if StringStartsWith (ident.name, "Yal__")
+        Error (ident, "identifiers starting with Yal__ are reserved");
+    }
+
     symbol := Alloc (Symbol);
     symbol.scope = scope;
     symbol.name = ident.name;
@@ -654,8 +658,13 @@ CheckArithmeticComparison :: (using binary : *AstBinary)
 
 CheckBitOperation :: (using binary : *AstBinary)
 {
-    Assert (binary, op.kind == .Pipe || op.kind == .Ampersand || op.kind == .Caret
-        || op.kind == .Less_Less || op.kind == .Greater_Greater, "invalid op");
+    Assert (binary,
+        op.kind == .Pipe || op.kind == .Ampersand || op.kind == .Caret
+        || op.kind == .Pipe_Equ || op.kind == .Ampersand_Equ || op.kind == .Caret_Equ
+        || op.kind == .Less_Less || op.kind == .Greater_Greater
+        || op.kind == .Less_Less_Equ || op.kind == .Greater_Greater_Equ,
+        "invalid op"
+    );
 
     if left.type.kind != .Integer || !TypeCanImplicitlyCastTo (right.type, left.type)
     {
@@ -678,7 +687,7 @@ CheckBitOperation :: (using binary : *AstBinary)
 
 CheckModulo :: (using binary : *AstBinary)
 {
-    Assert (binary, op.kind == .Percent, "invalid op");
+    Assert (binary, op.kind == .Percent || op.kind == .Percent_Equ, "invalid op");
 
     if left.type.kind != .Integer || !TypeCanImplicitlyCastTo (right.type, left.type)
     {
@@ -701,7 +710,11 @@ CheckModulo :: (using binary : *AstBinary)
 
 CheckArithmeticOperation :: (using binary : *AstBinary)
 {
-    Assert (binary, op.kind == .Plus || op.kind == .Minus || op.kind == .Star || op.kind == .Slash, "invalid op");
+    Assert (binary,
+        op.kind == .Plus || op.kind == .Minus || op.kind == .Star || op.kind == .Slash
+        || op.kind == .Plus_Equ || op.kind == .Minus_Equ || op.kind == .Star_Equ || op.kind == .Slash_Equ,
+        "invalid op"
+    );
 
     if left.type.kind != .Integer && left.type.kind != .Float
     || !TypeCanImplicitlyCastTo (right.type, left.type)
@@ -710,7 +723,7 @@ CheckArithmeticOperation :: (using binary : *AstBinary)
         return;
     }
 
-    if op.kind == .Minus && left.type.kind == .Integer && !(cast (*YalTypeInteger) left.type).is_signed
+    if (op.kind == .Minus || op.kind == .Minus_Equ) && left.type.kind == .Integer && !(cast (*YalTypeInteger) left.type).is_signed
     {
         Error (binary, "cannot subtract unsigned integers (left is: %, right is: %)", left.type.as_string, right.type.as_string);
         return;
@@ -1323,6 +1336,32 @@ CheckAssignment :: (using assign : *AstAssignment)
             left.type.as_string, right.type.as_string);
         return;
     }
+
+    // @Hack: AstAssignment and AstBinary have the same memory layout, so we use
+    // the routines to check binary expressions for assignments, which may lead
+    // to unexpected behavior
+    if op.kind ==
+    {
+    case .Plus_Equ; #through;
+    case .Minus_Equ; #through;
+    case .Star_Equ; #through;
+    case .Slash_Equ;
+        CheckArithmeticOperation (cast (*AstBinary) assign);
+
+    case .Percent_Equ;
+        CheckModulo (cast (*AstBinary) assign);
+
+    case .Ampersand_Equ; #through;
+    case .Pipe_Equ; #through;
+    case .Caret_Equ; #through;
+    case .Less_Less_Equ; #through;
+    case .Greater_Greater_Equ;
+        CheckBitOperation (cast (*AstBinary) assign);
+    }
+
+    // Reset the type and semantic meaning, plain statements don't have those
+    type = null;
+    semantic_meaning = .Invalid;
 }
 
 CheckIf :: (using if_stmt : *AstIf)

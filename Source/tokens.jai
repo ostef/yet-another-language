@@ -30,6 +30,7 @@ Token_Symbols :: string.[
     "Ampersand_Equ", "&=",
     "Pipe_Equ", "|=",
     "Tilde_Equ", "~=",
+    "Caret_Equ", "^=",
     "Less_Less", "<<",
     "Greater_Greater", ">>",
     "Ampersand_Ampersand", "&&",
@@ -221,7 +222,9 @@ Tokens_Assignment :: TokenKind.[
     .Percent_Equ,
     .Ampersand_Equ,
     .Pipe_Equ,
-    .Tilde_Equ,
+    .Caret_Equ,
+    .Less_Less_Equ,
+    .Greater_Greater_Equ,
 ];
 
 TokenLocation :: struct

@@ -57,6 +57,17 @@ proc Main (args : []string)
     }
 
     {
+        var foo : int;
+        foo += 10;
+
+        var bar := "Hello";
+        bar -= "100";
+
+        var baz : u64;
+        baz -= baz;
+    }
+
+    {
         var value : int;
         var inversed := ^value;
 
