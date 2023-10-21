@@ -119,6 +119,8 @@ proc Main (args : []string)
 
         var static_array : [112]int;
         const Count := static_array.count;
+
+        static_array.2;
     }
 
     return;

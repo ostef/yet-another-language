@@ -1086,13 +1086,14 @@ CheckFieldAccess :: (using access : *AstFieldAccess)
     type = g_type_invalid;
     defer right.type = type;
 
+    CheckExpression (left);
+
     if right.kind != .Identifier
     {
         Error (right, "invalid expression type for rhs of field access operator");
         return;
     }
 
-    CheckExpression (left);
     // Don't check the rhs since we don't actually want to resolve the identifier the normal way
 
     if left.type == g_type_invalid
