@@ -4,6 +4,8 @@
 #import "String_Builder";
 
 Basic :: #import "Basic";
+using, only (.["+", "-", "*", "/"]) Basic;
+
 Math :: #import "Math";
 File :: #import "File";
 JaiC :: #import "Compiler";
@@ -135,12 +137,21 @@ main :: ()
     if file_error
         Basic.exit (1);
 
+    parsing_start := Basic.current_time_monotonic ();
+
+    total_lines_of_code := 0;
     for g_files
     {
         ParseFile (it);
+        total_lines_of_code += it.line;
     }
 
+    parsing_end := Basic.current_time_monotonic ();
+    total_parsing_time := Basic.to_float64_seconds (parsing_end - parsing_start);
+
     ExitIfError ();
+
+    checking_start := Basic.current_time_monotonic ();
 
     for g_files
     {
@@ -151,45 +162,39 @@ main :: ()
         CheckAllDeclarationsInFile (it);
     }
 
-    /*
-    for g_files
-    {
-        PrintScope :: (scope : *Scope, indent_level := 0)
-        {
-            symbol := scope.first_symbol;
-            while symbol
-            {
-                for 0..indent_level - 1
-                    Print ("  ");
-
-                Println ("% : % (%)", symbol.name, symbol.kind, symbol.flags);
-
-                symbol = symbol.next;
-            }
-
-            for 0..indent_level - 1
-                Print ("  ");
-            Println ("{");
-
-            child := scope.first_child;
-            while child
-            {
-                PrintScope (child, indent_level + 1);
-                child = child.next;
-            }
-
-            for 0..indent_level - 1
-                Print ("  ");
-            Println ("}");
-        }
-
-        Println ("Declared symbols in file %:", it.filename);
-        PrintScope (it.scope);
-        Print ("\n");
-    }
-    */
+    checking_end := Basic.current_time_monotonic ();
+    total_checking_time := Basic.to_float64_seconds (checking_end - checking_start);
 
     ExitIfError ();
+
+    {
+        // We don't sample the total time so the percentages add up to 1
+        total_time := total_parsing_time + total_checking_time;
+        total_time_ms := total_time * 1000.0;
+
+        parsing_time_ms := total_parsing_time * 1000.0;
+        parsing_time_percent := ifx total_time_ms < 0.00001 then 0.0 else parsing_time_ms / total_time_ms;
+
+        checking_time_ms := total_checking_time * 1000.0;
+        checking_time_percent := ifx total_time_ms < 0.00001 then 0.0 else checking_time_ms / total_time_ms;
+
+        max_leading_digits := DecimalLength (cast (u64) Max (Max (parsing_time_ms, checking_time_ms), total_time_ms));
+
+        Println ("Timing information (processed % lines of code):", total_lines_of_code);
+        Println ("  Parsing:  {:*.2} ms, {:6.2}%% of total time", max_leading_digits + 3, parsing_time_ms, 100 * parsing_time_percent);
+        Println ("  Checking: {:*.2} ms, {:6.2}%% of total time", max_leading_digits + 3, checking_time_ms, 100 * checking_time_percent);
+        Println ("  Total:    {:*.2} ms", max_leading_digits + 3, total_time_ms);
+
+        memory_usage := context.temporary_storage.high_water_mark;
+        if memory_usage < 1000
+            Println ("\nTotal memory used by the compiler: % bytes", memory_usage);
+        else if memory_usage < 1000_000
+            Println ("\nTotal memory used by the compiler: {:.2} kilo-bytes", memory_usage / 1000.0);
+        else if memory_usage < 1000_000_000
+            Println ("\nTotal memory used by the compiler: {:.2} mega-bytes", memory_usage / 1000_000.0);
+        else if memory_usage < 1000_000_000_000
+            Println ("\nTotal memory used by the compiler: {:.2} giga-bytes", memory_usage / 1000_000_000.0);
+    }
 }
 
 #run
