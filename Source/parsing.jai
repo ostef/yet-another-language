@@ -689,6 +689,7 @@ ParseProcedureSignature :: (using file : *YalFile, proc_tok : Token) -> *AstProc
     close_paren := PrevToken (lexer);
 
     results : [..]*AstDeclaration;
+    results_close_paren : Token;
 
     if MatchToken (*lexer, .Arrow)
     {
@@ -696,6 +697,8 @@ ParseProcedureSignature :: (using file : *YalFile, proc_tok : Token) -> *AstProc
         {
             if !ParseFieldList (file, *results)
                 return null;
+
+            results_close_paren = PrevToken (*lexer);
         }
         else
         {
@@ -707,7 +710,7 @@ ParseProcedureSignature :: (using file : *YalFile, proc_tok : Token) -> *AstProc
         }
     }
 
-    return MakeAstProcedure (proc_tok, close_paren, parameters, results);
+    return MakeAstProcedure (proc_tok, close_paren, parameters, results, results_close_paren);
 }
 
 ParseDeclaration :: (using file : *YalFile) -> *AstDeclaration #must

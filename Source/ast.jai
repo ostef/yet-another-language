@@ -566,20 +566,31 @@ AstProcedure :: struct
     body : *AstBlock;
 }
 
-MakeAstProcedure :: inline (proc_tok : Token, close_paren_tok : Token, parameters : []*AstDeclaration, results : []*AstDeclaration, body : *AstBlock = null) -> *AstProcedure #must
+MakeAstProcedure :: inline (
+    proc_tok : Token,
+    close_paren_tok : Token,
+    parameters : []*AstDeclaration,
+    results : []*AstDeclaration,
+    results_close_paren_tok : Token,
+    body : *AstBlock = null
+) -> *AstProcedure #must
 {
     node := Alloc (AstProcedure);
     node.parameters = parameters;
     node.results = results;
     node.body = body;
 
-    if results.count > 0
+    if results.count > 1
+        node.signature_range = TokenRangeJoin (proc_tok, results_close_paren_tok);
+    else if results.count > 0
         node.signature_range = TokenRangeJoin (proc_tok, results[results.count - 1]);
     else
         node.signature_range = TokenRangeJoin (proc_tok, close_paren_tok);
 
     if body
         node.range = TokenRangeJoin (proc_tok, body);
+    else if results.count > 1
+        node.range = TokenRangeJoin (proc_tok, results_close_paren_tok);
     else if results.count > 0
         node.range = TokenRangeJoin (proc_tok, results[results.count - 1]);
     else
