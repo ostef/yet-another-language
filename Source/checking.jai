@@ -610,7 +610,7 @@ CheckEquality :: (using binary : *AstBinary)
 {
     Assert (binary, op.kind == .Equ_Equ || op.kind == .Bang_Equ, "invalid op");
 
-    if !TypeCanImplicitlyCastTo (left.type, right.type)
+    if !TypeCanImplicitlyCastTo (right.type, left.type)
     {
         Error (binary.left, "invalid type for comparison (left is: %, right is: %)", left.type.as_string, right.type.as_string);
         return;
@@ -632,10 +632,10 @@ CheckArithmeticComparison :: (using binary : *AstBinary)
 {
     Assert (binary, op.kind == .Less || op.kind == .Less_Equ || op.kind == .Greater || op.kind == .Greater_Equ, "invalid op");
 
-    if left.type.kind != .Integer || left.type.kind != .Float
-    || !TypeCanImplicitlyCastTo (left.type, right.type)
+    if left.type.kind != .Integer && left.type.kind != .Float
+    && !TypeCanImplicitlyCastTo (right.type, left.type)
     {
-        Error (binary.left, "invalid type for comparison (left is: %, right is: %)", left.type.as_string, right.type.as_string);
+        Error (binary, "invalid type for comparison (left is: %, right is: %)", left.type.as_string, right.type.as_string);
         return;
     }
 
