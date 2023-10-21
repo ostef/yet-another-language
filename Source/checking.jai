@@ -675,6 +675,29 @@ CheckBitOperation :: (using binary : *AstBinary)
     }
 }
 
+CheckModulo :: (using binary : *AstBinary)
+{
+    Assert (binary, op.kind == .Percent, "invalid op");
+
+    if left.type.kind != .Integer || !TypeCanImplicitlyCastTo (right.type, left.type)
+    {
+        Error (binary, "invalid type for operator % (left is: %, right is: %)", Token_Names[op.kind], left.type.as_string, right.type.as_string);
+        return;
+    }
+
+    type = left.type;
+
+    if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
+    {
+        semantic_meaning = .Constant;
+        value = ConstantEvaluate (left.value, right.value, op, binary);
+    }
+    else
+    {
+        semantic_meaning = .Value;
+    }
+}
+
 CheckArithmeticOperation :: (using binary : *AstBinary)
 {
     Assert (binary, op.kind == .Plus || op.kind == .Minus || op.kind == .Star || op.kind == .Slash, "invalid op");
@@ -741,6 +764,9 @@ CheckBinary :: (using binary : *AstBinary)
     case .Star; #through;
     case .Slash;
         CheckArithmeticOperation (binary);
+
+    case .Percent;
+        CheckModulo (binary);
 
     case;
         Error (op, "unhandled binary operator");

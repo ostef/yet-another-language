@@ -226,6 +226,12 @@ ConstantEvaluate :: (left : ConstantValue, right : ConstantValue, op : TokenKind
         case .Float;
             return .{float_value = left.float_value / right_casted.float_value, kind = .Float};
         }
+    case .Percent;
+        if left.kind ==
+        {
+        case .Integer;
+            return .{int_value = left.int_value % right_casted.int_value, kind = .Integer};
+        }
     case .Pipe;
         if left.kind ==
         {

@@ -343,7 +343,7 @@ Operators :: OperatorInfo.[
 
     .{ .Star,    10, 0 },
     .{ .Slash,   10, 0 },
-    .{ .Percent, 10, 0 },
+    .{ .Percent, 10, 0 }, // modulo
 
     .{ .Minus,     11, .Prefix },
     .{ .Bang,      11, .Prefix }, // logical not
