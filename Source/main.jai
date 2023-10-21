@@ -217,11 +217,11 @@ main :: ()
         if memory_usage < 1000
             Println ("\nTotal memory used by the compiler: % bytes", memory_usage);
         else if memory_usage < 1000_000
-            Println ("\nTotal memory used by the compiler: {:.2} kilo-bytes", memory_usage / 1000.0);
+            Println ("\nTotal memory used by the compiler: % kilo-bytes", memory_usage / 1000);
         else if memory_usage < 1000_000_000
-            Println ("\nTotal memory used by the compiler: {:.2} mega-bytes", memory_usage / 1000_000.0);
+            Println ("\nTotal memory used by the compiler: % mega-bytes", memory_usage / 1000_000);
         else if memory_usage < 1000_000_000_000
-            Println ("\nTotal memory used by the compiler: {:.2} giga-bytes", memory_usage / 1000_000_000.0);
+            Println ("\nTotal memory used by the compiler: % giga-bytes", memory_usage / 1000_000_000);
     }
 }
 
