@@ -56,5 +56,13 @@ proc Main (args : []string)
         *int_ptr = 10;
     }
 
+    {
+        var value : int;
+        var inversed := ^value;
+
+        var non_int : string;
+        ^non_int;
+    }
+
     return;
 }

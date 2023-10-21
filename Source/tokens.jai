@@ -45,6 +45,7 @@ Token_Symbols :: string.[
     "Percent", "%",
     "Ampersand", "&",
     "Pipe", "|",
+    "Caret", "^",
     "Tilde", "~",
     "Open_Paren", "(",
     "Close_Paren", ")",

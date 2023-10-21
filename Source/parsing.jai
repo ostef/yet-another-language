@@ -318,9 +318,9 @@ OperatorInfo :: struct
 
 // Must be sorted by order of precedence
 Operators :: OperatorInfo.[
-    .{ .Pipe_Pipe, 2, 0 },
+    .{ .Pipe_Pipe, 2, 0 }, // logical or
 
-    .{ .Ampersand_Ampersand, 3, 0 },
+    .{ .Ampersand_Ampersand, 3, 0 },  // logical and
 
     .{ .Equ_Equ,   4, .Non_Associative },
     .{ .Bang_Equ,    4, .Non_Associative },
@@ -329,14 +329,14 @@ Operators :: OperatorInfo.[
     .{ .Less_Equ,    4, .Non_Associative },
     .{ .Greater_Equ, 4, .Non_Associative },
 
-    .{ .Less_Less,       5, 0 }, // bitshift left
-    .{ .Greater_Greater, 5, 0 }, // bitshift right
+    .{ .Less_Less,       5, 0 }, // bit shift left
+    .{ .Greater_Greater, 5, 0 }, // bit shift right
 
-    .{ .Pipe, 6, 0 },
+    .{ .Pipe, 6, 0 },  // bit or
 
-    .{ .Tilde, 7, 0 },
+    .{ .Caret, 7, 0 },  // bit xor
 
-    .{ .Ampersand, 8, 0 },
+    .{ .Ampersand, 8, 0 }, // bit and
 
     .{ .Plus,  9, 0 },
     .{ .Minus, 9, 0 },
@@ -346,8 +346,8 @@ Operators :: OperatorInfo.[
     .{ .Percent, 10, 0 },
 
     .{ .Minus,     11, .Prefix },
-    .{ .Bang,      11, .Prefix },
-    .{ .Tilde,     11, .Prefix },
+    .{ .Bang,      11, .Prefix }, // logical not
+    .{ .Caret,     11, .Prefix }, // bit not
     .{ .Ampersand, 11, .Prefix }, // address of
     .{ .Star,      11, .Prefix }, // dereference
 

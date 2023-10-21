@@ -631,7 +631,7 @@ CheckNegation :: (using unary : *AstUnary)
     }
 }
 
-CheckNot :: (using unary : *AstUnary)
+CheckLogicalNot :: (using unary : *AstUnary)
 {
     if expr.semantic_meaning == .Constant
         semantic_meaning = .Constant;
@@ -649,6 +649,23 @@ CheckNot :: (using unary : *AstUnary)
     case;
         Error (unary, "invalid type for unary operator % (type is: %)", Token_Names[op.kind], expr.type.as_string);
     }
+}
+
+CheckBitNot :: (using unary : *AstUnary)
+{
+    // For now we only allow integers to be bit operated on
+    if expr.type.kind != .Integer
+    {
+        Error (unary, "invalid type for unary operator % (type is: %, only integer types are allowed in bit operations)", Token_Names[op.kind], expr.type.as_string);
+        return;
+    }
+
+    if expr.semantic_meaning == .Constant
+        semantic_meaning = .Constant;
+    else
+        semantic_meaning = .Value;
+
+    type = expr.type;
 }
 
 CheckAddressOf :: (using unary : *AstUnary)
@@ -690,7 +707,9 @@ CheckUnary :: (using unary : *AstUnary)
     case .Minus;
         CheckNegation (unary);
     case .Bang;
-        CheckNot (unary);
+        CheckLogicalNot (unary);
+    case .Caret;
+        CheckBitNot (unary);
     case .Ampersand;
         CheckAddressOf (unary);
     case .Star;
