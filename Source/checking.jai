@@ -427,7 +427,7 @@ CheckInitAssignment :: (using decl : *AstDeclaration)
 
     if decl_kind == .Constant && expr.semantic_meaning != .Constant
     {
-        Error (expr, "expression is not constant");
+        Error (expr, "assigning non constant expression to a constant");
         return;
     }
 
