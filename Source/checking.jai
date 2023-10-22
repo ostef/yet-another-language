@@ -1303,24 +1303,18 @@ CheckBlock :: (using block : *AstBlock)
 CheckAssignment :: (using assign : *AstAssignment)
 {
     CheckExpression (left);
-    if left.type == g_type_invalid
-        return;
-
     CheckExpression (right);
-    if right.type == g_type_invalid
+
+    if left.type == g_type_invalid || right.type == g_type_invalid
         return;
 
     if left.semantic_meaning ==
     {
     case .Type;
-        Error (left,
-            "assigning to a non addressable expression (expression is a type)"
-        );
+        Error (left, "assigning to a type");
         return;
     case .Value;
-        Error (left,
-            "assigning to a non addressable expression (expression is an r-value)"
-        );
+        Error (left, "assigning to an r-value");
         return;
     case .Constant;
         Error (left, "assigning to a constant");
