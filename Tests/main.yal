@@ -4,8 +4,8 @@ var a := 10;
 //var a := "redeclared";
 var b := "Hello World";
 
-var cycle0 := cycle1;
-var cycle1 := cycle0;
+//var cycle0 := cycle1;
+//var cycle1 := cycle0;
 
 proc Main (args : []string)
 {
@@ -19,7 +19,12 @@ proc Main (args : []string)
     }
 
     {
-        defer index = 10;
+        used_before_declared = 10;
+        var used_before_declared : int;
+    }
+
+    {
+        //defer index = 10;
 
         const Index := 9;
         var index := -10;

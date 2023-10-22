@@ -994,6 +994,14 @@ CheckIdentifier :: (using ident : *AstIdentifier)
         return;
     }
 
+    if symbol.decl.file_id == ident.file_id && enclosing_scope.kind == .Block
+    && CompareLineColumnPairs (symbol.decl.line_start, symbol.decl.char_start, ident.line_start, ident.char_start) >= 0
+    {
+        Error (ident, "identifier '%' is used before it is declared", ident.name);
+        Info (symbol.decl, "here is the declaration of '%'", ident.name);
+        return;
+    }
+
     if !symbol.decl.type
         CheckDeclaration (symbol.decl);
 
@@ -1516,6 +1524,7 @@ CheckStatement :: (stmt : *AstNode)
         }
 
     case .Defer;
+        // @Todo: create a scope for defer, handle non linear scopes
         CheckStatement ((cast (*AstDefer) stmt).stmt);
     case .Return;
         CheckReturn (cast (*AstReturn) stmt);
