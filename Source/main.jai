@@ -71,8 +71,6 @@ PrintUsage :: ()
     write_string ("  -no_colors: disable ANSI terminal colors\n", to_standard_error = true);
 }
 
-#scope_file
-
 PrintProfilingResults :: ()
 {
     AddGlobalProfilingData (*context.profiling_entries);
@@ -86,8 +84,6 @@ PrintProfilingResults :: ()
         LogMessage ("\nProfiling results:\n%", StringBuilderBuild (*builder));
     }
 }
-
-#scope_export
 
 ExitIfError :: ()
 {

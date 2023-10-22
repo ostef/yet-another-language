@@ -246,6 +246,7 @@ AstDeclaration :: struct
     expr : *AstNode;
 
     decl_kind : DeclarationKind;
+    check_status : CheckStatus;
 }
 
 MakeAstBadDeclaration :: inline (range : TokenRange) -> *AstDeclaration #must

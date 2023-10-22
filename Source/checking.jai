@@ -49,6 +49,13 @@ Scope :: struct
     };
 }
 
+CheckStatus :: enum u8
+{
+    Unchecked;
+    Checking;
+    Checked;
+}
+
 SymbolKind :: enum u8
 {
     Invalid;
@@ -381,10 +388,28 @@ SetDeclarationType :: (decl : *AstDeclaration, type : *YalType)
     }
 }
 
+ReportCircularDependencyErrorAndExit :: (decl : *AstDeclaration)
+{
+    // @Todo: store chain of checking declarations, find the cycle and report it
+    SetOutputColor (.Error);
+    write_string ("Circular dependency detected, exiting...\n", to_standard_error = true);
+    SetOutputColor (.None);
+
+    PrintProfilingResults ();
+
+    Basic.exit (1);
+}
+
 CheckDeclaration :: (using decl : *AstDeclaration)
 {
+    if check_status == .Checking
+        ReportCircularDependencyErrorAndExit (decl);
+
     if type
         return;
+
+    check_status = .Checking;
+    defer check_status = .Checked;
 
     defer if !type then SetDeclarationType (decl, g_type_invalid);
 

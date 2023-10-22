@@ -4,8 +4,8 @@ var a := 10;
 //var a := "redeclared";
 var b := "Hello World";
 
-//var cycle0 := cycle1;
-//var cycle1 := cycle0;
+var cycle0 := cycle1;
+var cycle1 := cycle0;
 
 proc Main (args : []string)
 {
