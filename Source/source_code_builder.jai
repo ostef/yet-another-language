@@ -1,6 +1,7 @@
 SourceCodeBuilder :: struct
 {
     using base : StringBuilder;
+    auto_indent_increment := true;
     auto_indent := true;
     max_consecutive_empty_lines := 1;
     current_indent_level : int;
@@ -47,6 +48,22 @@ AppendByte :: (using builder : *SourceCodeBuilder, byte : u8)
         current_char = 0;
 
         return;
+    }
+
+
+    if auto_indent_increment
+    {
+        if byte ==
+        {
+        case #char "["; #through;
+        case #char "{"; #through;
+        case #char "(";
+            Indent (builder);
+        case #char "]"; #through;
+        case #char "}"; #through;
+        case #char ")";
+            Unindent (builder);
+        }
     }
 
     current_char += StringBuilderAppendByte (*base, byte);

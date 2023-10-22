@@ -133,7 +133,6 @@ PrintAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
         block := cast (*AstBlock) node;
 
         Append (builder, "{\n");
-        Indent (builder);
         for block.statements
         {
             more_newlines := !ShouldStatementEndInSemicolon (it);
@@ -149,7 +148,6 @@ PrintAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
                 Append (builder, "\n");
         }
 
-        Unindent (builder);
         Append (builder, "}");
 
     case .If;
