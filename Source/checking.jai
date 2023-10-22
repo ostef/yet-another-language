@@ -994,7 +994,7 @@ CheckIdentifier :: (using ident : *AstIdentifier)
         return;
     }
 
-    if symbol.decl.file_id == ident.file_id && enclosing_scope.kind == .Block
+    if symbol.decl.file_id == ident.file_id && symbol.kind == .Variable && enclosing_scope.kind == .Block
     && CompareLineColumnPairs (symbol.decl.line_start, symbol.decl.char_start, ident.line_start, ident.char_start) >= 0
     {
         Error (ident, "identifier '%' is used before it is declared", ident.name);

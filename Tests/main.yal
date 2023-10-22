@@ -11,11 +11,13 @@ proc Main (args : []string)
 {
     proc ProcInsideProc (a : int, b : string) -> (float, ok : bool)
     {
-        var c := 10.0;
+        var c := Value;
+
+        const Value := 10.0;
         //undeclared;
 
         return 10.0, 1;
-        return 10.0, true;
+        return c, true;
     }
 
     {
