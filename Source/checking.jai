@@ -11,6 +11,7 @@ CheckContext :: struct
 {
     enclosing_proc : *AstProcedure;
     enclosing_while : *AstWhile;
+    declaration_stack : [..]*AstDeclaration;
 }
 
 #add_context check : CheckContext;
@@ -390,9 +391,27 @@ SetDeclarationType :: (decl : *AstDeclaration, type : *YalType)
 
 ReportCircularDependencyErrorAndExit :: (decl : *AstDeclaration)
 {
-    // @Todo: store chain of checking declarations, find the cycle and report it
+    file := GetFile (decl.file_id);
+    Assert (file != null);
+
+    ErrorNoSquiggles (decl, "circular dependency detected");
+
+    builder : StringBuilder;
+
+    StringBuilderAppend (*builder, "Here are the declarations we were checking (most recent first):\n\n");
+    for < context.check.declaration_stack
+    {
+        file := GetFile (it.file_id);
+        Assert (file != null);
+
+        StringBuilderAppend (*builder, "%:%:%\n", file.filename, it.line_start, it.char_start);
+        PrintTokenLine (*builder, it, print_squiggles = false);
+    }
+
+    Print (StringBuilderBuild (*builder), to_stderr = true);
+
     SetOutputColor (.Error);
-    write_string ("Circular dependency detected, exiting...\n", to_standard_error = true);
+    Println ("Exiting...", to_stderr = true);
     SetOutputColor (.None);
 
     PrintProfilingResults ();
@@ -410,6 +429,9 @@ CheckDeclaration :: (using decl : *AstDeclaration)
 
     check_status = .Checking;
     defer check_status = .Checked;
+
+    ArrayPush (*context.check.declaration_stack, decl);
+    defer ArrayPop (*context.check.declaration_stack);
 
     defer if !type then SetDeclarationType (decl, g_type_invalid);
 
