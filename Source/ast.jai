@@ -247,6 +247,7 @@ AstDeclaration :: struct
 
     decl_kind : DeclarationKind;
     check_status : CheckStatus;
+    codegen_status : CodegenStatus;
 }
 
 MakeAstBadDeclaration :: inline (range : TokenRange) -> *AstDeclaration #must

@@ -1,3 +1,7 @@
+const Pi := 3.1415926;
+
+var foo : [1][2][3]*int;
+
 proc Min (a : float, b : float) -> float
 {
     if a < b

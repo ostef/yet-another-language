@@ -22,6 +22,7 @@ JaiC :: #import "Compiler";
 #load "constant_eval.jai";
 #load "checking.jai";
 #load "types.jai";
+#load "c_code_generation.jai";
 
 BuildSettings :: struct
 {
@@ -190,6 +191,24 @@ main :: ()
 
     ExitIfError ();
 
+    codegen_start := Basic.current_time_monotonic ();
+
+    for g_files
+    {
+        builder : SourceCodeBuilder;
+
+        EmitCCodeForFile (*builder, it);
+
+        emitted := Build (*builder);
+
+        Println ("Emitted C code for file %:\n%", it.filename, emitted);
+    }
+
+    codegen_end := Basic.current_time_monotonic ();
+    codegen_time := Basic.to_float64_seconds (codegen_end - codegen_start);
+
+    ExitIfError ();
+
     {
         ChooseTimeUnit :: (value : float64) -> multiplier : float64, unit : string
         {
@@ -204,21 +223,24 @@ main :: ()
         }
 
         // We don't sample the total time so the percentages add up to 1
-        total_time_sec := parsing_time + checking_time;
+        total_time_sec := parsing_time + checking_time + codegen_time;
         total_time := total_time_sec;
         parsing_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else parsing_time / total_time) * 100;
         checking_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else checking_time / total_time) * 100;
+        codegen_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else codegen_time / total_time) * 100;
 
         time_unit_mult, time_unit := ChooseTimeUnit (total_time);
         parsing_time *= time_unit_mult;
         checking_time *= time_unit_mult;
+        codegen_time *= time_unit_mult;
         total_time *= time_unit_mult;
 
-        max_leading_digits := DecimalLength (cast (u64) Max (Max (parsing_time, checking_time), total_time));
+        max_leading_digits := DecimalLength (cast (u64) Max (Max (parsing_time, checking_time), Max (codegen_time, total_time)));
 
         Println ("Timing information (processed % lines of code):", total_lines_of_code);
         Println ("  Parsing:  {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, parsing_time, time_unit, Round (parsing_time_percent));
         Println ("  Checking: {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, checking_time, time_unit, Round (checking_time_percent));
+        Println ("  Codegen:  {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, codegen_time, time_unit, Round (codegen_time_percent));
         Println ("  Total:    {:~*.2} %, {:.0} lines of code per second", max_leading_digits + 3, total_time, time_unit, total_lines_of_code / total_time_sec);
 
         memory_usage := context.temporary_storage.high_water_mark;
