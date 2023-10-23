@@ -61,6 +61,7 @@ typedef struct Yal__DynamicArray
 C
 
 C_Entry_Point :: #string C
+
 // ======= Entry point =======
 
 int Yal__EntryPoint (int argc, char **argv)
@@ -75,6 +76,7 @@ int Yal__EntryPoint (int argc, char **argv)
 C
 
 C_Entry_Point_With_Arguments :: #string C
+
 // ======= Entry point =======
 
 int Yal__EntryPoint (int argc, char **argv)
@@ -94,7 +96,7 @@ int Yal__EntryPoint (int argc, char **argv)
 
         int len = 0;
         while (argv[i][len])
-            i += 1;
+            len += 1;
 
         ((Yal__String *)args.data)[i].count = len;
     }
