@@ -12,6 +12,7 @@ using, only (.["+", "-", "*", "/"]) Basic;
 Math :: #import "Math";
 File :: #import "File";
 Process :: #import "Process";
+String :: #import "String";
 JaiC :: #import "Compiler";
 
 #load "tokens.jai";
@@ -199,17 +200,28 @@ main :: ()
         builder : SourceCodeBuilder;
 
         EmitCCodeForFile (*builder, it);
+        it.emitted_c_code = Build (*builder);
+    }
 
-        emitted := Build (*builder);
+    codegen_end := Basic.current_time_monotonic ();
+    codegen_time := Basic.to_float64_seconds (codegen_end - codegen_start);
 
-        c_filename := it.filename;
-        c_filename.count -= ".yal".count;
-        c_filename = FormatString ("%.generated.c", c_filename);
-        File.write_entire_file (c_filename, emitted);
+    ExitIfError ();
 
-        Println ("Emitted file '%', invoking C compiler", c_filename);
+    c_compiler_start := Basic.current_time_monotonic ();
 
-        command := FormatString ("cl % /nologo", c_filename);
+    for g_files
+    {
+        filename := String.path_strip_extension (it.filename);
+        basename := String.path_filename (filename);
+        c_filename := FormatString ("%.generated.c", filename);
+        exe_filename := FormatString ("%.exe", basename);
+
+        File.write_entire_file (c_filename, it.emitted_c_code);
+
+        Println ("Invoking C compiler for file '%', output file is '%'", c_filename, exe_filename);
+
+        command := FormatString ("cl % /nologo /link /OUT:%", c_filename, exe_filename);
         command_strings := Process.break_command_into_strings (command);
 
         result, output, error_output := Process.run_command (..command_strings, capture_and_return_output = true);
@@ -226,8 +238,8 @@ main :: ()
         }
     }
 
-    codegen_end := Basic.current_time_monotonic ();
-    codegen_time := Basic.to_float64_seconds (codegen_end - codegen_start);
+    c_compiler_end := Basic.current_time_monotonic ();
+    c_compiler_time := Basic.to_float64_seconds (c_compiler_end - c_compiler_start);
 
     ExitIfError ();
 
@@ -245,25 +257,31 @@ main :: ()
         }
 
         // We don't sample the total time so the percentages add up to 1
-        total_time_sec := parsing_time + checking_time + codegen_time;
+        yal_time := parsing_time + checking_time + codegen_time;
+        total_time_sec := yal_time + c_compiler_time;
         total_time := total_time_sec;
         parsing_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else parsing_time / total_time) * 100;
         checking_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else checking_time / total_time) * 100;
         codegen_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else codegen_time / total_time) * 100;
+        c_compiler_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else c_compiler_time / total_time) * 100;
 
         time_unit_mult, time_unit := ChooseTimeUnit (total_time);
         parsing_time *= time_unit_mult;
         checking_time *= time_unit_mult;
         codegen_time *= time_unit_mult;
+        c_compiler_time *= time_unit_mult;
+        yal_time *= time_unit_mult;
         total_time *= time_unit_mult;
 
-        max_leading_digits := DecimalLength (cast (u64) Max (Max (parsing_time, checking_time), Max (codegen_time, total_time)));
+        max_leading_digits := DecimalLength (cast (u64) Max (Max (Max (parsing_time, checking_time), Max (codegen_time, total_time)), Max (yal_time, c_compiler_time)));
 
         Println ("\nTiming information (processed % lines of code):", total_lines_of_code);
-        Println ("  Parsing:  {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, parsing_time, time_unit, Round (parsing_time_percent));
-        Println ("  Checking: {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, checking_time, time_unit, Round (checking_time_percent));
-        Println ("  Codegen:  {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, codegen_time, time_unit, Round (codegen_time_percent));
-        Println ("  Total:    {:~*.2} %, {:.0} lines of code per second", max_leading_digits + 3, total_time, time_unit, total_lines_of_code / total_time_sec);
+        Println ("  Parsing:    {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, parsing_time, time_unit, Round (parsing_time_percent));
+        Println ("  Checking:   {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, checking_time, time_unit, Round (checking_time_percent));
+        Println ("  Codegen:    {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, codegen_time, time_unit, Round (codegen_time_percent));
+        Println ("  => Total:   {:~*.2} %, {:4.0}%% of total time\n", max_leading_digits + 3, yal_time, time_unit, Round (codegen_time_percent));
+        Println ("  C compiler: {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, c_compiler_time, time_unit, Round (c_compiler_time_percent));
+        Println ("  => Total:   {:~*.2} %, {:.0} lines of code per second", max_leading_digits + 3, total_time, time_unit, total_lines_of_code / total_time_sec);
 
         memory_usage := context.temporary_storage.high_water_mark;
         if memory_usage < 1000

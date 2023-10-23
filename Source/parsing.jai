@@ -7,6 +7,7 @@ YalFile :: struct
     using lexer : YalLexer;
     using, only (declarations) scope : *Scope;
     entry_point_declaration : *AstDeclaration;
+    emitted_c_code : string;
 }
 
 g_files : [..]*YalFile;
