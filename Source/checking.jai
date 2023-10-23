@@ -1044,12 +1044,12 @@ CheckProcedureCall :: (using call : *AstProcedureCall)
     if passed_arguments.count != proc_type.parameters.count
     {
         Error (call,
-            "mismatching number of arguments passed in procedure  Expected % but got %",
+            "mismatching number of arguments passed in procedure. Expected % but got %",
             proc_type.parameters.count, passed_arguments.count
         );
 
         if proc_type.node
-            Info (proc_type.node, "here is the declaration of the procedure being called");
+            InfoNoSquiggles (proc_type.node, "here is the declaration of the procedure being called");
     }
 
     for i : 0..passed_arguments.count - 1
@@ -1060,10 +1060,13 @@ CheckProcedureCall :: (using call : *AstProcedureCall)
         if arg.type == g_type_invalid
             continue;
 
+        if i >= proc_type.parameters.count
+            continue;
+
         param := proc_type.parameters[i];
         if !TypeCanImplicitlyCastTo (arg.type, param)
         {
-            Error (arg, "type mismatch for argument %.\n    Expected % but got %", i + 1, param.as_string, arg.type.as_string);
+            Error (arg, "type mismatch for argument %. Expected % but got %", i + 1, param.as_string, arg.type.as_string);
         }
     }
 
