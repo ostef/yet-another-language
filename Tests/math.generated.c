@@ -56,12 +56,12 @@ void main ();
 
 f32 ToRads (f32 x)
 {
-    return x * 3.1415926f / 180.0000000f;
+    return x * 0.0174533f;
 }
 
 f32 ToDegs (f32 x)
 {
-    return x * 180.0000000f / 3.1415926f;
+    return x * 57.2957805f;
 }
 
 f32 Min (f32 a, f32 b)
