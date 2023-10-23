@@ -833,7 +833,7 @@ CheckBinary :: (using binary : *AstBinary)
     if semantic_meaning == .Constant
     {
         Assert (binary, value.kind != .Invalid, "It seems a constant binary operation did not get constant evaluated");
-        Info (binary, "result is constant: left is %, right is %, result is %", ToString (left.value), ToString (right.value), ToString (value));
+        // Info (binary, "result is constant: left is %, right is %, result is %", ToString (left.value), ToString (right.value), ToString (value));
     }
 }
 
@@ -970,7 +970,7 @@ CheckUnary :: (using unary : *AstUnary)
     if semantic_meaning == .Constant
     {
         Assert (unary, value.kind != .Invalid, "It seems a constant unary operation did not get constant evaluated");
-        Info (unary, "result is constant: expr is %, result is %", ToString (expr.value), ToString (value));
+        // Info (unary, "result is constant: expr is %, result is %", ToString (expr.value), ToString (value));
     }
 }
 
@@ -1308,7 +1308,7 @@ CheckFieldAccess :: (using access : *AstFieldAccess)
     if semantic_meaning == .Constant
     {
         Assert (access, value.kind != .Invalid, "It seems a constant unary operation did not get constant evaluated");
-        Info (access, "result is constant: %", ToString (value));
+        // Info (access, "result is constant: %", ToString (value));
     }
 }
 
