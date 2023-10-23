@@ -1,3 +1,5 @@
+// @Todo: mangle names
+
 CodegenStatus :: enum u8
 {
     Not_Generated;
@@ -56,6 +58,51 @@ typedef struct Yal__DynamicArray
     Yal__Allocator allocator;
 } Yal__DynamicArray;
 
+C
+
+C_Entry_Point :: #string C
+// ======= Entry point =======
+
+int Yal__EntryPoint (int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+
+    Main ();
+
+    return 0;
+}
+C
+
+C_Entry_Point_With_Arguments :: #string C
+// ======= Entry point =======
+
+int Yal__EntryPoint (int argc, char **argv)
+{
+    static Yal__String args_data[128];
+
+    if (argc > 128)
+        argc = 128;
+
+    Yal__Slice args;
+    args.count = argc;
+    args.data = args_data;
+
+    for (int i = 0; i < argc; i += 1)
+    {
+        ((Yal__String *)args.data)[i].data = argv[i];
+
+        int len = 0;
+        while (argv[i][len])
+            i += 1;
+
+        ((Yal__String *)args.data)[i].count = len;
+    }
+
+    Main (args);
+
+    return 0;
+}
 C
 
 EmitForwardDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
@@ -549,5 +596,15 @@ EmitCCodeForFile :: (builder : *SourceCodeBuilder, file : *YalFile)
             Append (builder, "\n");
     }
 
-    Append (builder, "\nint Yal__EntryPoint (int argc, char **argv)\n{\n(void)argc;\n(void)argv;\nMain ();\nreturn 0;\n}\n");
+    {
+        auto_indent := builder.auto_indent;
+        builder.auto_indent = false;
+        defer builder.auto_indent = auto_indent;
+
+        entry_point_type := cast (*YalTypeProcedure) file.entry_point_declaration.type;
+        if entry_point_type.parameters.count > 0
+            Append (builder, C_Entry_Point_With_Arguments);
+        else
+            Append (builder, C_Entry_Point);
+    }
 }

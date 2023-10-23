@@ -44,7 +44,7 @@ proc Sign (x : float) -> float
     return 1.0;
 }
 
-proc Main ()
+proc Main ([]string)
 {
     var tau := Pi * 2.0;
     while true
