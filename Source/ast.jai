@@ -250,6 +250,33 @@ AstDeclaration :: struct
     codegen_status : CodegenStatus;
 }
 
+// for_expansion
+Identifiers :: (decl : *AstDeclaration, body : Code, flags : For_Flags) #expand
+{
+    if decl.identifier_count == 0
+        return;
+
+    `it : *AstIdentifier;
+    `it_index : int;
+
+    if decl.identifier_count == 1
+    {
+        it = decl.single_identifier;
+        it_index = 0;
+
+        #insert (break={return;}, continue={return;}) body;
+    }
+    else
+    {
+        for ident, i : decl.identifiers
+        {
+            it = ident;
+            it_index = i;
+            #insert body;
+        }
+    }
+}
+
 MakeAstBadDeclaration :: inline (range : TokenRange) -> *AstDeclaration #must
 {
     node := Alloc (AstDeclaration);

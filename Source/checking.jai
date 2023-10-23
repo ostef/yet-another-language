@@ -378,15 +378,8 @@ SetDeclarationType :: (decl : *AstDeclaration, type : *YalType)
     Assert (decl, decl.type == null, "declaration alread has a type");
 
     decl.type = type;
-    if decl.identifier_count > 1
-    {
-        for decl.identifiers
-            it.type = type;
-    }
-    else if decl.single_identifier
-    {
-        decl.single_identifier.type = type;
-    }
+    for :Identifiers decl
+        it.type = type;
 }
 
 ReportCircularDependencyErrorAndExit :: (decl : *AstDeclaration)

@@ -5,13 +5,9 @@ PrintValueDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
         PrintAstNode (builder, decl.type_node);
         return;
     }
-    else if decl.identifier_count == 1
-    {
-        Append (builder, decl.single_identifier.name);
-    }
     else
     {
-        for decl.identifiers
+        for :Identifiers decl
         {
             if it_index != 0
                Append (builder, ", ");
