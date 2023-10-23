@@ -1049,7 +1049,7 @@ CheckProcedureCall :: (using call : *AstProcedureCall)
         );
 
         if proc_type.node
-            InfoNoSquiggles (proc_type.node, "here is the declaration of the procedure being called");
+            Info (proc_type.node.signature_range, "here is the signature of the procedure being called");
     }
 
     for i : 0..passed_arguments.count - 1
