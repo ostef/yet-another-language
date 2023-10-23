@@ -237,10 +237,10 @@ AstDeclaration :: struct
     base.kind = .Declaration;
 
     identifier_count : s64;
-    single_identifier : *AstIdentifier; @NoCollectSymbols @NoResolveIdentifiers
+    single_identifier : *AstIdentifier; @NoCollectSymbols
 
     #place identifier_count;
-    identifiers : []*AstIdentifier; @NoCollectSymbols @NoResolveIdentifiers
+    identifiers : []*AstIdentifier; @NoCollectSymbols
 
     type_node : *AstNode;
     expr : *AstNode;
