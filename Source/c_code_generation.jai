@@ -83,15 +83,7 @@ EmitForwardDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
 
         Assert (decl.identifier_count < 2);
 
-        file := GetFile (decl.file_id);
-        Assert (file != null);
-
-        name : string;
-        if file.entry_point_declaration == decl
-            name = "main";
-        else if decl.single_identifier
-            name = decl.single_identifier.name;
-
+        name := ifx decl.single_identifier then decl.single_identifier.name else "";
         EmitProcedureSignature (builder, cast (*AstProcedure) decl.expr, name);
         Append (builder, ";\n");
     }
@@ -136,15 +128,7 @@ EmitDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
     case .Procedure;
         Assert (decl.identifier_count < 2);
 
-        file := GetFile (decl.file_id);
-        Assert (file != null);
-
-        name : string;
-        if file.entry_point_declaration == decl
-            name = "main";
-        else if decl.single_identifier
-            name = decl.single_identifier.name;
-
+        name := ifx decl.single_identifier then decl.single_identifier.name else "";
         EmitProcedure (builder, cast (*AstProcedure) decl.expr, name);
     }
 }
@@ -555,5 +539,7 @@ EmitCCodeForFile :: (builder : *SourceCodeBuilder, file : *YalFile)
             Append (builder, ";\n");
         else
             Append (builder, "\n");
-   }
+    }
+
+    Append (builder, "\nint Yal__EntryPoint (int argc, char **argv)\n{\n(void)argc;\n(void)argv;\nMain ();\nreturn 0;\n}\n");
 }

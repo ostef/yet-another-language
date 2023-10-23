@@ -50,7 +50,7 @@ f32 Min (f32 a, f32 b);
 f32 Max (f32 a, f32 b);
 f32 Abs (f32 x);
 f32 Sign (f32 x);
-void main ();
+void Main ();
 
 // ======= Procedure definitions =======
 
@@ -92,7 +92,15 @@ f32 Sign (f32 x)
     return 1.0000000f;
 }
 
-void main ()
+void Main ()
 {
     f32 tau = 6.2831852f;
+}
+
+int Yal__EntryPoint (int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+    Main ();
+    return 0;
 }
