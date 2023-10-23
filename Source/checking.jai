@@ -211,14 +211,12 @@ ScopeInsert :: (scope : *Scope, decl : *AstDeclaration)
         Panic (decl, "Invalid declaration kind %", decl.decl_kind);
     }
 
-    if decl.identifier_count == 1
+    for :Identifiers decl
     {
-        ScopeInsert (scope, symbol_kind, decl.single_identifier, decl);
-    }
-    else
-    {
-        for decl.identifiers
-            ScopeInsert (scope, symbol_kind, it, decl);
+        if it.name == "Main" && scope.kind == .File && symbol_kind == .Procedure
+            scope.file.entry_point_declaration = decl;
+
+        ScopeInsert (scope, symbol_kind, it, decl);
     }
 }
 
@@ -1533,4 +1531,9 @@ CheckAllDeclarationsInFile :: (file : *YalFile)
 
     for file.declarations
         CheckDeclaration (it);
+
+    if !file.entry_point_declaration
+    {
+        Error ("no entry point was defined in file '%'", file.filename);
+    }
 }
