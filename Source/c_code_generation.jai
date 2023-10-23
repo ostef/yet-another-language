@@ -95,7 +95,7 @@ EmitForwardDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
     }
 }
 
-EmitVariableDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
+EmitVariableDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration, index_in_list := -1)
 {
     Assert (decl, decl.identifier_count < 2, "multiple identifiers are not yet handled for C codegen");
 
@@ -103,6 +103,8 @@ EmitVariableDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration
 
     if decl.single_identifier
         Append (builder, " %", decl.single_identifier.name);
+    else if index_in_list != -1
+        Append (builder, " Yal__unnamed%", index_in_list);
 
     EmitTypeSuffix (builder, decl.type);
 
@@ -156,7 +158,7 @@ EmitProcedureSignature :: (builder : *SourceCodeBuilder, proc : *AstProcedure, n
     {
         if it_index != 0
             Append (builder, ", ");
-        EmitVariableDeclaration (builder, it);
+        EmitVariableDeclaration (builder, it, it_index);
     }
     Append (builder, ")");
 }
