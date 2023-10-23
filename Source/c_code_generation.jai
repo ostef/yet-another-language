@@ -22,6 +22,12 @@ typedef float  f32;
 typedef double f64;
 typedef u8 bool;
 
+enum
+{
+    false = 0,
+    true = 1,
+};
+
 typedef struct Yal__String
 {
     s64 count;

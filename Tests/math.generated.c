@@ -12,6 +12,12 @@ typedef float  f32;
 typedef double f64;
 typedef u8 bool;
 
+enum
+{
+    false = 0,
+    true = 1,
+};
+
 typedef struct Yal__String
 {
     s64 count;
@@ -95,6 +101,9 @@ f32 Sign (f32 x)
 void Main ()
 {
     f32 tau = 6.2831852f;
+    while (true)
+    {
+    }
 }
 
 int Yal__EntryPoint (int argc, char **argv)
