@@ -1,4 +1,5 @@
 const Pi := 3.1415926;
+const Tau := Pi * 2.0;
 
 var foo : [1][2][3]*int;
 
@@ -55,4 +56,11 @@ proc Main (args : []string)
     {
         Println (args[i]);
     }
+
+    // var procedure := &Main; // @Todo
+    // var procedure := Main; // @Todo
+    var value := Min (Max (1.0, 0.0), 10.0);
+    var array : [..]int;
+    array[0] = 10;
+    array.count += 1;
 }

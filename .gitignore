@@ -10,3 +10,4 @@ obj/
 Cubed
 imgui.ini
 data/faithless/
+*.generated.c
