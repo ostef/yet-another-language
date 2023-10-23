@@ -11,6 +11,7 @@ using, only (.["+", "-", "*", "/"]) Basic;
 
 Math :: #import "Math";
 File :: #import "File";
+Process :: #import "Process";
 JaiC :: #import "Compiler";
 
 #load "tokens.jai";
@@ -201,7 +202,28 @@ main :: ()
 
         emitted := Build (*builder);
 
-        Println ("Emitted C code for file %:\n%", it.filename, emitted);
+        c_filename := it.filename;
+        c_filename.count -= ".yal".count;
+        c_filename = FormatString ("%.generated.c", c_filename);
+        File.write_entire_file (c_filename, emitted);
+
+        Println ("Emitted file '%', invoking C compiler", c_filename);
+
+        command := FormatString ("cl % /nologo", c_filename);
+        command_strings := Process.break_command_into_strings (command);
+
+        result, output, error_output := Process.run_command (..command_strings, capture_and_return_output = true);
+        if result.type == .FAILED_TO_LAUNCH
+        {
+            Error ("could not invoke command '%'", command);
+            continue;
+        }
+
+        if result.type != .EXITED || result.exit_code != 0
+        {
+            Error ("C compiler failed with exit code %:\n\n%", result.exit_code, output);
+            continue;
+        }
     }
 
     codegen_end := Basic.current_time_monotonic ();
