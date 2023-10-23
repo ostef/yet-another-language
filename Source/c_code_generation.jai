@@ -289,12 +289,6 @@ EmitStatement :: (builder : *SourceCodeBuilder, node : *AstNode)
 
 EmitAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
 {
-    if node.is_parenthesized
-        Append (builder, "(");
-
-    defer if node.is_parenthesized
-        Append (builder, ")");
-
     if #complete node.kind ==
     {
     case .Invalid;
@@ -444,6 +438,12 @@ EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
             return;
         }
     }
+
+    if node.is_parenthesized
+        Append (builder, "(");
+
+    defer if node.is_parenthesized
+        Append (builder, ")");
 
     if node.kind ==
     {
