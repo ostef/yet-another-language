@@ -91,8 +91,9 @@ MakeTypeArray :: (array_kind : ArrayKind, element_type : *YalType, count : s64) 
     type := Alloc (YalTypeArray);
     type.array_kind = array_kind;
 
+    // @Todo: make sure it is not possible to get an element_type that is not sized yet
     if array_kind == .Static
-        type.size = 8;
+        type.size = element_type.size * count;
     else if array_kind == .Dynamic
         type.size = 8 + 8 + 8 + 16;  // capacity + count + data + allocator
     else if array_kind == .Slice
