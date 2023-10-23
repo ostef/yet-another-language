@@ -22,33 +22,33 @@ typedef float  f32;
 typedef double f64;
 typedef u8 bool;
 
-struct Yal__String
+typedef struct Yal__String
 {
     s64 count;
     u8 *data;
-};
+} Yal__String;
 
-struct Yal__Slice
+typedef struct Yal__Slice
 {
     s64 count;
     void *data;
-};
+} Yal__Slice;
 
-typedef void *(Yal__AllocatorProc) (s64, void *, void *);
+typedef void *(*Yal__AllocatorProc) (s64, void *, void *);
 
-struct Yal__Allocator
+typedef struct Yal__Allocator
 {
     void *data;
     Yal__AllocatorProc proc_ptr;
-};
+} Yal__Allocator;
 
-struct Yal__DynamicArray
+typedef struct Yal__DynamicArray
 {
     s64 count;
     void *data;
     s64 capacity;
     Yal__Allocator allocator;
-};
+} Yal__DynamicArray;
 
 C
 
@@ -369,12 +369,80 @@ EmitAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
         EmitExpression (builder, assign.right);
 
     case .Expressions_Begin;
+
+    case .Identifier; #through;
+    case .Literal; #through;
+    case .Binary; #through;
+    case .Unary; #through;
+    case .Subscript; #through;
+    case .Field_Access; #through;
+    case .Procedure_Call;
+        EmitExpression (builder, node);
+
+    case .Expressions_End;
+    case .Statements_End;
+    case .Types_Begin;
+    case .Type_Pointer;
+    case .Type_Array;
+    case .Type_Named;
+    case .Type_Primitive;
+    case .Procedure;
+        EmitProcedure (builder, cast (*AstProcedure) node);
+    case .Struct;
+    case .Enum;
+    case .Types_End;
+    case .Count;
+    }
+}
+
+EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
+{
+    if node.kind ==
+    {
     case .Identifier;
         ident := cast (*AstIdentifier) node;
-        Append (builder, ident.name);
+        if ident.semantic_meaning == .Constant
+        {
+            if #complete node.value.kind ==
+            {
+            case .Invalid;
+                Append (builder, "<invalid>");
+            case .Integer;
+                Append (builder, "%", node.value.int_value);
+            case .Float;
+                if node.type.size == 4
+                    Append (builder, "{:~.7}f", node.value.float_value);
+                else
+                    Append (builder, "{:~.17}", node.value.float_value);
+            case .Boolean;
+                Append (builder, "%", node.value.bool_value);
+            case .String;
+                Append (builder, "{:'}", node.value.string_value);
+            case .Pointer;
+                Append (builder, "%", cast (*void) node.value.pointer_value);
+            case .Procedure;
+                Append (builder, ident.name);
+            }
+        }
+        else
+        {
+            Append (builder, ident.name);
+        }
 
     case .Literal;
-        Append (builder, TokenRangeToString (node.range));
+        lit := cast (*AstLiteral) node;
+        if node.type.kind ==
+        {
+        case .Integer;
+            Append (builder, "%", node.value.int_value);
+        case .Float;
+            if node.type.size == 4
+                Append (builder, "{:~.7}f", node.value.float_value);
+            else
+                Append (builder, "{:~.17}", node.value.float_value);
+        case;
+            Append (builder, TokenRangeToString (node.range));
+        }
 
     case .Binary;
         binary := cast (*AstBinary) node;
@@ -425,25 +493,9 @@ EmitAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
 
         Append (builder, ")");
 
-    case .Expressions_End;
-    case .Statements_End;
-    case .Types_Begin;
-    case .Type_Pointer;
-    case .Type_Array;
-    case .Type_Named;
-    case .Type_Primitive;
-    case .Procedure;
-        EmitProcedure (builder, cast (*AstProcedure) node);
-    case .Struct;
-    case .Enum;
-    case .Types_End;
-    case .Count;
+    case;
+        Panic (node, "invalid expression kind %", node.kind);
     }
-}
-
-EmitExpression :: (builder : *SourceCodeBuilder, expr : *AstNode)
-{
-    Append (builder, "<expr>");
 }
 
 EmitProcedure :: (builder : *SourceCodeBuilder, proc : *AstProcedure, name := "")
