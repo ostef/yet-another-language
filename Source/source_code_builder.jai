@@ -31,6 +31,17 @@ Unindent :: inline (using builder : *SourceCodeBuilder)
 
 AppendByte :: (using builder : *SourceCodeBuilder, byte : u8)
 {
+    if auto_indent_increment
+    {
+        if byte ==
+        {
+        case #char "]"; #through;
+        case #char "}"; #through;
+        case #char ")";
+            Unindent (builder);
+        }
+    }
+
     if current_char == 0 && auto_indent
     {
         for i : 0..current_indent_level - 1
@@ -50,7 +61,6 @@ AppendByte :: (using builder : *SourceCodeBuilder, byte : u8)
         return;
     }
 
-
     if auto_indent_increment
     {
         if byte ==
@@ -59,10 +69,6 @@ AppendByte :: (using builder : *SourceCodeBuilder, byte : u8)
         case #char "{"; #through;
         case #char "(";
             Indent (builder);
-        case #char "]"; #through;
-        case #char "}"; #through;
-        case #char ")";
-            Unindent (builder);
         }
     }
 
