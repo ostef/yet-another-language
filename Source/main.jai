@@ -221,7 +221,7 @@ main :: ()
 
         Println ("Invoking C compiler for file '%', output file is '%'", c_filename, exe_filename);
 
-        command := FormatString ("cl % /nologo /link /OUT:% /ENTRY:Yal__EntryPoint /SUBSYSTEM:CONSOLE", c_filename, exe_filename);
+        command := FormatString ("cl % /nologo /link /OUT:%", c_filename, exe_filename);
         command_strings := Process.break_command_into_strings (command);
 
         result, output, error_output := Process.run_command (..command_strings, capture_and_return_output = true);

@@ -1,5 +1,7 @@
 // ======= Yal typedefs =======
 
+#include <malloc.h>
+
 typedef          char      s8;
 typedef unsigned char      u8;
 typedef          short     s16;
@@ -114,16 +116,11 @@ void Main (Yal__Slice args)
 
 // ======= Entry point =======
 
-int Yal__EntryPoint (int argc, char **argv)
+int main (int argc, char **argv)
 {
-    static Yal__String args_data[128];
-
-    if (argc > 128)
-        argc = 128;
-
     Yal__Slice args;
     args.count = argc;
-    args.data = args_data;
+    args.data = (Yal__String*)alloca (sizeof (Yal__String) * argc);
 
     for (int i = 0; i < argc; i += 1)
     {
