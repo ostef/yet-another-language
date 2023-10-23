@@ -420,52 +420,40 @@ EmitAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
 
 EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
 {
-    if node.kind ==
+    if node.semantic_meaning == .Constant
     {
-    case .Identifier;
-        ident := cast (*AstIdentifier) node;
-        if ident.semantic_meaning == .Constant
-        {
-            if #complete node.value.kind ==
-            {
-            case .Invalid;
-                Append (builder, "<invalid>");
-            case .Integer;
-                Append (builder, "%", node.value.int_value);
-            case .Float;
-                if node.type.size == 4
-                    Append (builder, "{:~.7}f", node.value.float_value);
-                else
-                    Append (builder, "{:~.17}", node.value.float_value);
-            case .Boolean;
-                Append (builder, "%", node.value.bool_value);
-            case .String;
-                Append (builder, "{:'}", node.value.string_value);
-            case .Pointer;
-                Append (builder, "%", cast (*void) node.value.pointer_value);
-            case .Procedure;
-                Append (builder, ident.name);
-            }
-        }
-        else
-        {
-            Append (builder, ident.name);
-        }
-
-    case .Literal;
-        lit := cast (*AstLiteral) node;
-        if node.type.kind ==
+        if node.value.kind ==
         {
         case .Integer;
             Append (builder, "%", node.value.int_value);
+            return;
         case .Float;
             if node.type.size == 4
                 Append (builder, "{:~.7}f", node.value.float_value);
             else
                 Append (builder, "{:~.17}", node.value.float_value);
-        case;
-            Append (builder, TokenRangeToString (node.range));
+            return;
+        case .Boolean;
+            Append (builder, "%", node.value.bool_value);
+            return;
+        case .String;
+            Append (builder, "{:'}", node.value.string_value);
+            return;
+        case .Pointer;
+            Append (builder, "%", cast (*void) node.value.pointer_value);
+            return;
         }
+    }
+
+    if node.kind ==
+    {
+    case .Identifier;
+        ident := cast (*AstIdentifier) node;
+        Append (builder, ident.name);
+
+    case .Literal;
+        lit := cast (*AstLiteral) node;
+        Panic (lit, "this case should have been handled earlier");
 
     case .Binary;
         binary := cast (*AstBinary) node;

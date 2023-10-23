@@ -94,5 +94,5 @@ f32 Sign (f32 x)
 
 void main ()
 {
-    f32 tau;
+    f32 tau = 6.2831852f;
 }
