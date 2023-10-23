@@ -69,12 +69,14 @@ EmitForwardDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
 
         EmitVariableDeclaration (builder, decl);
         Append (builder, ";\n");
+
     case .Constant;
         decl.codegen_status = .Generating;
         defer decl.codegen_status = .Generated;
 
         // We don't generate constant declarations because we emit the value directly when a constant is used
         Append (builder, "/* omitting % */\n", TokenRangeToString (decl));
+
     case .Procedure;
         decl.codegen_status = .Generating_Forward_Decl;
         defer decl.codegen_status = .Generated_Forward_Decl;
@@ -105,6 +107,12 @@ EmitVariableDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration
         Append (builder, " %", decl.single_identifier.name);
 
     EmitTypeSuffix (builder, decl.type);
+
+    if decl.expr
+    {
+        Append (builder, " = ");
+        EmitExpression (builder, decl.expr);
+    }
 }
 
 EmitDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
