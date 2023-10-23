@@ -50,6 +50,7 @@ f32 Min (f32 a, f32 b);
 f32 Max (f32 a, f32 b);
 f32 Abs (f32 x);
 f32 Sign (f32 x);
+void main ();
 
 // ======= Procedure definitions =======
 
@@ -89,4 +90,9 @@ f32 Sign (f32 x)
     if (x < 0.0000000f)
         return -1.0000000f;
     return 1.0000000f;
+}
+
+void main ()
+{
+    f32 tau;
 }

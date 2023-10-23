@@ -43,3 +43,8 @@ proc Sign (x : float) -> float
 
     return 1.0;
 }
+
+proc Main ()
+{
+    var tau := Pi * 2.0;
+}

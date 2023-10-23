@@ -76,13 +76,20 @@ EmitForwardDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
         // We don't generate constant declarations because we emit the value directly when a constant is used
         Append (builder, "/* omitting % */\n", TokenRangeToString (decl));
     case .Procedure;
-
         decl.codegen_status = .Generating_Forward_Decl;
         defer decl.codegen_status = .Generated_Forward_Decl;
 
         Assert (decl.identifier_count < 2);
 
-        name := ifx decl.single_identifier then decl.single_identifier.name else "";
+        file := GetFile (decl.file_id);
+        Assert (file != null);
+
+        name : string;
+        if file.entry_point_declaration == decl
+            name = "main";
+        else if decl.single_identifier
+            name = decl.single_identifier.name;
+
         EmitProcedureSignature (builder, cast (*AstProcedure) decl.expr, name);
         Append (builder, ";\n");
     }
@@ -121,7 +128,15 @@ EmitDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
     case .Procedure;
         Assert (decl.identifier_count < 2);
 
-        name := ifx decl.single_identifier then decl.single_identifier.name else "";
+        file := GetFile (decl.file_id);
+        Assert (file != null);
+
+        name : string;
+        if file.entry_point_declaration == decl
+            name = "main";
+        else if decl.single_identifier
+            name = decl.single_identifier.name;
+
         EmitProcedure (builder, cast (*AstProcedure) decl.expr, name);
     }
 }

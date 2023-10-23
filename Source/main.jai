@@ -259,7 +259,7 @@ main :: ()
 
         max_leading_digits := DecimalLength (cast (u64) Max (Max (parsing_time, checking_time), Max (codegen_time, total_time)));
 
-        Println ("Timing information (processed % lines of code):", total_lines_of_code);
+        Println ("\nTiming information (processed % lines of code):", total_lines_of_code);
         Println ("  Parsing:  {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, parsing_time, time_unit, Round (parsing_time_percent));
         Println ("  Checking: {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, checking_time, time_unit, Round (checking_time_percent));
         Println ("  Codegen:  {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, codegen_time, time_unit, Round (codegen_time_percent));
