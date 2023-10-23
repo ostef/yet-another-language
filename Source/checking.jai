@@ -1470,7 +1470,10 @@ CheckReturn :: (using return_stmt : *AstReturn)
     {
         CheckExpression (it);
         if it.type == g_type_invalid
-            return;
+            continue;
+
+        if i >= enclosing_proc.results.count
+            continue;
 
         if !TypeCanImplicitlyCastTo (it.type, enclosing_proc.results[i].type)
         {
