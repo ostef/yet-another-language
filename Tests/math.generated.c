@@ -56,7 +56,8 @@ f32 Min (f32 a, f32 b);
 f32 Max (f32 a, f32 b);
 f32 Abs (f32 x);
 f32 Sign (f32 x);
-void Main (Yal__Slice Yal__unnamed0);
+void Println (Yal__String str);
+void Main (Yal__Slice args);
 
 // ======= Procedure definitions =======
 
@@ -98,13 +99,19 @@ f32 Sign (f32 x)
     return 1.0000000f;
 }
 
-void Main (Yal__Slice Yal__unnamed0)
+void Println (Yal__String str)
 {
-    f32 tau = 6.2831852f;
-    while (true)
+}
+
+void Main (Yal__Slice args)
+{
+    s64 i = 0;
+    while (i < args.count)
     {
+        Println (((Yal__String*)(args).data)[i]);
     }
 }
+
 // ======= Entry point =======
 
 int Yal__EntryPoint (int argc, char **argv)
@@ -124,7 +131,7 @@ int Yal__EntryPoint (int argc, char **argv)
 
         int len = 0;
         while (argv[i][len])
-            i += 1;
+            len += 1;
 
         ((Yal__String *)args.data)[i].count = len;
     }

@@ -44,10 +44,15 @@ proc Sign (x : float) -> float
     return 1.0;
 }
 
-proc Main ([]string)
+proc Println (str : string)
 {
-    var tau := Pi * 2.0;
-    while true
+}
+
+proc Main (args : []string)
+{
+    var i := 0;
+    while i < args.count
     {
+        Println (args[i]);
     }
 }

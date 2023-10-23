@@ -515,12 +515,7 @@ EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
             Append (builder, "%", TokenToString (unary.op));
 
     case .Subscript;
-        subscript := cast (*AstSubscript) node;
-
-        EmitExpression (builder, subscript.subscripted);
-        Append (builder, "[");
-        EmitExpression (builder, subscript.index);
-        Append (builder, "]");
+        EmitSubscript (builder, cast (*AstSubscript) node);
 
     case .Field_Access;
         access := cast (*AstFieldAccess) node;
@@ -548,6 +543,44 @@ EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
     case;
         Panic (node, "invalid expression kind %", node.kind);
     }
+}
+
+EmitSubscript :: (builder : *SourceCodeBuilder, using subscript : *AstSubscript)
+{
+    // @Todo: emit bounds checking
+
+    if subscripted.type.kind ==
+    {
+    case .String;
+        Append (builder, "(");
+        EmitExpression (builder, subscripted);
+        Append (builder, ").data");
+
+    case .Array;
+        type_array := cast (*YalTypeArray) subscripted.type;
+
+        if type_array.array_kind ==
+        {
+        case .Slice; #through;
+        case .Dynamic;
+            Append (builder, "((");
+            EmitFullType (builder, MakeTypePointer (type_array.element_type));
+            Append (builder, ")");
+            Append (builder, "(");
+            EmitExpression (builder, subscripted);
+            Append (builder, ").data)");
+
+        case .Static;
+            EmitExpression (builder, subscripted);
+        }
+
+    case .Pointer;
+        EmitExpression (builder, subscripted);
+    }
+
+    Append (builder, "[");
+    EmitExpression (builder, index);
+    Append (builder, "]");
 }
 
 EmitProcedure :: (builder : *SourceCodeBuilder, proc : *AstProcedure, name := "")
