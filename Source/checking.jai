@@ -1525,6 +1525,26 @@ CheckStatement :: (stmt : *AstNode)
     }
 }
 
+CheckEntryPointSignature :: (decl : *AstDeclaration)
+{
+    proc := cast (*AstProcedure) decl.expr;
+    type := cast (*YalTypeProcedure) decl.type;
+    Assert (type.kind == .Procedure);
+
+    error := false;
+    if type.results.count == 1 && type.results[0].kind != .Void
+        error = true;
+    if type.results.count > 1
+        error = true;
+    else if type.parameters.count > 1
+        error = true;
+    else if type.parameters.count == 1 && !TypesAreEqual (type.parameters[0], MakeTypeArray (.Slice, g_type_string, -1))
+        error = true;
+
+    if error
+        Error (proc.signature_range, "invalid signature for entry point. Expected proc ([]string) -> void or proc () -> void");
+}
+
 CheckAllDeclarationsInFile :: (file : *YalFile)
 {
     ProfileBlock ();
@@ -1533,7 +1553,7 @@ CheckAllDeclarationsInFile :: (file : *YalFile)
         CheckDeclaration (it);
 
     if !file.entry_point_declaration
-    {
         Error ("no entry point was defined in file '%'", file.filename);
-    }
+    else
+        CheckEntryPointSignature (file.entry_point_declaration);
 }
