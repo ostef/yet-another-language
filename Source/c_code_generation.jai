@@ -32,7 +32,7 @@ enum
     true = 1,
 };
 
-#define null = ((void*)0)
+#define null ((void*)0)
 
 typedef struct Yal__String
 {
