@@ -11,3 +11,4 @@ Cubed
 imgui.ini
 data/faithless/
 *.generated.c
+*.generated.cpp
