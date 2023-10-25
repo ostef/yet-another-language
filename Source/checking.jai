@@ -481,22 +481,23 @@ CheckDeclaration :: (using decl : *AstDeclaration)
     case .Enum_Member;
         Assert (decl, type != null, "enum member type isn't set");
 
-        enum_value_counter := context.check.enum_value_counter;
-
         if expr
         {
             CheckExpression (expr);
             if expr.type == g_type_invalid
+            {
+                type = g_type_invalid;
                 return;
+            }
 
             CheckInitAssignment (decl);
         }
         else
         {
-            value = .{int_value = enum_value_counter, kind = .Integer};
+            value = .{int_value = context.check.enum_value_counter, kind = .Integer};
         }
 
-        context.check.enum_value_counter = enum_value_counter + 1;
+        context.check.enum_value_counter += 1;
     }
 }
 
@@ -599,7 +600,8 @@ CheckEnum :: (using node : *AstEnum, name := "")
         type_base_type = g_type_s64;
     }
 
-    type = MakeTypeEnum (node, name, type_base_type);
+    type_enum := MakeTypeEnum (node, name, type_base_type);
+    type = type_enum;
 
     // Set the type of all the enum members, so we can typecheck enum member init assignments
     for body.statements
@@ -614,9 +616,31 @@ CheckEnum :: (using node : *AstEnum, name := "")
         decl.type = type;
     }
 
+    prev_counter := context.check.enum_value_counter;
     context.check.enum_value_counter = 0;
+
     CheckBlock (body);
-    context.check.enum_value_counter = 0;
+
+    context.check.enum_value_counter = prev_counter;
+
+    type_enum.members = AllocArray (YalTypeEnumMember, body.statements.count, initialize = false);
+    i := 0;
+    for body.statements
+    {
+        if it.type == g_type_invalid
+            continue;
+
+        member_decl := cast (*AstDeclaration) it;
+
+        Assert (member_decl, member_decl.identifier_count == 1, "enum member have invalid number of identifiers");
+        Assert (member_decl, member_decl.value.kind == .Integer, "enum member has non integer value");
+
+        type_enum.members[i].name = member_decl.single_identifier.name;
+        type_enum.members[i].value = member_decl.value.int_value;
+        i += 1;
+    }
+
+    type_enum.members.count = i;
 }
 
 CheckType :: (type : *AstNode)
