@@ -3,6 +3,14 @@ const Tau := Pi * 2.0;
 
 var foo : [1][2][3]*int;
 
+struct Node
+{
+    var parent : *Node;
+    var first_child : *Node;
+    var next : *Node;
+    var prev : *Node;
+}
+
 struct Allocator
 {
     var data : *void;

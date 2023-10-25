@@ -470,14 +470,10 @@ CheckDeclaration :: (using decl : *AstDeclaration)
         CheckProcedureDeclaration (decl);
 
     case .Struct;
-        name := ifx identifier_count == 1 then decl.single_identifier.name else "";
-        CheckStruct (cast (*AstStruct) expr, name);
-        SetDeclarationType (decl, expr.type);
+        CheckStruct (cast (*AstStruct) expr, decl);
 
     case .Enum;
-        name := ifx identifier_count == 1 then decl.single_identifier.name else "";
-        CheckEnum (cast (*AstEnum) expr, name);
-        SetDeclarationType (decl, expr.type);
+        CheckEnum (cast (*AstEnum) expr, decl);
 
     case .Enum_Member;
         Assert (decl, type != null, "enum member type isn't set");
@@ -571,10 +567,15 @@ CheckProcedureDeclaration :: (decl : *AstDeclaration)
     context.check.enclosing_proc = enclosing_proc;
 }
 
-CheckStruct :: (using node : *AstStruct, name := "")
+CheckStruct :: (using node : *AstStruct, decl : *AstDeclaration = null)
 {
+    name := ifx decl then decl.single_identifier.name else "";
     type_struct := MakeTypeStruct (node, name);
     type = type_struct;
+
+    if decl
+        SetDeclarationType (decl, type);
+
     CheckBlock (body);
 
     members : [..]YalTypeStructMember;
@@ -608,7 +609,7 @@ CheckStruct :: (using node : *AstStruct, name := "")
     type_struct.size = member_byte_offset;
 }
 
-CheckEnum :: (using node : *AstEnum, name := "")
+CheckEnum :: (using node : *AstEnum, decl : *AstDeclaration = null)
 {
     type_base_type : *YalType;
     if base_type
@@ -632,8 +633,12 @@ CheckEnum :: (using node : *AstEnum, name := "")
         type_base_type = g_type_s64;
     }
 
+    name := ifx decl then decl.single_identifier.name else "";
     type_enum := MakeTypeEnum (node, name, type_base_type);
     type = type_enum;
+
+    if decl
+        SetDeclarationType (decl, type);
 
     // Set the type of all the enum members, so we can typecheck enum member init assignments
     for body.statements
@@ -675,7 +680,7 @@ CheckEnum :: (using node : *AstEnum, name := "")
     type_enum.members.count = i;
 }
 
-CheckType :: (type : *AstNode)
+CheckType :: (type : *AstNode, only_for_type := false)
 {
     type.type = g_type_invalid;
 
@@ -684,7 +689,7 @@ CheckType :: (type : *AstNode)
     case .Type_Pointer;
         type_pointer := cast (*AstTypePointer) type;
 
-        CheckType (type_pointer.pointed_type);
+        CheckType (type_pointer.pointed_type, only_for_type = true);
 
         if type_pointer.pointed_type.type == g_type_invalid
             return;
@@ -694,7 +699,7 @@ CheckType :: (type : *AstNode)
     case .Type_Array;
         type_array := cast (*AstTypeArray) type;
 
-        CheckType (type_array.element_type);
+        CheckType (type_array.element_type, only_for_type = only_for_type || type_array.array_kind != .Static);
 
         if type_array.element_type.type == g_type_invalid
             return;
@@ -737,7 +742,7 @@ CheckType :: (type : *AstNode)
     case .Type_Named;
         type_named := cast (*AstTypeNamed) type;
 
-        CheckIdentifier (type_named.identifier);
+        CheckIdentifier (type_named.identifier, only_for_type);
         if type_named.identifier.type == g_type_invalid
             return;
 
@@ -1130,7 +1135,7 @@ CheckUnary :: (using unary : *AstUnary)
     }
 }
 
-CheckIdentifier :: (using ident : *AstIdentifier)
+CheckIdentifier :: (using ident : *AstIdentifier, only_for_type := false)
 {
     type = g_type_invalid;
 
@@ -1149,7 +1154,13 @@ CheckIdentifier :: (using ident : *AstIdentifier)
         return;
     }
 
-    if symbol.decl.check_status != .Checked
+    should_check_decl : bool;
+    if only_for_type && symbol.decl.type
+        should_check_decl = false;
+    else
+        should_check_decl = symbol.decl.check_status != .Checked;
+
+    if should_check_decl
         CheckDeclaration (symbol.decl);
 
     type = symbol.decl.type;
