@@ -11,9 +11,9 @@ struct Allocator
 
 enum AllocatorOperation u8
 {
-    Alloc = foo;
-    Free = Alloc;
-    Resize = Free;
+    Alloc;
+    Free;
+    Resize;
 }
 
 //proc Alloc (allocator : Allocator) -> *void
