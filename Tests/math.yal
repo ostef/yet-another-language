@@ -11,6 +11,9 @@ struct Allocator
 
 proc AAAlloc (op : AllocatorOperation)
 {
+    AllocatorOperation.Alloc;
+    AllocatorOperation.Free;
+    AllocatorOperation.Free = 10;
 }
 
 enum AllocatorOperation u8

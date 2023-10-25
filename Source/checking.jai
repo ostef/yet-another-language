@@ -1414,23 +1414,57 @@ CheckFieldAccess :: (using access : *AstFieldAccess)
         return;
 
     ident := cast (*AstIdentifier) right;
-    if left.type.kind ==
+    if left.semantic_meaning == .Type
     {
-    case .Array;
-        CheckArrayFieldAccess (access);
+        if left.type.kind ==
+        {
+        case .Enum;
+            type_enum := cast (*YalTypeEnum) left.type;
+            member : *YalTypeEnumMember;
+            for * type_enum.members
+            {
+                if it.name == ident.name
+                {
+                    member = it;
+                    break;
+                }
+            }
 
-        if type == g_type_invalid
+            if !member
+            {
+                Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
+                return;
+            }
+
+            type = left.type;
+            semantic_meaning = .Constant;
+            value = .{int_value = member.value, kind = .Integer};
+
+        case;
+            Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
             return;
+        }
+    }
+    else
+    {
+        if left.type.kind ==
+        {
+        case .Array;
+            CheckArrayFieldAccess (access);
 
-    case .String;
-        CheckStringFieldAccess (access);
+            if type == g_type_invalid
+                return;
 
-        if type == g_type_invalid
+        case .String;
+            CheckStringFieldAccess (access);
+
+            if type == g_type_invalid
+                return;
+
+        case;
+            Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
             return;
-
-    case;
-        Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
-        return;
+        }
     }
 
     if semantic_meaning == .Constant
