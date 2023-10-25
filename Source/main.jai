@@ -1,5 +1,8 @@
 // @Todo: handle integer literal conversions to smaller and unsigned integers as well as floats
 
+// I'm thinking about making enum values start at 1 unless specified otherwise, so 0 is by
+// default used as an 'invalid' enum value, which is convenient because 0 is the default initialized value
+
 #import "Common";
 #import "Array";
 #import "Hash_Map";
