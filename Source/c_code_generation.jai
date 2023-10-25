@@ -757,12 +757,12 @@ EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
         // In some cases the C type we accessed does not match the original type in the Yal source code
         // This is the case for the data pointer of slices and dynamic arrays for example
         // When that happens, we cast the expression to the desired type
-        needs_cast := false; //access.type.kind == .Pointer;
+        needs_cast := access.type.kind == .Pointer;
         needs_arrow := access.left.type.kind == .Pointer;
 
         if needs_cast
         {
-            Append (builder, "*((");
+            Append (builder, "((");
             EmitFullType (builder, access.type);
             Append (builder, " *)&");
         }
@@ -775,7 +775,7 @@ EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
         EmitExpression (builder, access.right);
 
         if needs_cast
-            Append (builder, ")");
+            Append (builder, ")[0]");
 
     case .Procedure_Call;
         call := cast (*AstProcedureCall) node;
