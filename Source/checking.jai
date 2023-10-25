@@ -1493,6 +1493,27 @@ CheckFieldAccess :: (using access : *AstFieldAccess)
             if type == g_type_invalid
                 return;
 
+        case .Struct;
+            type_struct := cast (*YalTypeStruct) left.type;
+            member : *YalTypeStructMember;
+            for * type_struct.members
+            {
+                if it.name == ident.name
+                {
+                    member = it;
+                    break;
+                }
+            }
+
+            if !member
+            {
+                Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
+                return;
+            }
+
+            type = member.type;
+            semantic_meaning = .Mutable;
+
         case;
             Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
             return;

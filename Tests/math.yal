@@ -23,8 +23,12 @@ struct FooBar
 proc AAAlloc (op : AllocatorOperation)
 {
     var allocator : Allocator;
+    allocator.foobar = 10;
     allocator.data = null;
     allocator.procedure = null;
+
+    var foobar : FooBar;
+    foobar.another.a = foobar.another.b;
 }
 
 enum AllocatorOperation u8
