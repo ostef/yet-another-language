@@ -463,7 +463,7 @@ EmitTypePrefix :: (builder : *SourceCodeBuilder, type : *YalType)
         type_struct := cast (*YalTypeStruct) type;
 
         Assert (type_struct.name != "");
-        Append (builder, type_struct.name);
+        Append (builder, "struct %", type_struct.name);
 
     case .Enum;
         type_enum := cast (*YalTypeEnum) type;
