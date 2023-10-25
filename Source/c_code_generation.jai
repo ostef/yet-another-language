@@ -164,10 +164,7 @@ EmitDependenciesForwardDeclaration :: (builder : *SourceCodeBuilder, node : *$T)
                 {
                     pointed_type := (cast (*Type_Info_Pointer) member.type).pointer_to;
                     if TypeIsAstNode (pointed_type)
-                    {
-                        StringBuilderAppend (*builder, "if node.% && node.%.enclosing_scope == node.enclosing_scope\n", member.name, member.name);
-                        StringBuilderAppend (*builder, "    EmitDependenciesForwardDeclaration (builder, node.%);\n", member.name);
-                    }
+                        StringBuilderAppend (*builder, "EmitDependenciesForwardDeclaration (builder, node.%);\n", member.name);
                 }
                 else if member.type.type == .ARRAY
                 {
@@ -178,10 +175,8 @@ EmitDependenciesForwardDeclaration :: (builder : *SourceCodeBuilder, node : *$T)
 
                     if pointed_type && TypeIsAstNode (pointed_type)
                     {
-                        StringBuilderAppend (*builder, "for node.%\n{{\n", member.name);
-                        StringBuilderAppend (*builder, "    if it && it.enclosing_scope == node.enclosing_scope\n");
-                        StringBuilderAppend (*builder, "        EmitDependenciesForwardDeclaration (builder, it);\n");
-                        StringBuilderAppend (*builder, "}\n");
+                        StringBuilderAppend (*builder, "for node.%\n", member.name);
+                        StringBuilderAppend (*builder, "    EmitDependenciesForwardDeclaration (builder, it);\n");
                     }
                 }
             }
@@ -361,7 +356,9 @@ EmitDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
         EmitProcedure (builder, cast (*AstProcedure) decl.expr, name);
 
     case .Struct;
+        Append (builder, "typedef ");
         EmitStruct (builder, cast (*AstStruct) decl.expr, decl.single_identifier.name);
+        Append (builder, " %", decl.single_identifier.name);
     case .Enum;
         // We don't emit enums since enum members are emitted directly as their value because they are constants
         //EmitEnum (builder, cast (*AstEnum) decl.expr, decl.single_identifier.name);
