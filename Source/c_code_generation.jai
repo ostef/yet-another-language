@@ -176,6 +176,9 @@ EmitVariableDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration
 {
     Assert (decl, decl.identifier_count < 2, "multiple identifiers are not yet handled for C codegen");
 
+    if decl.type.kind == .Invalid
+        Panic (decl, "Invalid type for declaration");
+
     EmitTypePrefix (builder, decl.type);
 
     if decl.single_identifier
@@ -277,6 +280,7 @@ EmitTypePrefix :: (builder : *SourceCodeBuilder, type : *YalType)
     if #complete type.kind ==
     {
     case .Invalid;
+        Panic ("Invalid type");
     case .Void;
         Append (builder, "void");
     case .Integer;

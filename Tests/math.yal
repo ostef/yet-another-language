@@ -16,6 +16,10 @@ enum AllocatorOperation u8
     Resize;
 }
 
+proc Alloc (op : AllocatorOperation)
+{
+}
+
 //proc Alloc (allocator : Allocator) -> *void
 //{
 //    return null;
