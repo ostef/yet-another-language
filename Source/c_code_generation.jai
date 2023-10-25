@@ -155,13 +155,15 @@ EmitForwardDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
 
         Assert (decl.identifier_count == 1);
 
-        Append (builder, "enum % : ", decl.single_identifier.name);
+        Append (builder, "typedef ");
 
         enum_type := cast (*YalTypeEnum) decl.type;
         if enum_type.base_type
             EmitFullType (builder, enum_type.base_type);
         else
             Append (builder, "s64");
+
+        Append (builder, " %", decl.single_identifier.name);
 
         Append (builder, ";\n");
 
@@ -259,16 +261,6 @@ EmitStruct :: (builder : *SourceCodeBuilder, node : *AstStruct, name := "")
 EmitEnum :: (builder : *SourceCodeBuilder, node : *AstEnum, name := "")
 {
     Append (builder, "enum");
-    if name
-        Append (builder, " %", name);
-    Append (builder, " : ");
-
-    enum_type := cast (*YalTypeEnum) node.type;
-    if enum_type.base_type
-        EmitFullType (builder, enum_type.base_type);
-    else
-        Append (builder, "s64");
-
     Append (builder, "\n");
     EmitAstNode (builder, node.body);
 }
@@ -380,11 +372,23 @@ EmittedStatementShouldEndInSemicolon :: inline (node : *AstNode) -> bool #must
     if node.kind == .Declaration
     {
         decl := cast (*AstDeclaration) node;
-        if decl.decl_kind == .Procedure || decl.decl_kind == .Constant
+        if decl.decl_kind == .Procedure || decl.decl_kind == .Constant || decl.decl_kind == .Enum_Member
             return false;
     }
 
     return true;
+}
+
+EmittedStatementShouldEndInComma :: inline (node : *AstNode) -> bool #must
+{
+    if node.kind == .Declaration
+    {
+        decl := cast (*AstDeclaration) node;
+        if decl.decl_kind == .Enum_Member
+            return true;
+    }
+
+    return false;
 }
 
 EmitFullType :: inline (builder : *SourceCodeBuilder, type : *YalType)
@@ -399,6 +403,8 @@ EmitStatement :: (builder : *SourceCodeBuilder, node : *AstNode)
 
     if EmittedStatementShouldEndInSemicolon (node)
         Append (builder, ";");
+    else if EmittedStatementShouldEndInComma (node)
+        Append (builder, ",");
 }
 
 EmitAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
