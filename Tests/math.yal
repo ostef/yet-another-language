@@ -34,6 +34,8 @@ proc AAAlloc (op : AllocatorOperation)
 
     var foobar : FooBar;
     foobar.another.a = foobar.another.b;
+
+    var another := *foobar.another;
 }
 
 enum AllocatorOperation u8
