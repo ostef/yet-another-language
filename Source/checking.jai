@@ -12,6 +12,7 @@ CheckContext :: struct
     enclosing_proc : *AstProcedure;
     enclosing_while : *AstWhile;
     declaration_stack : [..]*AstDeclaration;
+    enum_value_counter : int;
 }
 
 #add_context check : CheckContext;
@@ -480,6 +481,8 @@ CheckDeclaration :: (using decl : *AstDeclaration)
     case .Enum_Member;
         Assert (decl, type != null, "enum member type isn't set");
 
+        enum_value_counter := context.check.enum_value_counter;
+
         if expr
         {
             CheckExpression (expr);
@@ -488,6 +491,12 @@ CheckDeclaration :: (using decl : *AstDeclaration)
 
             CheckInitAssignment (decl);
         }
+        else
+        {
+            value = .{int_value = enum_value_counter, kind = .Integer};
+        }
+
+        context.check.enum_value_counter = enum_value_counter + 1;
     }
 }
 
@@ -511,6 +520,9 @@ CheckInitAssignment :: (using decl : *AstDeclaration)
             type.as_string, expr.type.as_string);
         return;
     }
+
+    if decl_kind == .Constant || decl_kind == .Enum_Member
+        value = expr.value;
 }
 
 CheckProcedureSignature :: (using proc : *AstProcedure)
@@ -602,7 +614,9 @@ CheckEnum :: (using node : *AstEnum, name := "")
         decl.type = type;
     }
 
+    context.check.enum_value_counter = 0;
     CheckBlock (body);
+    context.check.enum_value_counter = 0;
 }
 
 CheckType :: (type : *AstNode)
@@ -1085,7 +1099,8 @@ CheckIdentifier :: (using ident : *AstIdentifier)
 
     case .Constant;
         semantic_meaning = .Constant;
-        value = symbol.decl.expr.value;
+        value = symbol.decl.value;
+        Assert (value.kind != .Invalid);
 
     case .Procedure;
         semantic_meaning = .Constant;
