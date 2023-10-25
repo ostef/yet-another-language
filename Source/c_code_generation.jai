@@ -518,6 +518,7 @@ EmittedStatementShouldEndInSemicolon :: inline (node : *AstNode) -> bool #must
         case .Procedure; #through;
         case .Constant; #through;
         case .Field; #through;
+        case .Enum; #through;
         case .Enum_Member;
             return false;
         }
