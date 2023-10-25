@@ -9,15 +9,15 @@ struct Allocator
     var procedure : *void;
 }
 
+proc AAAlloc (op : AllocatorOperation)
+{
+}
+
 enum AllocatorOperation u8
 {
     Alloc;
     Free;
     Resize;
-}
-
-proc Alloc (op : AllocatorOperation)
-{
 }
 
 //proc Alloc (allocator : Allocator) -> *void

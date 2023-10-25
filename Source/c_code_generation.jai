@@ -106,6 +106,144 @@ int main (int argc, char **argv)
 }
 C
 
+EmitDependenciesForwardDeclaration :: (builder : *SourceCodeBuilder, node : *$T)
+#modify { return TypeIsAstNode (cast (*Type_Info) T); }
+{
+    if !node
+        return;
+
+    #if T == AstNode
+    {
+        inline EmitDependenciesForwardDeclarationForUntypedNode (builder, node);
+    }
+    else #if T == AstDeclaration
+    {
+        if node.decl_kind ==
+        {
+        case .Variable; #through;
+        case .Field;
+            EmitDependenciesForwardDeclaration (builder, node.type_node);
+            EmitDependenciesForwardDeclaration (builder, node.expr);
+
+        case .Procedure;
+            proc_node := cast (*AstProcedure) node.expr;
+            for proc_node.parameters
+                EmitDependenciesForwardDeclaration (builder, it);
+
+            for proc_node.results
+                EmitDependenciesForwardDeclaration (builder, it);
+        }
+    }
+    else #if T == AstIdentifier
+    {
+        if node.symbol
+            EmitForwardDeclaration (builder, node.symbol.decl);
+    }
+    else
+    {
+        #insert -> string
+        {
+            info := type_info (T);
+
+            builder : StringBuilder;
+
+            StringBuilderAppend (*builder, "// EmitDependenciesForwardDeclaration for %\n", T);
+
+            for member : info.members
+            {
+                for note : member.notes
+                {
+                    if note == "NoCollectSymbols"
+                    {
+                        StringBuilderAppend (*builder, "// % is ignored\n", member.name);
+                        continue member;
+                    }
+                }
+
+                if member.type.type == .POINTER
+                {
+                    pointed_type := (cast (*Type_Info_Pointer) member.type).pointer_to;
+                    if TypeIsAstNode (pointed_type)
+                    {
+                        StringBuilderAppend (*builder, "if node.% && node.%.enclosing_scope == node.enclosing_scope\n", member.name, member.name);
+                        StringBuilderAppend (*builder, "    EmitDependenciesForwardDeclaration (builder, node.%);\n", member.name);
+                    }
+                }
+                else if member.type.type == .ARRAY
+                {
+                    element_type := (cast (*Type_Info_Array) member.type).element_type;
+                    pointed_type : *Type_Info;
+                    if element_type.type == .POINTER
+                        pointed_type = (cast (*Type_Info_Pointer) element_type).pointer_to;
+
+                    if pointed_type && TypeIsAstNode (pointed_type)
+                    {
+                        StringBuilderAppend (*builder, "for node.%\n{{\n", member.name);
+                        StringBuilderAppend (*builder, "    if it && it.enclosing_scope == node.enclosing_scope\n");
+                        StringBuilderAppend (*builder, "        EmitDependenciesForwardDeclaration (builder, it);\n");
+                        StringBuilderAppend (*builder, "}\n");
+                    }
+                }
+            }
+
+            return StringBuilderBuild (*builder);
+        }
+    }
+}
+
+EmitDependenciesForwardDeclarationForUntypedNode :: (builder : *SourceCodeBuilder, node : *AstNode)
+{
+    Ignore_Kinds :: AstKind.[
+        .Invalid,
+        .Statements_Begin,
+        .Bad_Declaration,
+        .Expressions_Begin,
+        .Expressions_End,
+        .Statements_End,
+        .Types_Begin,
+        .Types_End,
+        .Count
+    ];
+
+    #insert -> string
+    {
+        AppendAstStructName :: (builder : *StringBuilder, kind : AstKind)
+        {
+            StringBuilderAppend (builder, "Ast");
+
+            name := type_info (AstKind).names[kind];
+            for i : 0..name.count - 1
+            {
+                if name[i] == #char "_"
+                    continue;
+
+                StringBuilderAppendByte (builder, name[i]);
+            }
+        }
+
+        builder : StringBuilder;
+
+        StringBuilderAppend (*builder, "if node.kind ==\n{\n");
+        for i : 0..AstKind.Count - 1
+        {
+            kind := cast (AstKind) i;
+            for Ignore_Kinds
+            {
+                if it == kind
+                    continue i;
+            }
+
+            StringBuilderAppend (*builder, "case .%;\n", kind);
+            StringBuilderAppend (*builder, "    EmitDependenciesForwardDeclaration (builder, cast (*");
+            AppendAstStructName (*builder, kind);
+            StringBuilderAppend (*builder, ") node);\n");
+        }
+        StringBuilderAppend (*builder, "}");
+
+        return StringBuilderBuild (*builder);
+    };
+}
+
 EmitForwardDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
 {
     Assert (decl, decl.codegen_status != .Generating_Forward_Decl && decl.codegen_status != .Generating, "circular dependency when emitting C code");
@@ -113,20 +251,23 @@ EmitForwardDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
     if decl.codegen_status != .Not_Generated
         return;
 
+    EmitDependenciesForwardDeclaration (builder, decl);
+
     if #complete decl.decl_kind ==
     {
     case .Invalid;
-    case .Variable; #through;
-    case .Field;
+    case .Variable;;
         decl.codegen_status = .Generating;
         defer decl.codegen_status = .Generated;
 
         EmitVariableDeclaration (builder, decl);
         Append (builder, ";\n");
 
+    case .Field;
+        decl.codegen_status = .Generated_Forward_Decl;
+
     case .Constant;
-        decl.codegen_status = .Generating;
-        defer decl.codegen_status = .Generated;
+        decl.codegen_status = .Generated;
 
         // We don't generate constant declarations because we emit the value directly when a constant is used
         Append (builder, "/* omitting % */\n", TokenRangeToString (decl));
@@ -376,8 +517,14 @@ EmittedStatementShouldEndInSemicolon :: inline (node : *AstNode) -> bool #must
     if node.kind == .Declaration
     {
         decl := cast (*AstDeclaration) node;
-        if decl.decl_kind == .Procedure || decl.decl_kind == .Constant || decl.decl_kind == .Enum_Member
+        if decl.decl_kind ==
+        {
+        case .Procedure; #through;
+        case .Constant; #through;
+        case .Field; #through;
+        case .Enum_Member;
             return false;
+        }
     }
 
     return true;
