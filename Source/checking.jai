@@ -480,11 +480,14 @@ CheckDeclaration :: (using decl : *AstDeclaration)
     case .Enum_Member;
         Assert (decl, type != null, "enum member type isn't set");
 
-        CheckExpression (expr);
-        if expr.type == g_type_invalid
-            return;
+        if expr
+        {
+            CheckExpression (expr);
+            if expr.type == g_type_invalid
+                return;
 
-        CheckInitAssignment (decl);
+            CheckInitAssignment (decl);
+        }
     }
 }
 
