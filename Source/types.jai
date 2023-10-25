@@ -183,6 +183,7 @@ MakeTypeEnum :: (node : *AstEnum, name : string, base_type : *YalType) -> *YalTy
     type.node = node;
     type.name = name;
     type.base_type = base_type;
+    type.size = base_type.size;
     SetTypeString (type);
 
     return type;
