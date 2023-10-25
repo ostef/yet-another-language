@@ -363,7 +363,8 @@ EmitDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
     case .Struct;
         EmitStruct (builder, cast (*AstStruct) decl.expr, decl.single_identifier.name);
     case .Enum;
-        EmitEnum (builder, cast (*AstEnum) decl.expr, decl.single_identifier.name);
+        // We don't emit enums since enum members are emitted directly as their value because they are constants
+        //EmitEnum (builder, cast (*AstEnum) decl.expr, decl.single_identifier.name);
     case .Enum_Member;
         Append (builder, "% = ", decl.single_identifier.name);
         EmitValue (builder, decl.value, decl.type);
@@ -402,18 +403,13 @@ EmitStruct :: (builder : *SourceCodeBuilder, node : *AstStruct, name := "")
     EmitAstNode (builder, node.body);
 }
 
+/*
 EmitEnum :: (builder : *SourceCodeBuilder, node : *AstEnum, name := "")
 {
     Append (builder, "enum");
     Append (builder, "\n");
     EmitAstNode (builder, node.body);
 }
-
-/*
-
-var foo : [10]*int -> int* foo[10]
-var bar : [1][2][3]*int -> int* bar[3][2][1]
-
 */
 
 EmitTypePrefix :: (builder : *SourceCodeBuilder, type : *YalType)
@@ -679,7 +675,7 @@ EmitAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
     case .Struct;
         EmitStruct (builder, cast (*AstStruct) node);
     case .Enum;
-        EmitEnum (builder, cast (*AstEnum) node);
+        // We don't emit enums since we unwrap enum member values, as they are constants
     case .Types_End;
     case .Count;
     }
