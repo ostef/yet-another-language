@@ -1069,7 +1069,7 @@ CheckIdentifier :: (using ident : *AstIdentifier)
         return;
     }
 
-    if !symbol.decl.type
+    if symbol.decl.check_status != .Checked
         CheckDeclaration (symbol.decl);
 
     type = symbol.decl.type;
