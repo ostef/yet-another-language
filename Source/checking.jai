@@ -422,7 +422,7 @@ CheckDeclaration :: (using decl : *AstDeclaration)
     if check_status == .Checking
         ReportCircularDependencyErrorAndExit (decl);
 
-    if type
+    if check_status == .Checked
         return;
 
     check_status = .Checking;
