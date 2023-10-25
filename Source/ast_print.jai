@@ -69,14 +69,40 @@ PrintProcedure :: (builder : *SourceCodeBuilder, proc : *AstProcedure, name : st
     }
 }
 
+PrintStruct :: (builder : *SourceCodeBuilder, node : *AstStruct, name : string)
+{
+    Append (builder, "struct");
+    if name
+        Append (builder, " %", name);
+
+    Append (builder, "\n");
+    PrintStatement (builder, node.body);
+}
+
+PrintEnum :: (builder : *SourceCodeBuilder, node : *AstEnum, name : string)
+{
+    Append (builder, "enum");
+    if name
+        Append (builder, " %", name);
+
+    if node.base_type
+    {
+        Append (builder, " ");
+        PrintAstNode (builder, node.base_type);
+    }
+
+    Append (builder, "\n");
+    PrintStatement (builder, node.body);
+}
+
 ShouldStatementEndInSemicolon :: inline (node : *AstNode) -> bool #must
 {
     if node.kind == .Block || node.kind == .If || node.kind == .While || node.kind == .Defer
         return false;
     if node.kind == .Declaration
     {
-        decl := cast (*AstDeclaration) node;
-        if decl.decl_kind == .Procedure
+        decl_kind := (cast (*AstDeclaration) node).decl_kind;
+        if decl_kind == .Procedure || decl_kind == .Struct || decl_kind == .Enum
             return false;
     }
 
@@ -123,6 +149,28 @@ PrintAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
                 PrintProcedure (builder, cast (*AstProcedure) decl.expr, "");
             else
                 PrintProcedure (builder, cast (*AstProcedure) decl.expr, decl.single_identifier.name);
+
+        case .Struct;
+            if decl.identifier_count == 0
+                PrintStruct (builder, cast (*AstStruct) decl.expr, "");
+            else
+                PrintStruct (builder, cast (*AstStruct) decl.expr, decl.single_identifier.name);
+
+        case .Enum;
+            if decl.identifier_count == 0
+                PrintEnum (builder, cast (*AstEnum) decl.expr, "");
+            else
+                PrintEnum (builder, cast (*AstEnum) decl.expr, decl.single_identifier.name);
+
+        case .Enum_Member;
+            Assert (decl.identifier_count == 1);
+
+            Append (builder, decl.single_identifier.name);
+            if decl.expr
+            {
+                Append (builder, " = ");
+                PrintAstNode (builder, decl.expr);
+            }
         }
 
     case .Block;
@@ -309,7 +357,9 @@ PrintAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
     case .Procedure;
         PrintProcedure (builder, cast (*AstProcedure) node, "");
     case .Struct;
+        PrintStruct (builder, cast (*AstStruct) node, "");
     case .Enum;
+        PrintEnum (builder, cast (*AstEnum) node, "");
     case .Types_End;
     case .Count;
     }

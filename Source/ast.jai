@@ -229,6 +229,9 @@ DeclarationKind :: enum u8
     Constant;
     Field;
     Procedure;
+    Struct;
+    Enum;
+    Enum_Member;
 }
 
 AstDeclaration :: struct

@@ -659,12 +659,11 @@ ParseType :: (using file : *YalFile) -> *AstNode #must
     if MatchToken (*lexer, .Proc)
         return ParseProcedureSignature (file, PrevToken (lexer));
 
-    // @Todo
-    // if MatchToken (*lexer, .Struct)
-    //     return ParseStruct (file, PrevToken (lexer));
+    if MatchToken (*lexer, .Struct)
+        return ParseStruct (file, PrevToken (lexer));
 
-    // if MatchToken (*lexer, .Enum)
-    //     return ParseEnum (file, PrevToken (lexer));
+    if MatchToken (*lexer, .Enum)
+        return ParseEnum (file, PrevToken (lexer));
 
     if MatchToken (*lexer, .Identifier)
         return MakeAstTypeNamed (MakeAstIdentifier (PrevToken (lexer)));
@@ -744,6 +743,14 @@ ParseDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
     else if MatchToken (*lexer, .Proc)
     {
         return ParseProcedureDeclaration (file);
+    }
+    else if MatchToken (*lexer, .Struct)
+    {
+        return ParseStructDeclaration (file);
+    }
+    else if MatchToken (*lexer, .Enum)
+    {
+        return ParseEnumDeclaration (file);
     }
     else
     {
@@ -905,4 +912,103 @@ ParseProcedureDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
     signature.range = TokenRangeJoin (signature, body);
 
     return MakeAstDeclaration (proc_tok, ident, null, signature, .Procedure);
+}
+
+ParseStructDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
+{
+    struct_tok := PrevToken (lexer);
+
+    Expect (file, .Identifier);
+    ident := PrevToken (lexer);
+
+    struct_node := ParseStruct (file, struct_tok);
+    if !struct_node
+        return null;
+
+    return MakeAstDeclaration (struct_tok, MakeAstIdentifier (ident), null, struct_node, .Struct);
+}
+
+ParseStruct :: (using file : *YalFile, struct_tok : Token) -> *AstStruct #must
+{
+    body := ParseBlock (file);
+    if !body
+        return null;
+
+    return MakeAstStruct (struct_tok, body);
+}
+
+ParseEnumDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
+{
+    enum_tok := PrevToken (lexer);
+
+    Expect (file, .Identifier);
+    ident := PrevToken (lexer);
+
+    enum_node := ParseEnum (file, enum_tok);
+    if !enum_node
+        return null;
+
+    return MakeAstDeclaration (enum_tok, MakeAstIdentifier (ident), null, enum_node, .Enum);
+}
+
+ParseEnum :: (using file : *YalFile, enum_tok : Token) -> *AstEnum #must
+{
+    base_type : *AstNode;
+    if !NextTokenIs (*lexer, .Open_Curly)
+    {
+        base_type = ParseType (file);
+        if !base_type
+        {
+            Recover (file, .Open_Curly);
+
+            if !NextTokenIs (*lexer, .Open_Curly)
+                return null;
+        }
+    }
+
+    Expect (file, .Open_Curly);
+    open_brace_tok := PrevToken (lexer);
+
+    members : [..]*AstNode;
+
+    while !MatchToken (*lexer, .EOF, .Close_Curly)
+    {
+        decl := ParseEnumMemberDeclaration (file);
+        if !decl
+        {
+            Recover (file, .Close_Curly);
+            continue;
+        }
+
+        ArrayPush (*members, decl);
+    }
+
+    if PrevToken (lexer).kind != .Close_Curly
+    {
+        ExpectedError (PrevToken (lexer, 1), PrevToken (lexer), .Close_Curly);
+        return null;
+    }
+
+    body := MakeAstBlock (open_brace_tok, PrevToken (lexer), members);
+
+    return MakeAstEnum (enum_tok, base_type, body);
+}
+
+ParseEnumMemberDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
+{
+    Expect (file, .Identifier);
+
+    ident := PrevToken (lexer);
+
+    expr : *AstNode;
+    if MatchToken (*lexer, .Equal)
+    {
+        expr = ParseExpression (file);
+        if !expr
+            return null;
+    }
+
+    Expect (file, .Semicolon);
+
+    return MakeAstDeclaration (ident, MakeAstIdentifier (ident), null, expr, .Enum_Member);
 }

@@ -3,6 +3,24 @@ const Tau := Pi * 2.0;
 
 var foo : [1][2][3]*int;
 
+struct Allocator
+{
+    var data : *void;
+    var procedure : *void;
+}
+
+enum AllocatorOperation u8
+{
+    Alloc = foo;
+    Free = Alloc;
+    Resize = Free;
+}
+
+//proc Alloc (allocator : Allocator) -> *void
+//{
+//    return null;
+//}
+
 proc ToRads (x : float) -> float
 {
     return x * (Pi / 180.0);

@@ -207,6 +207,13 @@ ScopeInsert :: (scope : *Scope, decl : *AstDeclaration)
     case .Procedure;
         symbol_kind = .Procedure;
 
+    case .Struct; #through;
+    case .Enum;
+        symbol_kind = .Type;
+
+    case .Enum_Member;
+        symbol_kind = .Constant;
+
     case .Invalid;
         Panic (decl, "Invalid declaration kind %", decl.decl_kind);
     }
@@ -459,6 +466,25 @@ CheckDeclaration :: (using decl : *AstDeclaration)
 
     case .Procedure;
         CheckProcedureDeclaration (decl);
+
+    case .Struct;
+        name := ifx identifier_count == 1 then decl.single_identifier.name else "";
+        CheckStruct (cast (*AstStruct) expr, name);
+        SetDeclarationType (decl, expr.type);
+
+    case .Enum;
+        name := ifx identifier_count == 1 then decl.single_identifier.name else "";
+        CheckEnum (cast (*AstEnum) expr, name);
+        SetDeclarationType (decl, expr.type);
+
+    case .Enum_Member;
+        Assert (decl, type != null, "enum member type isn't set");
+
+        CheckExpression (expr);
+        if expr.type == g_type_invalid
+            return;
+
+        CheckInitAssignment (decl);
     }
 }
 
@@ -470,7 +496,7 @@ CheckInitAssignment :: (using decl : *AstDeclaration)
         return;
     }
 
-    if decl_kind == .Constant && expr.semantic_meaning != .Constant
+    if (decl_kind == .Constant || decl_kind == .Enum_Member) && expr.semantic_meaning != .Constant
     {
         Error (expr, "assigning non constant expression to a constant");
         return;
@@ -528,6 +554,54 @@ CheckProcedureDeclaration :: (decl : *AstDeclaration)
     context.check.enclosing_proc = enclosing_proc;
 }
 
+CheckStruct :: (using node : *AstStruct, name := "")
+{
+    type = MakeTypeStruct (node, name);
+    CheckBlock (body);
+}
+
+CheckEnum :: (using node : *AstEnum, name := "")
+{
+    type_base_type : *YalType;
+    if base_type
+    {
+        CheckType (base_type);
+        if base_type.type == g_type_invalid
+            return;
+
+        type_base_type = base_type.type;
+    }
+    else
+    {
+        type_base_type = g_type_s64;
+    }
+
+    if type_base_type.kind != .Integer
+    {
+        Error (base_type, "invalid type for enum base type. Should be an integer but got %", type_base_type.as_string);
+
+        // Set base type to something valid so this error does not cascade
+        type_base_type = g_type_s64;
+    }
+
+    type = MakeTypeEnum (node, name, type_base_type);
+
+    // Set the type of all the enum members, so we can typecheck enum member init assignments
+    for body.statements
+    {
+        // There technically should only be enum members here since anything else would be a parsing error
+
+        decl := cast (*AstDeclaration) it;
+
+        Assert (it, it.kind == .Declaration, "this should be a declaration");
+        Assert (decl, decl.decl_kind == .Enum_Member, "this should be an enum member declaration");
+
+        decl.type = type;
+    }
+
+    CheckBlock (body);
+}
+
 CheckType :: (type : *AstNode)
 {
     type.type = g_type_invalid;
@@ -542,7 +616,7 @@ CheckType :: (type : *AstNode)
         if type_pointer.pointed_type.type == g_type_invalid
             return;
 
-        type.type = MakeTypePointer (type_pointer.pointed_type.type);
+        type.type = MakeTypePointer (type_pointer.pointed_type.type, type);
 
     case .Type_Array;
         type_array := cast (*AstTypeArray) type;
@@ -585,7 +659,7 @@ CheckType :: (type : *AstNode)
             array_count = count.value.int_value;
         }
 
-        type.type = MakeTypeArray (type_array.array_kind, type_array.element_type.type, array_count);
+        type.type = MakeTypeArray (type_array.array_kind, type_array.element_type.type, array_count, type);
 
     case .Type_Named;
         type_named := cast (*AstTypeNamed) type;
@@ -621,7 +695,9 @@ CheckType :: (type : *AstNode)
         CheckProcedureSignature (cast (*AstProcedure) type);
 
     case .Struct;
+        CheckStruct (cast (*AstStruct) type);
     case .Enum;
+        CheckEnum (cast (*AstEnum) type);
     case;
         Panic (type, "Invalid ast kind (%)", type.kind);
     }
@@ -921,7 +997,7 @@ CheckAddressOf :: (using unary : *AstUnary)
     }
 
     semantic_meaning = .Value;
-    type = MakeTypePointer (expr.type);
+    type = MakeTypePointer (expr.type, unary);
 }
 
 CheckDeref :: (using unary : *AstUnary)
@@ -1224,7 +1300,7 @@ CheckArrayFieldAccess :: (using access : *AstFieldAccess)
         }
 
     case "data";
-        type = MakeTypePointer (type_array.element_type);
+        type = MakeTypePointer (type_array.element_type, access);
 
     case;
         Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);

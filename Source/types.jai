@@ -11,6 +11,8 @@ YalType :: struct
         Pointer;
         Array;
         Procedure;
+        Struct;
+        Enum;
     }
 
     as_string : string;
@@ -56,7 +58,41 @@ YalTypeProcedure :: struct
     results : []*YalType;
 }
 
-MakeType :: (kind : YalType.Kind, size : s64) -> *YalType #must
+YalTypeStructMember :: struct
+{
+    name : string;
+    byte_offset := -1;
+    type : *YalType;
+}
+
+YalTypeStruct :: struct
+{
+    #as using base : YalType;
+    base.kind = .Struct;
+
+    node : *AstStruct;
+    name : string;
+    members : []YalTypeStructMember;
+}
+
+YalTypeEnumMember :: struct
+{
+    name : string;
+    value : s64;
+}
+
+YalTypeEnum :: struct
+{
+    #as using base : YalType;
+    base.kind = .Enum;
+
+    node : *AstEnum;
+    base_type : *YalType;
+    name : string;
+    members : []YalTypeEnumMember;
+}
+
+MakeType :: (kind : YalType.Kind, size : s64, node_for_debug : *AstNode = null) -> *YalType #must
 {
     type := Alloc (YalType);
     type.kind = kind;
@@ -66,7 +102,7 @@ MakeType :: (kind : YalType.Kind, size : s64) -> *YalType #must
     return type;
 }
 
-MakeTypeInteger :: (size : s64, is_signed : bool) -> *YalTypeInteger #must
+MakeTypeInteger :: (size : s64, is_signed : bool, node_for_debug : *AstNode = null) -> *YalTypeInteger #must
 {
     type := Alloc (YalTypeInteger);
     type.size = size;
@@ -76,7 +112,7 @@ MakeTypeInteger :: (size : s64, is_signed : bool) -> *YalTypeInteger #must
     return type;
 }
 
-MakeTypePointer :: (pointed_type : *YalType) -> *YalTypePointer #must
+MakeTypePointer :: (pointed_type : *YalType, node_for_debug : *AstNode = null) -> *YalTypePointer #must
 {
     type := Alloc (YalTypePointer);
     type.size = 8;
@@ -86,18 +122,31 @@ MakeTypePointer :: (pointed_type : *YalType) -> *YalTypePointer #must
     return type;
 }
 
-MakeTypeArray :: (array_kind : ArrayKind, element_type : *YalType, count : s64) -> *YalTypeArray #must
+MakeTypeArray :: (array_kind : ArrayKind, element_type : *YalType, count : s64, node_for_debug : *AstNode = null) -> *YalTypeArray #must
 {
     type := Alloc (YalTypeArray);
     type.array_kind = array_kind;
 
-    // @Todo: make sure it is not possible to get an element_type that is not sized yet
     if array_kind == .Static
+    {
+        if element_type.size == -1
+        {
+            if node_for_debug
+                Panic (node_for_debug, "Array element type is unsized for static array, so we cannot calculate array size");
+            else
+                Panic ("Array element type is unsized for static array, so we cannot calculate array size");
+        }
+
         type.size = element_type.size * count;
+    }
     else if array_kind == .Dynamic
+    {
         type.size = 8 + 8 + 8 + 16;  // capacity + count + data + allocator
+    }
     else if array_kind == .Slice
+    {
         type.size = 8 + 8;  // count + data
+    }
 
     type.element_type = element_type;
     type.count = count;
@@ -113,6 +162,27 @@ MakeTypeProcedure :: (node : *AstProcedure, parameters : []*YalType, results : [
     type.node = node;
     type.parameters = parameters;
     type.results = results;
+    SetTypeString (type);
+
+    return type;
+}
+
+MakeTypeStruct :: (node : *AstStruct, name : string) -> *YalTypeStruct #must
+{
+    type := Alloc (YalTypeStruct);
+    type.node = node;
+    type.name = name;
+    SetTypeString (type);
+
+    return type;
+}
+
+MakeTypeEnum :: (node : *AstEnum, name : string, base_type : *YalType) -> *YalTypeEnum #must
+{
+    type := Alloc (YalTypeEnum);
+    type.node = node;
+    type.name = name;
+    type.base_type = base_type;
     SetTypeString (type);
 
     return type;
@@ -232,6 +302,20 @@ AppendType :: (builder : *StringBuilder, type : *YalType)
 
         if proc_type.results.count > 1
             StringBuilderAppend (builder, ")");
+
+    case .Struct;
+        type_struct := cast (*YalTypeStruct) type;
+        if !type_struct.name
+            StringBuilderAppend (builder, "struct <anonymous>");
+        else
+            StringBuilderAppend (builder, "struct %", type_struct.name);
+
+    case .Enum;
+        type_enum := cast (*YalTypeEnum) type;
+        if !type_enum.name
+            StringBuilderAppend (builder, "enum <anonymous>");
+        else
+            StringBuilderAppend (builder, "enum %", type_enum.name);
     }
 }
 
@@ -246,6 +330,9 @@ SetTypeString :: inline (type : *YalType)
 
 TypesAreEqual :: (a : *YalType, b : *YalType) -> bool #must
 {
+    if a == b
+        return true;
+
     if a.kind != b.kind
         return false;
 
@@ -308,6 +395,12 @@ TypesAreEqual :: (a : *YalType, b : *YalType) -> bool #must
     case .Bool; #through;
     case .Float;
         return true;
+
+    case .Struct;
+        return a == b;
+
+    case .Enum;
+        return a == b;
     }
 }
 

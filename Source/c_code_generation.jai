@@ -140,6 +140,33 @@ EmitForwardDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
         name := ifx decl.single_identifier then decl.single_identifier.name else "";
         EmitProcedureSignature (builder, cast (*AstProcedure) decl.expr, name);
         Append (builder, ";\n");
+
+    case .Struct;
+        decl.codegen_status = .Generating_Forward_Decl;
+        defer decl.codegen_status = .Generated_Forward_Decl;
+
+        Assert (decl.identifier_count == 1);
+
+        Append (builder, "struct %;\n", decl.single_identifier.name);
+
+    case .Enum;
+        decl.codegen_status = .Generating_Forward_Decl;
+        defer decl.codegen_status = .Generated_Forward_Decl;
+
+        Assert (decl.identifier_count == 1);
+
+        Append (builder, "enum % : ", decl.single_identifier.name);
+
+        enum_type := cast (*YalTypeEnum) decl.type;
+        if enum_type.base_type
+            EmitFullType (builder, enum_type.base_type);
+        else
+            Append (builder, "s64");
+
+        Append (builder, ";\n");
+
+    case .Enum_Member;
+        // Enum member cannot be forward declared
     }
 }
 
@@ -186,6 +213,14 @@ EmitDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
 
         name := ifx decl.single_identifier then decl.single_identifier.name else "";
         EmitProcedure (builder, cast (*AstProcedure) decl.expr, name);
+
+    case .Struct;
+        EmitStruct (builder, cast (*AstStruct) decl.expr, decl.single_identifier.name);
+    case .Enum;
+        EmitEnum (builder, cast (*AstEnum) decl.expr, decl.single_identifier.name);
+    case .Enum_Member;
+        Append (builder, "% = ", decl.single_identifier.name);
+        EmitValue (builder, decl.value, decl.type);
     }
 }
 
@@ -209,6 +244,33 @@ EmitProcedureSignature :: (builder : *SourceCodeBuilder, proc : *AstProcedure, n
         EmitVariableDeclaration (builder, it, it_index);
     }
     Append (builder, ")");
+}
+
+EmitStruct :: (builder : *SourceCodeBuilder, node : *AstStruct, name := "")
+{
+    Append (builder, "struct");
+    if name
+        Append (builder, " %", name);
+
+    Append (builder, "\n");
+    EmitAstNode (builder, node.body);
+}
+
+EmitEnum :: (builder : *SourceCodeBuilder, node : *AstEnum, name := "")
+{
+    Append (builder, "enum");
+    if name
+        Append (builder, " %", name);
+    Append (builder, " : ");
+
+    enum_type := cast (*YalTypeEnum) node.type;
+    if enum_type.base_type
+        EmitFullType (builder, enum_type.base_type);
+    else
+        Append (builder, "s64");
+
+    Append (builder, "\n");
+    EmitAstNode (builder, node.body);
 }
 
 /*
@@ -266,6 +328,18 @@ EmitTypePrefix :: (builder : *SourceCodeBuilder, type : *YalType)
             Append (builder, "void");
         else
             EmitFullType (builder, type_proc.results[0]);
+
+    case .Struct;
+        type_struct := cast (*YalTypeStruct) type;
+
+        Assert (type_struct.name != "");
+        Append (builder, type_struct.name);
+
+    case .Enum;
+        type_enum := cast (*YalTypeEnum) type;
+
+        Assert (type_enum.name != "");
+        Append (builder, type_enum.name);
     }
 }
 
@@ -446,37 +520,47 @@ EmitAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
     case .Procedure;
         EmitProcedure (builder, cast (*AstProcedure) node);
     case .Struct;
+        EmitStruct (builder, cast (*AstStruct) node);
     case .Enum;
+        EmitEnum (builder, cast (*AstEnum) node);
     case .Types_End;
     case .Count;
     }
+}
+
+EmitValue :: (builder : *SourceCodeBuilder, value : ConstantValue, type : *YalType) -> emitted : bool
+{
+    if value.kind ==
+    {
+    case .Integer;
+        Append (builder, "%", value.int_value);
+        return true;
+    case .Float;
+        if type.size == 4
+            Append (builder, "{:~.7}f", value.float_value);
+        else
+            Append (builder, "{:~.17}", value.float_value);
+        return true;
+    case .Boolean;
+        Append (builder, "%", value.bool_value);
+        return true;
+    case .String;
+        Append (builder, "{:'}", value.string_value);
+        return true;
+    case .Pointer;
+        Append (builder, "%", cast (*void) value.pointer_value);
+        return true;
+    }
+
+    return false;
 }
 
 EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
 {
     if node.semantic_meaning == .Constant
     {
-        if node.value.kind ==
-        {
-        case .Integer;
-            Append (builder, "%", node.value.int_value);
+        if EmitValue (builder, node.value, node.type)
             return;
-        case .Float;
-            if node.type.size == 4
-                Append (builder, "{:~.7}f", node.value.float_value);
-            else
-                Append (builder, "{:~.17}", node.value.float_value);
-            return;
-        case .Boolean;
-            Append (builder, "%", node.value.bool_value);
-            return;
-        case .String;
-            Append (builder, "{:'}", node.value.string_value);
-            return;
-        case .Pointer;
-            Append (builder, "%", cast (*void) node.value.pointer_value);
-            return;
-        }
     }
 
     if node.is_parenthesized
@@ -610,7 +694,7 @@ EmitCCodeForFile :: (builder : *SourceCodeBuilder, file : *YalFile)
         EmitForwardDeclaration (builder, it);
     }
 
-    Append (builder, "\n// ======= Procedure definitions =======\n");
+    Append (builder, "\n// ======= Full definitions =======\n\n");
 
     for file.declarations
     {
