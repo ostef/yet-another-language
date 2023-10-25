@@ -219,11 +219,10 @@ main :: ()
 
         File.write_entire_file (c_filename, it.emitted_c_code);
 
-        Println ("Invoking C compiler for file '%', output file is '%'", c_filename, exe_filename);
-
-        // @Todo: switch to GCC because CL is shit
-        command := FormatString ("gcc % -o%", c_filename, exe_filename);
+        command := FormatString ("gcc % -o %", c_filename, exe_filename);
         command_strings := Process.break_command_into_strings (command);
+
+        Println ("> %", command);
 
         result, output, error_output := Process.run_command (..command_strings, capture_and_return_output = true);
         if result.type == .FAILED_TO_LAUNCH
