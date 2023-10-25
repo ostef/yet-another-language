@@ -502,7 +502,7 @@ CheckInitAssignment :: (using decl : *AstDeclaration)
         return;
     }
 
-    if type_node && !TypeCanImplicitlyCastTo (expr.type, type)
+    if type && !TypeCanImplicitlyCastTo (expr.type, type)
     {
         Error (expr, "invalid type for assignment (left type: %, right type: %)",
             type.as_string, expr.type.as_string);
