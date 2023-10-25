@@ -189,7 +189,7 @@ ScopeInsert :: (using scope : *Scope, symbol_kind : SymbolKind, ident : *AstIden
 ScopeInsert :: (scope : *Scope, decl : *AstDeclaration)
 {
     // File scope declarations array was filled during parsing
-    if scope.kind != .File
+    if decl && scope.kind != .File
         ArrayPush (*scope.declarations, decl);
 
     if !decl || decl.identifier_count == 0
@@ -680,10 +680,17 @@ CheckType :: (type : *AstNode)
 
     case .Type_Named;
         type_named := cast (*AstTypeNamed) type;
-        if !type_named.identifier.symbol
-            return;
 
         CheckIdentifier (type_named.identifier);
+        if type_named.identifier.type == g_type_invalid
+            return;
+
+        if type_named.identifier.semantic_meaning != .Type
+        {
+            Error (type_named, "identifier is not a type");
+            return;
+        }
+
         type.type = type_named.identifier.type;
 
     case .Type_Primitive;
