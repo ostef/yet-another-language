@@ -27,6 +27,9 @@ proc AAAlloc (op : AllocatorOperation)
     allocator.data = null;
     allocator.procedure = null;
 
+    var ptr := &allocator;
+    ptr.data = null;
+
     var foobar : FooBar;
     foobar.another.a = foobar.another.b;
 }

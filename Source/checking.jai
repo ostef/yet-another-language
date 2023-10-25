@@ -1427,6 +1427,37 @@ CheckStringFieldAccess :: (using access : *AstFieldAccess)
     }
 }
 
+CheckStructFieldAccess :: (using access : *AstFieldAccess)
+{
+    type_struct : *YalTypeStruct;
+    if left.type.kind == .Pointer
+        type_struct = cast (*YalTypeStruct) (cast (*YalTypePointer) left.type).pointed_type;
+    else
+        type_struct = cast (*YalTypeStruct) left.type;
+
+    Assert (access, type_struct.kind == .Struct, "not a struct type or a pointer to a struct");
+
+    ident := cast (*AstIdentifier) right;
+    member : *YalTypeStructMember;
+    for * type_struct.members
+    {
+        if it.name == ident.name
+        {
+            member = it;
+            break;
+        }
+    }
+
+    if !member
+    {
+        Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
+        return;
+    }
+
+    type = member.type;
+    semantic_meaning = .Mutable;
+}
+
 CheckFieldAccess :: (using access : *AstFieldAccess)
 {
     type = g_type_invalid;
@@ -1493,26 +1524,18 @@ CheckFieldAccess :: (using access : *AstFieldAccess)
             if type == g_type_invalid
                 return;
 
-        case .Struct;
-            type_struct := cast (*YalTypeStruct) left.type;
-            member : *YalTypeStructMember;
-            for * type_struct.members
+        case .Pointer;
+            type_pointer := cast (*YalTypePointer) left.type;
+            if type_pointer.pointed_type.kind != .Struct
             {
-                if it.name == ident.name
-                {
-                    member = it;
-                    break;
-                }
-            }
-
-            if !member
-            {
-                Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
+                Error (right, "pointer access can only be done on structs (type is: %)", type_pointer.as_string);
                 return;
             }
 
-            type = member.type;
-            semantic_meaning = .Mutable;
+            CheckStructFieldAccess (access);
+
+        case .Struct;
+            CheckStructFieldAccess (access);
 
         case;
             Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
