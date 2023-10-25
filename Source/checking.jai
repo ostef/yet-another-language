@@ -388,6 +388,7 @@ SetDeclarationType :: (decl : *AstDeclaration, type : *YalType)
         it.type = type;
 }
 
+// @Todo: more helpful cycle reporting
 ReportCircularDependencyErrorAndExit :: (decl : *AstDeclaration)
 {
     file := GetFile (decl.file_id);
@@ -572,8 +573,39 @@ CheckProcedureDeclaration :: (decl : *AstDeclaration)
 
 CheckStruct :: (using node : *AstStruct, name := "")
 {
-    type = MakeTypeStruct (node, name);
+    type_struct := MakeTypeStruct (node, name);
+    type = type_struct;
     CheckBlock (body);
+
+    members : [..]YalTypeStructMember;
+    ArrayReserve (*members, body.statements.count);
+
+    member_byte_offset := 0;
+    for body.statements
+    {
+        if it.kind != .Declaration
+            continue;
+
+        decl := cast (*AstDeclaration) it;
+        if decl.decl_kind != .Variable
+            continue;
+
+        for :Identifiers decl
+        {
+            member := ArrayPush (*members);
+            member.name = it.name;
+            member.byte_offset = member_byte_offset;
+            member.type = decl.type;
+
+            Assert (it, decl.type.size != -1, "when generating struct type, this member was not sized");
+
+            // @Todo: alignment
+            member_byte_offset += decl.type.size;
+        }
+    }
+
+    type_struct.members = members;
+    type_struct.size = member_byte_offset;
 }
 
 CheckEnum :: (using node : *AstEnum, name := "")

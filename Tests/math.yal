@@ -9,11 +9,22 @@ struct Allocator
     var procedure : *void;
 }
 
+struct Another
+{
+    var a, b, c : int;
+}
+
+struct FooBar
+{
+    var data : *void;
+    var another : Another;
+}
+
 proc AAAlloc (op : AllocatorOperation)
 {
-    op = AllocatorOperation.Alloc;
-    var array : []int;
-    *array.data = 10;
+    var allocator : Allocator;
+    allocator.data = null;
+    allocator.procedure = null;
 }
 
 enum AllocatorOperation u8

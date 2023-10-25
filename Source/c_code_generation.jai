@@ -757,9 +757,9 @@ EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
     case .Field_Access;
         access := cast (*AstFieldAccess) node;
 
-        // In some cases the C type we accessed does not match the origin type in the Yal source code
+        // In some cases the C type we accessed does not match the original type in the Yal source code
         // This is the case for the data pointer of slices and dynamic arrays for example
-        // In that case, we cast the expression to the desired type
+        // When that happens, we cast the expression to the desired type
         needs_cast := access.type.kind == .Pointer;
 
         if needs_cast
