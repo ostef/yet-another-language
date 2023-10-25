@@ -221,7 +221,8 @@ main :: ()
 
         Println ("Invoking C compiler for file '%', output file is '%'", c_filename, exe_filename);
 
-        command := FormatString ("cl % /nologo /link /OUT:%", c_filename, exe_filename);
+        // @Todo: switch to GCC because CL is shit
+        command := FormatString ("gcc % -o%", c_filename, exe_filename);
         command_strings := Process.break_command_into_strings (command);
 
         result, output, error_output := Process.run_command (..command_strings, capture_and_return_output = true);
@@ -233,7 +234,7 @@ main :: ()
 
         if result.type != .EXITED || result.exit_code != 0
         {
-            Error ("C compiler failed with exit code %:\n\n%", result.exit_code, output);
+            Error ("C compiler failed with exit code %:\n\n%", result.exit_code, error_output);
             continue;
         }
     }
