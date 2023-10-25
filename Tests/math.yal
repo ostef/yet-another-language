@@ -11,19 +11,21 @@ struct Allocator
 
 struct Another
 {
-    var a, b, c : int;
+    var a : int;
+    var b : int;
+    var c : int;
 }
 
 struct FooBar
 {
     var data : *void;
-    var another : Another;
+    var another : *Another;
 }
 
 proc AAAlloc (op : AllocatorOperation)
 {
     var allocator : Allocator;
-    allocator.foobar = 10;
+    //allocator.foobar = 10;
     allocator.data = null;
     allocator.procedure = null;
 
