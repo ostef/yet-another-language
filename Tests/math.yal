@@ -12,6 +12,8 @@ struct Allocator
 proc AAAlloc (op : AllocatorOperation)
 {
     op = AllocatorOperation.Alloc;
+    var array : []int;
+    *array.data = 10;
 }
 
 enum AllocatorOperation u8
