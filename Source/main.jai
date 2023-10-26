@@ -35,6 +35,7 @@ BuildSettings :: struct
     max_reported_lines := 8;
     tab_size := 4;
     output_colors := true;
+    use_gcc := false;
 }
 
 g_stdout_has_colors, g_stderr_has_colors : bool;
@@ -222,7 +223,11 @@ main :: ()
 
         File.write_entire_file (c_filename, it.emitted_c_code);
 
-        command := FormatString ("gcc % -o %", c_filename, exe_filename);
+        command : string;
+        if g_build_settings.use_gcc
+            command = FormatString ("gcc % -o %", c_filename, exe_filename);
+        else
+            command = FormatString ("cl % /nologo /link /OUT:%", c_filename, exe_filename);
         command_strings := Process.break_command_into_strings (command);
 
         Println ("> %", command);
@@ -233,6 +238,9 @@ main :: ()
             Error ("Could not invoke command '%'", command);
             continue;
         }
+
+        if !g_build_settings.use_gcc
+            error_output = output;
 
         if result.type != .EXITED || result.exit_code != 0
         {
