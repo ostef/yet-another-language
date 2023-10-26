@@ -762,6 +762,10 @@ ParseDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
     {
         return ParseEnumDeclaration (file);
     }
+    else if MatchToken (*lexer, .External)
+    {
+        return ParseExternalDeclaration (file);
+    }
     else
     {
         SyntaxError (NextToken (*lexer), "Expected a declaration");
@@ -772,6 +776,41 @@ ParseDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
     }
 
     return null;
+}
+
+ParseExternalDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
+{
+    external_tok := PrevToken (lexer);
+
+    decl : *AstDeclaration;
+
+    if MatchToken (*lexer, .Proc)
+    {
+        proc_tok := PrevToken (lexer);
+
+        Expect (file, .Identifier);
+        ident := PrevToken (lexer);
+
+        signature := ParseProcedureSignature (file, proc_tok);
+        if !signature
+            return null;
+
+        Expect (file, .Semicolon);
+
+        decl = MakeAstDeclaration (external_tok, MakeAstIdentifier (ident), null, signature, .Procedure);
+    }
+    else
+    {
+        SyntaxError (NextToken (*lexer), "Expected a procedure signature");
+    }
+
+    if !decl
+        return null;
+
+    decl.range = TokenRangeJoin (external_tok, decl.range);
+    decl.decl_flags |= .External;
+
+    return decl;
 }
 
 ParseValueDeclaration :: (using file : *YalFile, kind : DeclarationKind) -> *AstDeclaration #must

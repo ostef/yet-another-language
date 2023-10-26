@@ -12,6 +12,7 @@ CodegenStatus :: enum u8
 C_Header :: #string C
 // ======= Yal typedefs =======
 
+#include <stdio.h>
 #include <malloc.h>
 
 typedef          char      s8;
@@ -62,6 +63,20 @@ typedef struct Yal__DynamicArray
     Yal__Allocator allocator;
 } Yal__DynamicArray;
 
+void Yal__WriteString (Yal__String str)
+{
+    printf ("%.*s", str.count, str.data);
+}
+
+void *Yal__malloc (s64 size)
+{
+    return malloc (size);
+}
+
+void Yal__free (void *ptr)
+{
+    free (ptr);
+}
 C
 
 C_Entry_Point :: #string C
@@ -271,12 +286,26 @@ EmitForwardDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
         Append (builder, "/* omitting % */\n", TokenRangeToString (decl));
 
     case .Procedure;
-        decl.codegen_status = .Generating_Forward_Decl;
-        defer decl.codegen_status = .Generated_Forward_Decl;
+        // Technically we don't need to emit anything for external proc, since external means
+        // "this declaration is from C world", but this allows us to have the C typechecker
+        // check our external proc's signature against the one that is already declared.
 
-        Assert (decl.identifier_count < 2);
+        if decl.decl_flags & .External
+           decl.codegen_status = .Generating;
+        else
+           decl.codegen_status = .Generating_Forward_Decl;
 
-        name := ifx decl.single_identifier then decl.single_identifier.name else "";
+        defer if decl.decl_flags & .External
+            decl.codegen_status = .Generated;
+        else
+            decl.codegen_status = .Generated_Forward_Decl;
+
+        Assert (decl.identifier_count == 1);
+
+        name := decl.single_identifier.name;
+        if decl.decl_flags & .External
+            name = StringJoin ("Yal__", name);
+
         EmitProcedureSignature (builder, cast (*AstProcedure) decl.expr, name);
         Append (builder, ";\n");
 
@@ -751,6 +780,10 @@ EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
     {
     case .Identifier;
         ident := cast (*AstIdentifier) node;
+
+        if ident.symbol && ident.symbol.decl.decl_flags & .External
+            Append (builder, "Yal__");
+
         Append (builder, ident.name);
 
     case .Literal;

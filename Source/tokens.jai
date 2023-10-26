@@ -5,7 +5,7 @@ Token_Keywords :: string.[
     "defer", "using", "cast", "size_of", "return",
     "true", "false", "null", "void", "bool", "string", "int", "uint",
     "s8", "u8", "s16", "u16", "s32", "u32", "s64", "u64",
-    "float", "f32", "f64",
+    "float", "f32", "f64", "external",
 ];
 
 // Symbol tokens should be declared in the order of longest to shortest,

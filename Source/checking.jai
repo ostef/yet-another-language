@@ -589,10 +589,13 @@ CheckProcedureDeclaration :: (decl : *AstDeclaration)
     if decl.type == g_type_invalid
         return;
 
-    enclosing_proc := context.check.enclosing_proc;
-    context.check.enclosing_proc = proc;
-    CheckBlock (proc.body);
-    context.check.enclosing_proc = enclosing_proc;
+    if proc.body
+    {
+        enclosing_proc := context.check.enclosing_proc;
+        context.check.enclosing_proc = proc;
+        CheckBlock (proc.body);
+        context.check.enclosing_proc = enclosing_proc;
+    }
 }
 
 CheckStruct :: (using node : *AstStruct, decl : *AstDeclaration = null)

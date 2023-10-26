@@ -235,6 +235,11 @@ DeclarationKind :: enum u8
     Typedef;
 }
 
+DeclarationFlags :: enum_flags u8
+{
+    External;
+}
+
 AstDeclaration :: struct
 {
     #as using base : AstNode;
@@ -250,6 +255,7 @@ AstDeclaration :: struct
     expr : *AstNode;
 
     decl_kind : DeclarationKind;
+    decl_flags : DeclarationFlags;
     check_status : CheckStatus;
     codegen_status : CodegenStatus;
 }

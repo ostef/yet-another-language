@@ -1,3 +1,7 @@
+external proc malloc (size : s64) -> *void;
+external proc free (ptr : *void);
+external proc WriteString (str : string);
+
 const Pi := 3.1415926;
 const Tau := Pi * 2.0;
 
@@ -97,13 +101,14 @@ proc Sign (x : float) -> float
     return 1.0;
 }
 
-proc Println (str : string)
+proc Recursive2 ()
 {
+    Recursive1 ();
 }
 
-proc Recursive ()
+proc Recursive1 ()
 {
-    Recursive ();
+    Recursive2 ();
 }
 
 proc Main (args : []string)
@@ -111,14 +116,7 @@ proc Main (args : []string)
     var i := 0;
     while i < args.count
     {
-        Println (args[i]);
+        WriteString (args[i]);
+        i += 1;
     }
-
-    var procedure := Main;
-    procedure (args);
-
-    var value := Min (Max (1.0, 0.0), 10.0);
-    var array : [..]int;
-    array[0] = 10;
-    array.count += 1;
 }
