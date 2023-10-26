@@ -1086,7 +1086,8 @@ CheckBitNot :: (using unary : *AstUnary)
 
 CheckAddressOf :: (using unary : *AstUnary)
 {
-    if expr.semantic_meaning != .Mutable
+    is_procedure := expr.semantic_meaning == .Constant && expr.type.kind == .Procedure;
+    if expr.semantic_meaning != .Mutable && !is_procedure
     {
         Error (unary, "Taking address of non-addressable expression");
         return;
