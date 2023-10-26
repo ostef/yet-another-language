@@ -101,7 +101,6 @@ proc Println (str : string)
 {
 }
 
-// @Todo
 proc Recursive ()
 {
     Recursive ();
