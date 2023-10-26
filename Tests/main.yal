@@ -117,6 +117,8 @@ proc Main (args : []string)
     while i < args.count
     {
         WriteString (args[i]);
+        WriteString ("\n");
         i += 1;
     }
+
 }

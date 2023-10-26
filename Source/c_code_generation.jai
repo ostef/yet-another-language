@@ -752,7 +752,8 @@ EmitValue :: (builder : *SourceCodeBuilder, value : ConstantValue, type : *YalTy
         Append (builder, "%", value.bool_value);
         return true;
     case .String;
-        Append (builder, "{:'}", value.string_value);
+        Append (builder, "(Yal__String){{ sizeof ({0:'}) - 1, {0:'} }", value.string_value);
+        // Append (builder, "{:'}", value.string_value);
         return true;
     case .Pointer;
         Append (builder, "%", cast (*void) value.pointer_value);
