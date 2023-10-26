@@ -597,21 +597,29 @@ CheckStruct :: (using node : *AstStruct, decl : *AstDeclaration = null)
         if it.kind != .Declaration
             continue;
 
-        decl := cast (*AstDeclaration) it;
-        if decl.decl_kind != .Variable
+        member_decl := cast (*AstDeclaration) it;
+        if member_decl.decl_kind != .Variable
             continue;
 
-        for :Identifiers decl
+        for :Identifiers member_decl
         {
+            if member_decl.type == g_type_invalid
+            {
+                if decl
+                    SetDeclarationType (decl, g_type_invalid);
+
+                return;
+            }
+
             member := ArrayPush (*members);
             member.name = it.name;
             member.byte_offset = member_byte_offset;
-            member.type = decl.type;
+            member.type = member_decl.type;
 
-            Assert (it, decl.type.size != -1, "When generating struct type, this member was not sized");
+            Assert (it, member_decl.type.size != -1, "When generating struct type, this member was not sized");
 
             // @Todo: alignment
-            member_byte_offset += decl.type.size;
+            member_byte_offset += member_decl.type.size;
         }
     }
 
