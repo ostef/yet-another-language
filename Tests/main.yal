@@ -14,7 +14,7 @@ struct Node
 struct Allocator
 {
     var data : *void;
-    var procedure : *void;
+    var procedure : proc (AllocatorOperation, size : s64, ptr : *void, new_size : s64) -> *void;
 }
 
 struct FooBar
@@ -35,7 +35,7 @@ proc AAAlloc (op : AllocatorOperation)
     var allocator : Allocator;
     //allocator.foobar = 10;
     allocator.data = null;
-    allocator.procedure = null;
+    //allocator.procedure = null;
 
     var ptr := &allocator;
     ptr.data = null;
