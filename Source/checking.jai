@@ -215,6 +215,9 @@ ScopeInsert :: (scope : *Scope, decl : *AstDeclaration)
     case .Enum_Member;
         symbol_kind = .Constant;
 
+    case .Typedef;
+        symbol_kind = .Type;
+
     case .Invalid;
         Panic (decl, "Invalid declaration kind %", decl.decl_kind);
     }
@@ -495,6 +498,21 @@ CheckDeclaration :: (using decl : *AstDeclaration)
         }
 
         context.check.enum_value_counter += 1;
+
+    case .Typedef;
+        if decl.expr.kind == .Struct
+        {
+            Error (decl, "typedef is not yet allowed for structs");
+            return;
+        }
+        else if decl.expr.kind == .Enum
+        {
+            Error (decl, "typedef is not yet allowed for enums");
+            return;
+        }
+
+        CheckType (decl.expr);
+        SetDeclarationType (decl, decl.expr.type);
     }
 }
 

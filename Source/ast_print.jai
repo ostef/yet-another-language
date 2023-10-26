@@ -171,6 +171,12 @@ PrintAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
                 Append (builder, " = ");
                 PrintAstNode (builder, decl.expr);
             }
+
+        case .Typedef;
+            Assert (decl.identifier_count == 1);
+
+            Append (builder, "typedef % = ", decl.single_identifier.name);
+            PrintAstNode (builder, decl.expr);
         }
 
     case .Block;

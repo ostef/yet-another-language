@@ -132,6 +132,9 @@ EmitDependenciesForwardDeclaration :: (builder : *SourceCodeBuilder, node : *$T)
 
             for proc_node.results
                 EmitDependenciesForwardDeclaration (builder, it);
+
+        // case .Typedef;
+        //     EmitDependenciesForwardDeclaration (builder, node.expr);
         }
     }
     else #if T == AstIdentifier
@@ -305,7 +308,26 @@ EmitForwardDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
 
     case .Enum_Member;
         // Enum member cannot be forward declared
+
+    case .Typedef;
+    // @Todo: handle type emission for struct typedefs, right now they do not get deduplicated
+    // We don't need to emit anything for typedefs
+    //     EmitTypedefDeclaration (builder, decl);
     }
+}
+
+EmitTypedefDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
+{
+    decl.codegen_status = .Generating;
+    defer decl.codegen_status = .Generated;
+
+    Assert (decl.identifier_count == 1);
+
+    Append (builder, "typedef ");
+    EmitTypePrefix (builder, decl.type);
+    Append (builder, " %", decl.single_identifier.name);
+    EmitTypeSuffix (builder, decl.type);
+    Append (builder, ";\n");
 }
 
 EmitVariableDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration, index_in_list := -1)
@@ -365,6 +387,9 @@ EmitDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
     case .Enum_Member;
         Append (builder, "% = ", decl.single_identifier.name);
         EmitValue (builder, decl.value, decl.type);
+
+    case .Typedef;
+        EmitTypedefDeclaration (builder, decl);
     }
 }
 

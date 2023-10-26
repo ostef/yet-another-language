@@ -11,10 +11,12 @@ struct Node
     var prev : *Node;
 }
 
+typedef AllocatorProc = proc (AllocatorOperation, size : s64, ptr : *void, new_size : s64) -> *void;
+
 struct Allocator
 {
     var data : *void;
-    var procedure : proc (AllocatorOperation, size : s64, ptr : *void, new_size : s64) -> *void;
+    var procedure : AllocatorProc;
 }
 
 struct FooBar

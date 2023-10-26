@@ -740,6 +740,16 @@ ParseDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
 
         return decl;
     }
+    else if MatchToken (*lexer, .Typedef)
+    {
+        decl := ParseTypedefDeclaration (file);
+        if !decl
+            return null;
+
+        Expect (file, .Semicolon);
+
+        return decl;
+    }
     else if MatchToken (*lexer, .Proc)
     {
         return ParseProcedureDeclaration (file);
@@ -877,6 +887,23 @@ ParseFieldList :: (using file : *YalFile, results : *[..]*AstDeclaration) -> boo
     }
 
     return true;
+}
+
+ParseTypedefDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
+{
+    typedef_tok := PrevToken (lexer);
+
+    Expect (file, .Identifier);
+
+    ident := PrevToken (lexer);
+
+    Expect (file, .Equal);
+
+    type_node := ParseType (file);
+    if !type_node
+        return null;
+
+    return MakeAstDeclaration (typedef_tok, MakeAstIdentifier (ident), null, type_node, .Typedef);
 }
 
 ParseProcedureDeclaration :: (using file : *YalFile) -> *AstDeclaration #must

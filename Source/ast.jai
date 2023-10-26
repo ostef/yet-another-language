@@ -232,6 +232,7 @@ DeclarationKind :: enum u8
     Struct;
     Enum;
     Enum_Member;
+    Typedef;
 }
 
 AstDeclaration :: struct
