@@ -241,7 +241,7 @@ EmitDependenciesForwardDeclarationForUntypedNode :: (builder : *SourceCodeBuilde
 
 EmitForwardDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
 {
-    Assert (decl, decl.codegen_status != .Generating_Forward_Decl && decl.codegen_status != .Generating, "circular dependency when emitting C code");
+    Assert (decl, decl.codegen_status != .Generating_Forward_Decl && decl.codegen_status != .Generating, "Circular dependency when emitting C code");
 
     if decl.codegen_status != .Not_Generated
         return;
@@ -310,7 +310,7 @@ EmitForwardDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
 
 EmitVariableDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration, index_in_list := -1)
 {
-    Assert (decl, decl.identifier_count < 2, "multiple identifiers are not yet handled for C codegen");
+    Assert (decl, decl.identifier_count < 2, "Multiple identifiers are not yet handled for C codegen");
 
     if decl.type.kind == .Invalid
         Panic (decl, "Invalid type for declaration");
@@ -333,7 +333,7 @@ EmitVariableDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration
 
 EmitDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
 {
-    Assert (decl, decl.codegen_status != .Generating_Forward_Decl && decl.codegen_status != .Generating, "circular dependency when emitting C code");
+    Assert (decl, decl.codegen_status != .Generating_Forward_Decl && decl.codegen_status != .Generating, "Circular dependency when emitting C code");
 
     if decl.codegen_status == .Generated
         return;
@@ -370,7 +370,7 @@ EmitDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
 
 EmitProcedureSignature :: (builder : *SourceCodeBuilder, proc : *AstProcedure, name := "")
 {
-    Assert (proc, proc.results.count < 2, "multiple return values are not yet handled for C codegen");
+    Assert (proc, proc.results.count < 2, "Multiple return values are not yet handled for C codegen");
 
     if proc.results.count == 0
         Append (builder, "void");
@@ -629,7 +629,7 @@ EmitAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
         ret := cast (*AstReturn) node;
         Append (builder, "return");
 
-        Assert (ret, ret.return_values.count < 2, "multiple return values are not yet handled for codegen");
+        Assert (ret, ret.return_values.count < 2, "Multiple return values are not yet handled for codegen");
 
         for ret.return_values
         {
@@ -728,7 +728,7 @@ EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
 
     case .Literal;
         lit := cast (*AstLiteral) node;
-        Panic (lit, "this case should have been handled earlier");
+        Panic (lit, "This case should have been handled earlier");
 
     case .Binary;
         binary := cast (*AstBinary) node;
@@ -794,7 +794,7 @@ EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
         Append (builder, ")");
 
     case;
-        Panic (node, "invalid expression kind %", node.kind);
+        Panic (node, "Invalid expression kind %", node.kind);
     }
 }
 

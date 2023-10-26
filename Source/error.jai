@@ -313,11 +313,11 @@ ExpectedError :: (prev : Token, tok : Token, kinds : ..TokenKind)
 
     if kinds.count == 1
     {
-        StringBuilderAppend (*err_builder, "expected %", Token_Names[kinds[0]]);
+        StringBuilderAppend (*err_builder, "Expected %", Token_Names[kinds[0]]);
     }
     else
     {
-        StringBuilderAppend (*err_builder, "expected one of ");
+        StringBuilderAppend (*err_builder, "Expected one of ");
 
         for kinds
         {

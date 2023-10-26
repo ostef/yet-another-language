@@ -122,7 +122,7 @@ ScopeCreate :: inline (file : *YalFile) -> *Scope
 
 ScopeCreate :: inline (parent : *Scope, block : *AstBlock) -> *Scope
 {
-    Assert (block, block.scope == null, "block scope has already been created");
+    Assert (block, block.scope == null, "Block scope has already been created");
 
     scope := ScopeCreate (parent, .Block);
     scope.block = block;
@@ -133,7 +133,7 @@ ScopeCreate :: inline (parent : *Scope, block : *AstBlock) -> *Scope
 
 ScopeCreate :: inline (parent : *Scope, procedure : *AstProcedure) -> *Scope
 {
-    Assert (procedure, procedure.scope == null, "procedure scope has already been created");
+    Assert (procedure, procedure.scope == null, "Procedure scope has already been created");
 
     scope := ScopeCreate (parent, .Procedure);
     scope.procedure = procedure;
@@ -149,7 +149,7 @@ ScopeInsert :: (using scope : *Scope, symbol_kind : SymbolKind, ident : *AstIden
 
     if StringStartsWith (ident.name, "Yal__")
     {
-        Error (ident, "identifiers starting with Yal__ are reserved");
+        Error (ident, "Identifiers starting with Yal__ are reserved");
     }
 
     symbol := Alloc (Symbol);
@@ -174,8 +174,8 @@ ScopeInsert :: (using scope : *Scope, symbol_kind : SymbolKind, ident : *AstIden
     original := ScopeLookupCurrent (scope, ident.name);
     if original
     {
-        Error (decl, "redeclaration of identifier '%'", ident.name);
-        Info (original.decl, "here is the first declaration of '%'", ident.name);
+        Error (decl, "Redeclaration of identifier '%'", ident.name);
+        Info (original.decl, "Here is the first declaration of '%'", ident.name);
         symbol.flags |= .Redeclaration;
     }
     else
@@ -381,7 +381,7 @@ CollectAllSymbolsInFile :: (file : *YalFile)
 
 SetDeclarationType :: (decl : *AstDeclaration, type : *YalType)
 {
-    Assert (decl, decl.type == null, "declaration alread has a type");
+    Assert (decl, decl.type == null, "Declaration alread has a type");
 
     decl.type = type;
     for :Identifiers decl
@@ -394,7 +394,7 @@ ReportCircularDependencyErrorAndExit :: (decl : *AstDeclaration)
     file := GetFile (decl.file_id);
     Assert (file != null);
 
-    ErrorNoSquiggles (decl, "circular dependency detected");
+    ErrorNoSquiggles (decl, "Circular dependency detected");
 
     builder : StringBuilder;
 
@@ -463,7 +463,7 @@ CheckDeclaration :: (using decl : *AstDeclaration)
         }
         else if decl_kind == .Constant
         {
-            Error (decl, "uninitialized constant");
+            Error (decl, "Uninitialized constant");
         }
 
     case .Procedure;
@@ -476,7 +476,7 @@ CheckDeclaration :: (using decl : *AstDeclaration)
         CheckEnum (cast (*AstEnum) expr, decl);
 
     case .Enum_Member;
-        Assert (decl, type != null, "enum member type isn't set");
+        Assert (decl, type != null, "Enum member type isn't set");
 
         if expr
         {
@@ -502,19 +502,19 @@ CheckInitAssignment :: (using decl : *AstDeclaration)
 {
     if expr.semantic_meaning == .Type
     {
-        Error (expr, "assignment of a type");
+        Error (expr, "Assignment of a type");
         return;
     }
 
     if (decl_kind == .Constant || decl_kind == .Enum_Member) && expr.semantic_meaning != .Constant
     {
-        Error (expr, "assigning non constant expression to a constant");
+        Error (expr, "Assigning non constant expression to a constant");
         return;
     }
 
     if type && !TypeCanImplicitlyCastTo (expr.type, type)
     {
-        Error (expr, "invalid type for assignment (left type: %, right type: %)",
+        Error (expr, "Invalid type for assignment (left type: %, right type: %)",
             type.as_string, expr.type.as_string);
         return;
     }
@@ -598,7 +598,7 @@ CheckStruct :: (using node : *AstStruct, decl : *AstDeclaration = null)
             member.byte_offset = member_byte_offset;
             member.type = decl.type;
 
-            Assert (it, decl.type.size != -1, "when generating struct type, this member was not sized");
+            Assert (it, decl.type.size != -1, "When generating struct type, this member was not sized");
 
             // @Todo: alignment
             member_byte_offset += decl.type.size;
@@ -627,7 +627,7 @@ CheckEnum :: (using node : *AstEnum, decl : *AstDeclaration = null)
 
     if type_base_type.kind != .Integer
     {
-        Error (base_type, "invalid type for enum base type. Should be an integer but got %", type_base_type.as_string);
+        Error (base_type, "Invalid type for enum base type. Should be an integer but got %", type_base_type.as_string);
 
         // Set base type to something valid so this error does not cascade
         type_base_type = g_type_s64;
@@ -647,7 +647,7 @@ CheckEnum :: (using node : *AstEnum, decl : *AstDeclaration = null)
 
         decl := cast (*AstDeclaration) it;
 
-        Assert (it, it.kind == .Declaration, "this should be a declaration");
+        Assert (it, it.kind == .Declaration, "This should be an enum member declaration");
         Assert (decl, decl.decl_kind == .Enum_Member, "this should be an enum member declaration");
 
         decl.type = type;
@@ -669,8 +669,8 @@ CheckEnum :: (using node : *AstEnum, decl : *AstDeclaration = null)
 
         member_decl := cast (*AstDeclaration) it;
 
-        Assert (member_decl, member_decl.identifier_count == 1, "enum member have invalid number of identifiers");
-        Assert (member_decl, member_decl.value.kind == .Integer, "enum member has non integer value");
+        Assert (member_decl, member_decl.identifier_count == 1, "Enum member have invalid number of identifiers");
+        Assert (member_decl, member_decl.value.kind == .Integer, "Enum member has non integer value");
 
         type_enum.members[i].name = member_decl.single_identifier.name;
         type_enum.members[i].value = member_decl.value.int_value;
@@ -716,21 +716,21 @@ CheckType :: (type : *AstNode, only_for_type := false)
 
             if count.type.kind != .Integer
             {
-                Error (count, "array count must be a positive constant integer");
+                Error (count, "Array count must be a positive constant integer");
                 return;
             }
 
             if count.semantic_meaning != .Constant
             {
-                Error (count, "array count must be constant");
+                Error (count, "Array count must be constant");
                 return;
             }
 
             if count.value.int_value < 0
             {
-                Error (count, "array count must be a positive integer (is %)", count.value.int_value);
+                Error (count, "Array count must be a positive integer (is %)", count.value.int_value);
                 // @Todo: handle number signedness
-                InfoWithoutSourceCode (count, "for now, we only handle 64-bit signed integer values");
+                InfoWithoutSourceCode (count, "For now, we only handle 64-bit signed integer values");
                 return;
             }
 
@@ -748,7 +748,7 @@ CheckType :: (type : *AstNode, only_for_type := false)
 
         if type_named.identifier.semantic_meaning != .Type
         {
-            Error (type_named, "identifier is not a type");
+            Error (type_named, "Identifier is not a type");
             return;
         }
 
@@ -790,12 +790,12 @@ CheckType :: (type : *AstNode, only_for_type := false)
 
 CheckLogicalComposition :: (using binary : *AstBinary)
 {
-    Assert (binary, op.kind == .Ampersand_Ampersand || op.kind == .Pipe_Pipe, "invalid op");
+    Assert (binary, op.kind == .Ampersand_Ampersand || op.kind == .Pipe_Pipe, "Invalid op");
 
     if !TypeCanImplicitlyCastTo (left.type, g_type_bool)
     || !TypeCanImplicitlyCastTo (right.type, g_type_bool)
     {
-        Error (binary.left, "invalid type for binary operator % (left is: %, right is: %)", Token_Names[op.kind], left.type.as_string, right.type.as_string);
+        Error (binary.left, "Invalid type for binary operator % (left is: %, right is: %)", Token_Names[op.kind], left.type.as_string, right.type.as_string);
         return;
     }
 
@@ -814,11 +814,11 @@ CheckLogicalComposition :: (using binary : *AstBinary)
 
 CheckEquality :: (using binary : *AstBinary)
 {
-    Assert (binary, op.kind == .Equ_Equ || op.kind == .Bang_Equ, "invalid op");
+    Assert (binary, op.kind == .Equ_Equ || op.kind == .Bang_Equ, "Invalid op");
 
     if !TypeCanImplicitlyCastTo (right.type, left.type)
     {
-        Error (binary.left, "invalid type for comparison (left is: %, right is: %)", left.type.as_string, right.type.as_string);
+        Error (binary.left, "Invalid type for comparison (left is: %, right is: %)", left.type.as_string, right.type.as_string);
         return;
     }
 
@@ -836,12 +836,12 @@ CheckEquality :: (using binary : *AstBinary)
 
 CheckArithmeticComparison :: (using binary : *AstBinary)
 {
-    Assert (binary, op.kind == .Less || op.kind == .Less_Equ || op.kind == .Greater || op.kind == .Greater_Equ, "invalid op");
+    Assert (binary, op.kind == .Less || op.kind == .Less_Equ || op.kind == .Greater || op.kind == .Greater_Equ, "Invalid op");
 
     if left.type.kind != .Integer && left.type.kind != .Float
     || !TypeCanImplicitlyCastTo (right.type, left.type)
     {
-        Error (binary, "invalid type for comparison (left is: %, right is: %)", left.type.as_string, right.type.as_string);
+        Error (binary, "Invalid type for comparison (left is: %, right is: %)", left.type.as_string, right.type.as_string);
         return;
     }
 
@@ -865,12 +865,12 @@ CheckBitOperation :: (using binary : *AstBinary)
         || op.kind == .Pipe_Equ || op.kind == .Ampersand_Equ || op.kind == .Caret_Equ
         || op.kind == .Less_Less || op.kind == .Greater_Greater
         || op.kind == .Less_Less_Equ || op.kind == .Greater_Greater_Equ,
-        "invalid op"
+        "Invalid op"
     );
 
     if left.type.kind != .Integer || !TypeCanImplicitlyCastTo (right.type, left.type)
     {
-        Error (binary, "invalid type for bit operation (left is: %, right is: %)", left.type.as_string, right.type.as_string);
+        Error (binary, "Invalid type for bit operation (left is: %, right is: %)", left.type.as_string, right.type.as_string);
         return;
     }
 
@@ -889,11 +889,11 @@ CheckBitOperation :: (using binary : *AstBinary)
 
 CheckModulo :: (using binary : *AstBinary)
 {
-    Assert (binary, op.kind == .Percent || op.kind == .Percent_Equ, "invalid op");
+    Assert (binary, op.kind == .Percent || op.kind == .Percent_Equ, "Invalid op");
 
     if left.type.kind != .Integer || !TypeCanImplicitlyCastTo (right.type, left.type)
     {
-        Error (binary, "invalid type for operator % (left is: %, right is: %)", Token_Names[op.kind], left.type.as_string, right.type.as_string);
+        Error (binary, "Invalid type for operator % (left is: %, right is: %)", Token_Names[op.kind], left.type.as_string, right.type.as_string);
         return;
     }
 
@@ -915,19 +915,19 @@ CheckArithmeticOperation :: (using binary : *AstBinary)
     Assert (binary,
         op.kind == .Plus || op.kind == .Minus || op.kind == .Star || op.kind == .Slash
         || op.kind == .Plus_Equ || op.kind == .Minus_Equ || op.kind == .Star_Equ || op.kind == .Slash_Equ,
-        "invalid op"
+        "Invalid op"
     );
 
     if left.type.kind != .Integer && left.type.kind != .Float
     || !TypeCanImplicitlyCastTo (right.type, left.type)
     {
-        Error (binary, "invalid type for arithmetic operation (left is: %, right is: %)", left.type.as_string, right.type.as_string);
+        Error (binary, "Invalid type for arithmetic operation (left is: %, right is: %)", left.type.as_string, right.type.as_string);
         return;
     }
 
     if (op.kind == .Minus || op.kind == .Minus_Equ) && left.type.kind == .Integer && !(cast (*YalTypeInteger) left.type).is_signed
     {
-        Error (binary, "cannot subtract unsigned integers (left is: %, right is: %)", left.type.as_string, right.type.as_string);
+        Error (binary, "Cannot subtract unsigned integers (left is: %, right is: %)", left.type.as_string, right.type.as_string);
         return;
     }
 
@@ -987,7 +987,7 @@ CheckBinary :: (using binary : *AstBinary)
         CheckModulo (binary);
 
     case;
-        Error (op, "unhandled binary operator");
+        Error (op, "Unhandled binary operator");
         return;
     }
 
@@ -1006,7 +1006,7 @@ CheckNegation :: (using unary : *AstUnary)
         type_int := cast (*YalTypeInteger) expr.type;
         if !type_int.is_signed
         {
-            Error (unary, "cannot negate an unsigned integer (type is: %)", expr.type.as_string);
+            Error (unary, "Cannot negate an unsigned integer (type is: %)", expr.type.as_string);
             return;
         }
 
@@ -1015,7 +1015,7 @@ CheckNegation :: (using unary : *AstUnary)
     case .Float;
         type = expr.type;
     case;
-        Error (unary, "invalid type for unary operator % (type is: %)", Token_Names[op.kind], expr.type.as_string);
+        Error (unary, "Invalid type for unary operator % (type is: %)", Token_Names[op.kind], expr.type.as_string);
         return;
     }
 
@@ -1034,7 +1034,7 @@ CheckLogicalNot :: (using unary : *AstUnary)
 {
     if expr.type.kind != .Bool
     {
-        Error (unary, "invalid type for unary operator % (type is: %)", Token_Names[op.kind], expr.type.as_string);
+        Error (unary, "Invalid type for unary operator % (type is: %)", Token_Names[op.kind], expr.type.as_string);
         return;
     }
 
@@ -1056,7 +1056,8 @@ CheckBitNot :: (using unary : *AstUnary)
     // For now we only allow integers to be bit operated on
     if expr.type.kind != .Integer
     {
-        Error (unary, "invalid type for unary operator % (type is: %, only integer types are allowed in bit operations)", Token_Names[op.kind], expr.type.as_string);
+        Error (unary, "Invalid type for unary operator % (type is: %, only integer types are allowed in bit operations)",
+            Token_Names[op.kind], expr.type.as_string);
         return;
     }
 
@@ -1077,7 +1078,7 @@ CheckAddressOf :: (using unary : *AstUnary)
 {
     if expr.semantic_meaning != .Mutable
     {
-        Error (unary, "taking address of non-addressable expression");
+        Error (unary, "Taking address of non-addressable expression");
         return;
     }
 
@@ -1089,13 +1090,13 @@ CheckDeref :: (using unary : *AstUnary)
 {
     if expr.type.kind != .Pointer
     {
-        Error (unary, "expected a pointer for dereference but got %", expr.type.as_string);
+        Error (unary, "Expected a pointer for dereference but got %", expr.type.as_string);
         return;
     }
 
     if expr.semantic_meaning == .Constant
     {
-        Error (unary, "cannot dereference a constant");
+        Error (unary, "Cannot dereference a constant");
         return;
     }
 
@@ -1124,7 +1125,7 @@ CheckUnary :: (using unary : *AstUnary)
     case .Star;
         CheckDeref (unary);
     case;
-        Error (op, "unhandled unary operator");
+        Error (op, "Unhandled unary operator");
         return;
     }
 
@@ -1142,15 +1143,15 @@ CheckIdentifier :: (using ident : *AstIdentifier, only_for_type := false)
     symbol = ScopeLookup (enclosing_scope, name);
     if !symbol
     {
-        Error (ident, "undeclared identifier '%'", name);
+        Error (ident, "Undeclared identifier '%'", name);
         return;
     }
 
     if symbol.decl.file_id == ident.file_id && symbol.kind == .Variable && enclosing_scope.kind == .Block
     && CompareLineColumnPairs (symbol.decl.line_start, symbol.decl.char_start, ident.line_start, ident.char_start) >= 0
     {
-        Error (ident, "identifier '%' is used before it is declared", ident.name);
-        Info (symbol.decl, "here is the declaration of '%'", ident.name);
+        Error (ident, "Identifier '%' is used before it is declared", ident.name);
+        Info (symbol.decl, "Here is the declaration of '%'", ident.name);
         return;
     }
 
@@ -1204,7 +1205,7 @@ CheckProcedureCall :: (using call : *AstProcedureCall)
 
     if callee.type.kind != .Procedure
     {
-        Error (callee, "callee in procedure call expression is not a procedure (type is: %)", callee.type.as_string);
+        Error (callee, "Callee in procedure call expression is not a procedure (type is: %)", callee.type.as_string);
         return;
     }
 
@@ -1212,12 +1213,12 @@ CheckProcedureCall :: (using call : *AstProcedureCall)
     if passed_arguments.count != proc_type.parameters.count
     {
         Error (call,
-            "mismatching number of arguments passed in procedure. Expected % but got %",
+            "Mismatching number of arguments passed in procedure. Expected % but got %",
             proc_type.parameters.count, passed_arguments.count
         );
 
         if proc_type.node
-            Info (proc_type.node.signature_range, "here is the signature of the procedure being called");
+            Info (proc_type.node.signature_range, "Here is the signature of the procedure being called");
     }
 
     for i : 0..passed_arguments.count - 1
@@ -1234,7 +1235,7 @@ CheckProcedureCall :: (using call : *AstProcedureCall)
         param := proc_type.parameters[i];
         if !TypeCanImplicitlyCastTo (arg.type, param)
         {
-            Error (arg, "type mismatch for argument %. Expected % but got %", i + 1, param.as_string, arg.type.as_string);
+            Error (arg, "Type mismatch for argument %. Expected % but got %", i + 1, param.as_string, arg.type.as_string);
         }
     }
 
@@ -1256,7 +1257,7 @@ CheckSubscript :: (using subscript : *AstSubscript)
     if subscripted.type.kind != .Array && subscripted.type.kind != .Pointer && subscripted.type.kind != .String
     {
         Error (subscripted,
-            "invalid type for subscript operator. Expected an array, a pointer or a string but got %",
+            "Invalid type for subscript operator. Expected an array, a pointer or a string but got %",
             subscripted.type.as_string
         );
         return;
@@ -1279,7 +1280,7 @@ CheckSubscript :: (using subscript : *AstSubscript)
     if index.type.kind != .Integer
     {
         Error (index,
-            "invalid type for index of subscript operator. Expected an integer but got %",
+            "Invalid type for index of subscript operator. Expected an integer but got %",
             index.type.as_string
         );
         return;
@@ -1299,7 +1300,7 @@ CheckSubscript :: (using subscript : *AstSubscript)
         {
             Error (
                 index,
-                "static array subscript index out of bounds. Array is empty so no index is valid, the index is %",
+                "Static array subscript index out of bounds. Array is empty so no index is valid, the index is %",
                 index_value
             );
         }
@@ -1307,7 +1308,7 @@ CheckSubscript :: (using subscript : *AstSubscript)
         if index_value < 0 || index_value >= array_count
         {
             Error (index,
-                "static array subscript index out of bounds. Expected [0; %] but got %",
+                "Static array subscript index out of bounds. Expected [0; %] but got %",
                 array_count - 1, index_value
             );
         }
@@ -1330,7 +1331,7 @@ CheckArrayFieldAccess :: (using access : *AstFieldAccess)
         }
         else if left.semantic_meaning == .Constant
         {
-            Warning (access, "this expression should be constant but we don't yet handle constant array values. The result of this expression is 0 for now");
+            Warning (access, "This expression should be constant but we don't yet handle constant array values. The result of this expression is 0 for now");
             semantic_meaning = .Constant;
             value = .{int_value = 0, kind = .Integer};
         }
@@ -1353,7 +1354,7 @@ CheckArrayFieldAccess :: (using access : *AstFieldAccess)
         type = g_type_s64;
         if left.semantic_meaning == .Constant
         {
-            Warning (access, "this expression should be constant but we don't yet handle constant array values. The result of this expression is 0 for now");
+            Warning (access, "This expression should be constant but we don't yet handle constant array values. The result of this expression is 0 for now");
             semantic_meaning = .Constant;
             value = .{int_value = 0, kind = .Integer};
         }
@@ -1373,12 +1374,12 @@ CheckArrayFieldAccess :: (using access : *AstFieldAccess)
             return;
         }
 
-        Warning (access, "the type for this expression does not exist yet, so it is *void for now");
+        Warning (access, "The type for this expression does not exist yet, so it is *void for now");
 
         type = g_type_void_ptr;
         if left.semantic_meaning == .Constant
         {
-            Warning (access, "this expression should be constant but we don't yet handle constant array values, so it is set to null for now");
+            Warning (access, "This expression should be constant but we don't yet handle constant array values, so it is set to null for now");
             semantic_meaning = .Constant;
             value = .{pointer_value = 0, kind = .Pointer};
         }
@@ -1446,7 +1447,7 @@ CheckStructFieldAccess :: (using access : *AstFieldAccess)
     else
         type_struct = cast (*YalTypeStruct) left.type;
 
-    Assert (access, type_struct.kind == .Struct, "not a struct type or a pointer to a struct");
+    Assert (access, type_struct.kind == .Struct, "Not a struct type or a pointer to a struct");
 
     ident := cast (*AstIdentifier) right;
     member : *YalTypeStructMember;
@@ -1478,7 +1479,7 @@ CheckFieldAccess :: (using access : *AstFieldAccess)
 
     if right.kind != .Identifier
     {
-        Error (right, "invalid expression type for rhs of field access operator");
+        Error (right, "Invalid expression type for rhs of field access operator");
         return;
     }
 
@@ -1539,7 +1540,7 @@ CheckFieldAccess :: (using access : *AstFieldAccess)
             type_pointer := cast (*YalTypePointer) left.type;
             if type_pointer.pointed_type.kind != .Struct
             {
-                Error (right, "pointer access can only be done on structs (type is: %)", type_pointer.as_string);
+                Error (right, "Pointer access can only be done on structs (type is: %)", type_pointer.as_string);
                 return;
             }
 
@@ -1606,25 +1607,25 @@ CheckAssignment :: (using assign : *AstAssignment)
     if left.semantic_meaning ==
     {
     case .Type;
-        Error (left, "assigning to a type");
+        Error (left, "Assigning to a type");
         return;
     case .Value;
-        Error (left, "assigning to an r-value");
+        Error (left, "Assigning to an r-value");
         return;
     case .Constant;
-        Error (left, "assigning to a constant");
+        Error (left, "Assigning to a constant");
         return;
     }
 
     if right.semantic_meaning == .Type
     {
-        Error (right, "rhs of assignment is a type");
+        Error (right, "Right of assignment is a type");
         return;
     }
 
     if !TypeCanImplicitlyCastTo (right.type, left.type)
     {
-        Error (right, "invalid type for assignment (left type: %, right type: %)",
+        Error (right, "Invalid type for assignment (left type: %, right type: %)",
             left.type.as_string, right.type.as_string);
         return;
     }
@@ -1664,7 +1665,7 @@ CheckIf :: (using if_stmt : *AstIf)
 
     if !TypeCanImplicitlyCastTo (condition.type, g_type_bool)
     {
-        Error (condition, "invalid type for condition in if statement. Expected a bool but got %", condition.type.as_string);
+        Error (condition, "Invalid type for condition in if statement. Expected a bool but got %", condition.type.as_string);
         return;
     }
 
@@ -1682,7 +1683,7 @@ CheckWhile :: (using while_stmt : *AstWhile)
 
     if !TypeCanImplicitlyCastTo (condition.type, g_type_bool)
     {
-        Error (condition, "invalid type for condition in while statement. Expected a bool but got %", condition.type.as_string);
+        Error (condition, "Invalid type for condition in while statement. Expected a bool but got %", condition.type.as_string);
         return;
     }
 
@@ -1705,10 +1706,10 @@ CheckReturn :: (using return_stmt : *AstReturn)
     if return_stmt.return_values.count != enclosing_proc.results.count
     {
         Error (return_stmt,
-            "invalid number of return values. Expected % but got %",
+            "Invalid number of return values. Expected % but got %",
             enclosing_proc.results.count, return_stmt.return_values.count
         );
-        Info (enclosing_proc.signature_range, "here is the signature of the enclosing procedure");
+        Info (enclosing_proc.signature_range, "Here is the signature of the enclosing procedure");
         return;
     }
 
@@ -1724,12 +1725,12 @@ CheckReturn :: (using return_stmt : *AstReturn)
         if !TypeCanImplicitlyCastTo (it.type, enclosing_proc.results[i].type)
         {
             Error (it,
-                "invalid type for return value %. Expected % but got %",
+                "Invalid type for return value %. Expected % but got %",
                 i + 1,
                 enclosing_proc.results[i].type.as_string,
                 it.type.as_string
             );
-            Info (enclosing_proc.signature_range, "here is the signature of the enclosing procedure");
+            Info (enclosing_proc.signature_range, "Here is the signature of the enclosing procedure");
         }
     }
 }
@@ -1773,7 +1774,7 @@ CheckStatement :: (stmt : *AstNode)
         CheckReturn (cast (*AstReturn) stmt);
 
     case;
-        Error (stmt, "not yet handled");
+        Error (stmt, "Not yet handled");
     }
 }
 
@@ -1794,7 +1795,7 @@ CheckEntryPointSignature :: (decl : *AstDeclaration)
         error = true;
 
     if error
-        Error (proc.signature_range, "invalid signature for entry point. Expected proc ([]string) -> void or proc () -> void");
+        Error (proc.signature_range, "Invalid signature for entry point. Expected proc ([]string) -> void or proc () -> void");
 }
 
 CheckAllDeclarationsInFile :: (file : *YalFile)
@@ -1805,7 +1806,7 @@ CheckAllDeclarationsInFile :: (file : *YalFile)
         CheckDeclaration (it);
 
     if !file.entry_point_declaration
-        Error ("no entry point was defined in file '%'", file.filename);
+        Error ("No entry point was defined in file '%'", file.filename);
     else
         CheckEntryPointSignature (file.entry_point_declaration);
 }

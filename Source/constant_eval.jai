@@ -399,8 +399,8 @@ ParseStringLiteral :: (token : Token) -> string, bool
                 buffer[index] = #char "\"";
 
             case;
-                SyntaxError (token, "invalid escape sequence in string literal");
-                InfoWithoutSourceCode (token, "valid escape sequences are \\0, \\t, \\n, \\r, \\\\, \\', \\\"");
+                SyntaxError (token, "Invalid escape sequence in string literal");
+                InfoWithoutSourceCode (token, "Valid escape sequences are \\0, \\t, \\n, \\r, \\\\, \\', \\\"");
                 return "", false;
             }
 
@@ -422,7 +422,7 @@ ParseStringLiteral :: (token : Token) -> string, bool
 
     if escape
     {
-        SyntaxError (token, "unfinished escaped sequence at then end of a string literal");
+        SyntaxError (token, "Unfinished escaped sequence at then end of a string literal");
         return "", false;
     }
 
@@ -457,14 +457,14 @@ ParseCharLiteral :: (token : Token) -> s64, bool
 
     if str.count > 0 && str[0] == #char "\\"
     {
-        SyntaxError (token, "invalid escape sequence in character literal");
-        InfoWithoutSourceCode (token, "valid escape sequences are \\0, \\t, \\n, \\r, \\\\, \\', \\\"");
+        SyntaxError (token, "Invalid escape sequence in character literal");
+        InfoWithoutSourceCode (token, "Valid escape sequences are \\0, \\t, \\n, \\r, \\\\, \\', \\\"");
         return 0, false;
     }
 
     if str.count != 1
     {
-        SyntaxError (token, "invalid character literal");
+        SyntaxError (token, "Invalid character literal");
         return 0, false;
     }
 
@@ -541,7 +541,7 @@ ParseFloatLiteral :: (token : Token) -> float64, bool
 
     result, ok := Basic.string_to_float64 (MakeString (index, str));
     if !ok
-        SyntaxError (token, "invalid float literal");
+        SyntaxError (token, "Invalid float literal");
 
     return result, ok;
 }

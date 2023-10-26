@@ -506,9 +506,9 @@ ScanNextToken :: (using lexer : *YalLexer) -> Token #must
         SetEnd (*tok, lexer);
 
         if unclosed
-            SyntaxError (tok, "unclosed %", Token_Names[tok.kind]);
+            SyntaxError (tok, "Unclosed %", Token_Names[tok.kind]);
         else if has_newline
-            SyntaxError (tok, "newline in %", Token_Names[tok.kind]);
+            SyntaxError (tok, "Newline in %", Token_Names[tok.kind]);
 
         return tok;
     }
@@ -541,7 +541,7 @@ ScanNextToken :: (using lexer : *YalLexer) -> Token #must
             SetEnd (*tok, lexer);
 
             if !decimal_valid || !fract_valid
-                SyntaxError (tok, "invalid float literal");
+                SyntaxError (tok, "Invalid float literal");
         }
         else
         {
@@ -552,7 +552,7 @@ ScanNextToken :: (using lexer : *YalLexer) -> Token #must
             SetEnd (*tok, lexer);
 
             if !decimal_valid
-                SyntaxError (tok, "invalid %", Token_Names[tok.kind]);
+                SyntaxError (tok, "Invalid %", Token_Names[tok.kind]);
         }
 
         return tok;

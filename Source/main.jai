@@ -230,7 +230,7 @@ main :: ()
         result, output, error_output := Process.run_command (..command_strings, capture_and_return_output = true);
         if result.type == .FAILED_TO_LAUNCH
         {
-            Error ("could not invoke command '%'", command);
+            Error ("Could not invoke command '%'", command);
             continue;
         }
 

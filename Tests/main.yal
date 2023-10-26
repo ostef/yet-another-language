@@ -99,6 +99,12 @@ proc Println (str : string)
 {
 }
 
+// @Todo
+proc Recursive ()
+{
+    Recursive ();
+}
+
 proc Main (args : []string)
 {
     var i := 0;
@@ -107,8 +113,8 @@ proc Main (args : []string)
         Println (args[i]);
     }
 
-    // var procedure := &Main; // @Todo
-    // var procedure := Main; // @Todo
+    //var procedure := &Main; // @Todo
+    //var procedure := Main; // @Todo
     var value := Min (Max (1.0, 0.0), 10.0);
     var array : [..]int;
     array[0] = 10;

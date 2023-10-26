@@ -23,7 +23,7 @@ AddFile :: (filename : string) -> *YalFile
     contents, ok := File.read_entire_file (filename, zero_terminated = true, log_errors = false);
     if !ok
     {
-        Error ("could not read file '%'", filename);
+        Error ("Could not read file '%'", filename);
         return null;
     }
 
@@ -180,7 +180,7 @@ ParseStatement :: (using file : *YalFile) -> *AstNode #must
 
             if MatchToken (*lexer, ..Tokens_Assignment)
             {
-                SyntaxError (PrevToken (lexer), "chaining of assignment statements");
+                SyntaxError (PrevToken (lexer), "Chaining of assignment statements");
                 return null;
             }
 
@@ -190,7 +190,7 @@ ParseStatement :: (using file : *YalFile) -> *AstNode #must
         if !MatchExpect (file, .Semicolon)
         {
             if NextTokenIs (*lexer, .Colon)
-                Info (NextToken (*lexer), "this looks like a variable or constant declaration, but the 'var' or 'const' keyword is missing");
+                Info (NextToken (*lexer), "This looks like a variable or constant declaration, but the 'var' or 'const' keyword is missing");
 
             return null;
         }
@@ -286,7 +286,7 @@ ParseReturn :: (using file : *YalFile) -> *AstReturn #must
             if MatchToken (*lexer, .Semicolon)
             {
                 SyntaxError (PrevToken (lexer),
-                    "expected a return value after ',', but got ';' instead");
+                    "Expected a return value after ',', but got ';' instead");
                 return null;
             }
         }
@@ -509,17 +509,17 @@ ParseExpression :: (using file : *YalFile, prec := 0) -> *AstNode #must
         if next.kind == last_non_associative_op.tok
         {
             SyntaxError (next,
-                "chaining of non associative operator %", Token_Names[next.kind]);
+                "Chaining of non associative operator %", Token_Names[next.kind]);
         }
         else
         {
             SyntaxError (next,
-                "chaining of non associative operator % with operator % of same precedence",
+                "Chaining of non associative operator % with operator % of same precedence",
                     Token_Names[last_non_associative_tok.kind], Token_Names[next.kind]);
         }
 
-        InfoWithoutSourceCode (next, "you might want to use parentheses to fix this");
-        Info (last_non_associative_tok, "here is the first occurence of the non associative operator");
+        InfoWithoutSourceCode (next, "You might want to use parentheses to fix this");
+        Info (last_non_associative_tok, "Here is the first occurence of the non associative operator");
     }
 
     return expr;
@@ -550,7 +550,7 @@ ParsePrimaryExpression :: (using file : *YalFile) -> *AstNode #must
 
         if NextTokenIs (*lexer, ..Tokens_Assignment)
         {
-            SyntaxError (NextToken (*lexer), "assignment in parenthesized expression");
+            SyntaxError (NextToken (*lexer), "Assignment in parenthesized expression");
 
             return null;
         }
@@ -572,7 +572,7 @@ ParsePrimaryExpression :: (using file : *YalFile) -> *AstNode #must
         return MakeAstLiteral (tok);
     }
 
-    SyntaxError (tok, "expected an expression, but got % instead", Token_Names[tok.kind]);
+    SyntaxError (tok, "Expected an expression, but got % instead", Token_Names[tok.kind]);
 
     return null;
 }
@@ -595,7 +595,7 @@ ParseProcedureCall :: (using file : *YalFile, callee : *AstNode) -> *AstProcedur
             if MatchToken (*lexer, .Close_Paren)
             {
                 SyntaxError (PrevToken (lexer),
-                    "expected expression after ',', but got ')' instead");
+                    "Expected expression after ',', but got ')' instead");
 
                 return null;
             }
@@ -675,7 +675,7 @@ ParseType :: (using file : *YalFile) -> *AstNode #must
     )
     {
         SyntaxError (NextToken (*lexer),
-            "expected a type, but got % instead", Token_Names[NextToken (*lexer).kind]);
+            "Expected a type, but got % instead", Token_Names[NextToken (*lexer).kind]);
 
         return null;
     }
@@ -754,11 +754,11 @@ ParseDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
     }
     else
     {
-        SyntaxError (NextToken (*lexer), "expected a declaration");
+        SyntaxError (NextToken (*lexer), "Expected a declaration");
 
         // @Todo: maybe catch compound declarations where the 'var' keyword is missing?
         if NextTokenIs (*lexer, .Identifier) && NextToken (*lexer, 1).kind == .Colon
-            Info (NextToken (*lexer), "this looks like a variable or constant declaration, but the 'var' or 'const' keyword is missing");
+            Info (NextToken (*lexer), "This looks like a variable or constant declaration, but the 'var' or 'const' keyword is missing");
     }
 
     return null;
@@ -852,7 +852,7 @@ ParseFieldList :: (using file : *YalFile, results : *[..]*AstDeclaration) -> boo
             if MatchToken (*lexer, .Close_Paren)
             {
                 SyntaxError (PrevToken (lexer),
-                    "expected a field declaration after ',', but got ')' instead");
+                    "Expected a field declaration after ',', but got ')' instead");
 
                 // This is a minor error so we return true so as to not fuck up the state of the parser
                 return true;
@@ -891,7 +891,7 @@ ParseProcedureDeclaration :: (using file : *YalFile) -> *AstDeclaration #must
     {
         ExpectedError (PrevToken (lexer), NextToken (*lexer), .Open_Curly);
         if NextTokenIs (*lexer, .Comma)
-            Info (NextToken (*lexer), "multiple return values have to be enclosed in parentheses");
+            Info (NextToken (*lexer), "Multiple return values have to be enclosed in parentheses");
 
         // Not recovering and returning null can really fuck up the
         // parsing state, so we do that and return a Bad_Declaration
