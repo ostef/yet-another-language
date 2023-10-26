@@ -459,6 +459,8 @@ EmitTypePrefix :: (builder : *SourceCodeBuilder, type : *YalType)
         else
             EmitFullType (builder, type_proc.results[0]);
 
+        Append (builder, " (*");
+
     case .Struct;
         type_struct := cast (*YalTypeStruct) type;
 
@@ -492,7 +494,7 @@ EmitTypeSuffix :: (builder : *SourceCodeBuilder, type : *YalType)
     case .Procedure;
         type_proc := cast (*YalTypeProcedure) type;
 
-        Append (builder, "(");
+        Append (builder, ") (");
         for type_proc.parameters
         {
             if it_index != 0

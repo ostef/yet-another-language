@@ -113,8 +113,9 @@ proc Main (args : []string)
         Println (args[i]);
     }
 
-    //var procedure := &Main; // @Todo
-    //var procedure := Main; // @Todo
+    var procedure := Main;
+    procedure (args);
+
     var value := Min (Max (1.0, 0.0), 10.0);
     var array : [..]int;
     array[0] = 10;
