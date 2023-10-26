@@ -558,6 +558,16 @@ CheckProcedureDeclaration :: (decl : *AstDeclaration)
     CheckProcedureSignature (proc);
     SetDeclarationType (decl, proc.type);
 
+    // @Hack: set this as checked so we don't report a circular dependency
+    // on recursive procedure call. This is sketchy because other places
+    // in the code might make the assumption that if something is in the
+    // declaration_stack then it is not yet checked. The best way to handle
+    // this would probably be to have an extra parameter that tells us info
+    // about why we are checking this declaration (kind of like what we do
+    // to handle recursive structs through pointers)
+    // Another way to handle this would be to defer checking of procedure bodies.
+    decl.check_status = .Checked;
+
     if decl.type == g_type_invalid
         return;
 
