@@ -111,6 +111,20 @@ proc Recursive1 ()
     Recursive2 ();
 }
 
+proc IntegerImplicitConversion ()
+{
+    var a : s64;
+    var b : u64;
+    var c : u32;
+
+    a = b;  // Should not work
+    b = a;  // Should not work
+    a = c;  // Should work
+    c = a;  // Should not work
+    b = c;  // Should work
+    c = b;  // Should not work
+}
+
 proc Main (args : []string)
 {
     var i := 0;

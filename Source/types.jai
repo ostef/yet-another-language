@@ -609,7 +609,29 @@ TypesAreEqual :: (a : *YalType, b : *YalType) -> bool #must
     }
 }
 
+TypeIntegerCanImplicitlyCastTo :: (type : *YalTypeInteger, to : *YalType) -> bool #must
+{
+    if to.kind == .Integer
+    {
+        to_integer := cast (*YalTypeInteger) to;
+
+        if type.is_signed == to_integer.is_signed
+            return type.size <= to_integer.size;
+        else if !type.is_signed && to_integer.is_signed
+            return type.size < to_integer.size;
+        else
+            return false;
+    }
+    else if to.kind == .Bool
+        return true;
+
+    return false;
+}
+
 TypeCanImplicitlyCastTo :: (type : *YalType, to : *YalType) -> bool #must
 {
+    if type.kind == .Integer
+        return inline TypeIntegerCanImplicitlyCastTo (cast (*YalTypeInteger) type, to);
+
     return TypesAreEqual (type, to);
 }
