@@ -622,8 +622,6 @@ TypeIntegerCanImplicitlyCastTo :: (type : *YalTypeInteger, to : *YalType) -> boo
         else
             return false;
     }
-    else if to.kind == .Bool
-        return true;
 
     return false;
 }
