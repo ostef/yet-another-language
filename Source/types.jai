@@ -19,6 +19,44 @@ MemcmpTypesIgnoringAsStringMember :: inline (a : *YalType, b : *YalType, size : 
     return memcmp (*a.kind, *b.kind, size - OffsetOf (YalType, "kind"));
 }
 
+HashTypeProcedure :: (type : *YalTypeProcedure) -> u64 #must
+{
+    result := fnv1a_hash (cast (u64) type.node);
+
+    for type.parameters
+        result = fnv1a_hash (cast (u64) it, result);
+    for type.results
+        result = fnv1a_hash (cast (u64) it, result);
+
+    return result;
+}
+
+ShallowCompareTypeProcedure :: (a : *YalTypeProcedure, b : *YalTypeProcedure) -> bool #must
+{
+    if a.node != b.node
+        return false;
+
+    if a.parameters.count != b.parameters.count
+        return false;
+
+    if a.results.count != b.results.count
+        return false;
+
+    for i : 0..a.parameters.count - 1 #no_abc
+    {
+        if a.parameters[i] != b.parameters[i]
+            return false;
+    }
+
+    for i : 0..a.results.count - 1 #no_abc
+    {
+        if a.results[i] != b.results[i]
+            return false;
+    }
+
+    return true;
+}
+
 g_pointer_type_cache : HashSet (
     *YalTypePointer,
     hash_func = (val) => HashTypesIgnoringAsStringMember (val, size_of (YalTypePointer)),
@@ -29,6 +67,14 @@ g_array_type_cache : HashSet (
     *YalTypeArray,
     hash_func = (val) => HashTypesIgnoringAsStringMember (val, size_of (YalTypeArray)),
     comp_func = (a, b) => MemcmpTypesIgnoringAsStringMember (a, b, size_of (YalTypeArray)) == 0
+);
+
+// Not sure that this type cache will be very helpful since we take into account the procedure node
+// which is probably unique everytime we call MakeTypeProcedure
+g_proc_type_cache : HashSet (
+    *YalTypeProcedure,
+    hash_func = HashTypeProcedure,
+    comp_func = ShallowCompareTypeProcedure
 );
 
 g_type_invalid : *YalType;
@@ -145,7 +191,12 @@ YalTypeEnum :: struct
 
 MakeType :: (kind : YalType.Kind, size : s64, node_for_debug : *AstNode = null) -> *YalType #must
 {
-    if kind == .Void
+    if kind == .Invalid
+    {
+        if g_type_invalid
+            return g_type_invalid;
+    }
+    else if kind == .Void
     {
         if g_type_void
             return g_type_void;
@@ -311,14 +362,30 @@ MakeTypeArray :: (array_kind : ArrayKind, element_type : *YalType, count : s64, 
 
 MakeTypeProcedure :: (node : *AstProcedure, parameters : []*YalType, results : []*YalType) -> *YalTypeProcedure #must
 {
-    type := Alloc (YalTypeProcedure);
+    type : YalTypeProcedure;
     type.size = 8;
     type.node = node;
     type.parameters = parameters;
     type.results = results;
-    SetTypeString (type);
+    SetTypeString (*type);
 
-    return type;
+    #if Use_Type_Cache
+    {
+        in_cache := HashSetGetPtr (*g_proc_type_cache, *type);
+        if in_cache
+        {
+            g_dedup_types_count += 1;
+            return in_cache.*;
+        }
+    }
+
+    result := Alloc (YalTypeProcedure, initialize = false);
+    result.* = type;
+
+    #if Use_Type_Cache
+        HashSetInsert (*g_proc_type_cache, result);
+
+    return result;
 }
 
 MakeTypeStruct :: (node : *AstStruct, name : string) -> *YalTypeStruct #must
