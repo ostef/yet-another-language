@@ -113,16 +113,23 @@ proc Recursive1 ()
 
 proc IntegerImplicitConversion ()
 {
-    var a : s64;
-    var b : u64;
-    var c : u32;
+    {
+        var a : s64;
+        var b : u64;
+        var c : u32;
 
-    a = b;  // Should not work
-    b = a;  // Should not work
-    a = c;  // Should work
-    c = a;  // Should not work
-    b = c;  // Should work
-    c = b;  // Should not work
+        a = b;  // Should not work
+        b = a;  // Should not work
+        a = c;  // Should work
+        c = a;  // Should not work
+        b = c;  // Should work
+        c = b;  // Should not work
+    }
+
+    {
+        var a : float;
+        a = 127.0;
+    }
 }
 
 proc Main (args : []string)

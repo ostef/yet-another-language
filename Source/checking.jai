@@ -1663,7 +1663,20 @@ CheckAssignment :: (using assign : *AstAssignment)
         return;
     }
 
-    if !TypeCanImplicitlyCastTo (right.type, left.type)
+    if right.semantic_meaning == .Constant && right.value.kind == .Integer
+    {
+        // @Todo: constant integers are not necessarily untyped
+        if !UntypedIntegerValueCanImplicitlyCastTo (right.value, left.type)
+        {
+            if left.type.kind == .Integer
+                Error (right, "This integer value does not fit into a %", left.type.as_string);
+            else
+                Error (right, "Invalid type for assignment (left type: %, right type: %)",
+                    left.type.as_string, right.type.as_string);
+            return;
+        }
+    }
+    else if !TypeCanImplicitlyCastTo (right.type, left.type)
     {
         Error (right, "Invalid type for assignment (left type: %, right type: %)",
             left.type.as_string, right.type.as_string);

@@ -609,6 +609,68 @@ TypesAreEqual :: (a : *YalType, b : *YalType) -> bool #must
     }
 }
 
+UntypedIntegerValueCanImplicitlyCastTo :: (value : ConstantValue, to : *YalType) -> bool #must
+{
+    Assert (value.kind == .Integer);
+
+    if to.kind == .Integer
+    {
+        to_integer := cast (*YalTypeInteger) to;
+
+        if to_integer.is_signed
+        {
+            min, max : s64;
+            if to_integer.size ==
+            {
+            case 1;
+                min = Math.S8_MIN;
+                max = Math.S8_MAX;
+            case 2;
+                min = Math.S16_MIN;
+                max = Math.S16_MAX;
+            case 4;
+                min = Math.S32_MIN;
+                max = Math.S32_MAX;
+            case 8;
+                min = Math.S64_MIN;
+                max = Math.S64_MAX;
+            }
+
+            if value.int_value < min || value.int_value > max
+                return false;
+
+            return true;
+        }
+        else
+        {
+            max : u64;
+            if to_integer.size ==
+            {
+            case 1;
+                max = Math.U8_MAX;
+            case 2;
+                max = Math.U16_MAX;
+            case 4;
+                max = Math.U32_MAX;
+            case 8;
+                max = Math.U64_MAX;
+            }
+
+            // @Todo: handle signedness
+            if value.int_value < 0 || cast (u64) value.int_value > max
+                return false;
+
+            return true;
+        }
+    }
+    else if to.kind == .Float
+    {
+        return true;
+    }
+
+    return false;
+}
+
 TypeIntegerCanImplicitlyCastTo :: (type : *YalTypeInteger, to : *YalType) -> bool #must
 {
     if to.kind == .Integer
