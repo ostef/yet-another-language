@@ -1,3 +1,53 @@
+Use_Type_Cache :: true;
+
+#import "Hash";
+
+// This only count types cached in a hash set (array and pointer types for now)
+g_dedup_types_count : s64;
+
+// Some types will not get deduplicated even though they are equal, because
+// they might point at types that have not been deduplicated and thus the
+// hash and memcmp will be different
+
+HashTypesIgnoringAsStringMember :: inline (type : *YalType, size : s64) -> u64 #must
+{
+    return fnv1a_hash (*type.kind, size - OffsetOf (YalType, "kind"));
+}
+
+MemcmpTypesIgnoringAsStringMember :: inline (a : *YalType, b : *YalType, size : s64) -> int #must
+{
+    return memcmp (*a.kind, *b.kind, size - OffsetOf (YalType, "kind"));
+}
+
+g_pointer_type_cache : HashSet (
+    *YalTypePointer,
+    hash_func = (val) => HashTypesIgnoringAsStringMember (val, size_of (YalTypePointer)),
+    comp_func = (a, b) => MemcmpTypesIgnoringAsStringMember (a, b, size_of (YalTypePointer)) == 0
+);
+
+g_array_type_cache : HashSet (
+    *YalTypeArray,
+    hash_func = (val) => HashTypesIgnoringAsStringMember (val, size_of (YalTypeArray)),
+    comp_func = (a, b) => MemcmpTypesIgnoringAsStringMember (a, b, size_of (YalTypeArray)) == 0
+);
+
+g_type_invalid : *YalType;
+g_type_void : *YalType;
+g_type_void_ptr : *YalType;
+g_type_s64 : *YalType;
+g_type_u64 : *YalType;
+g_type_s32 : *YalType;
+g_type_u32 : *YalType;
+g_type_s16 : *YalType;
+g_type_u16 : *YalType;
+g_type_s8 : *YalType;
+g_type_u8 : *YalType;
+g_type_u8_ptr : *YalType;
+g_type_f32 : *YalType;
+g_type_f64 : *YalType;
+g_type_bool : *YalType;
+g_type_string : *YalType;
+
 YalType :: struct
 {
     Kind :: enum u8
@@ -15,6 +65,7 @@ YalType :: struct
         Enum;
     }
 
+    // DISCLAIMER: do not change the layout of this! Some functions rely on it.
     as_string : string;
     kind : Kind;
     size := -1;
@@ -94,6 +145,29 @@ YalTypeEnum :: struct
 
 MakeType :: (kind : YalType.Kind, size : s64, node_for_debug : *AstNode = null) -> *YalType #must
 {
+    if kind == .Void
+    {
+        if g_type_void
+            return g_type_void;
+    }
+    else if kind == .Float
+    {
+        if size == 4 && g_type_f32
+            return g_type_f32;
+        if size == 8 && g_type_f64
+            return g_type_f64;
+    }
+    else if kind == .String
+    {
+        if g_type_string
+            return g_type_string;
+    }
+    else if kind == .Bool
+    {
+        if g_type_bool
+            return g_type_bool;
+    }
+
     type := Alloc (YalType);
     type.kind = kind;
     type.size = size;
@@ -104,6 +178,54 @@ MakeType :: (kind : YalType.Kind, size : s64, node_for_debug : *AstNode = null) 
 
 MakeTypeInteger :: (size : s64, is_signed : bool, node_for_debug : *AstNode = null) -> *YalTypeInteger #must
 {
+    if size ==
+    {
+    case 1;
+        if is_signed
+        {
+            if g_type_s8
+                return xx g_type_s8;
+        }
+        else
+        {
+            if g_type_u8
+                return xx g_type_u8;
+        }
+    case 2;
+        if is_signed
+        {
+            if g_type_s16
+                return xx g_type_s16;
+        }
+        else
+        {
+            if g_type_u16
+                return xx g_type_u16;
+        }
+    case 4;
+        if is_signed
+        {
+            if g_type_s32
+                return xx g_type_s32;
+        }
+        else
+        {
+            if g_type_u32
+                return xx g_type_u32;
+        }
+    case 8;
+        if is_signed
+        {
+            if g_type_s64
+                return xx g_type_s64;
+        }
+        else
+        {
+            if g_type_u64
+                return xx g_type_u64;
+        }
+    }
+
     type := Alloc (YalTypeInteger);
     type.size = size;
     type.is_signed = is_signed;
@@ -114,17 +236,33 @@ MakeTypeInteger :: (size : s64, is_signed : bool, node_for_debug : *AstNode = nu
 
 MakeTypePointer :: (pointed_type : *YalType, node_for_debug : *AstNode = null) -> *YalTypePointer #must
 {
-    type := Alloc (YalTypePointer);
+    type : YalTypePointer;
     type.size = 8;
     type.pointed_type = pointed_type;
-    SetTypeString (type);
+    SetTypeString (*type);
 
-    return type;
+    #if Use_Type_Cache
+    {
+        in_cache := HashSetGetPtr (*g_pointer_type_cache, *type);
+        if in_cache
+        {
+            g_dedup_types_count += 1;
+            return in_cache.*;
+        }
+    }
+
+    result := Alloc (YalTypePointer, initialize = false);
+    result.* = type;
+
+    #if Use_Type_Cache
+        HashSetInsert (*g_pointer_type_cache, result);
+
+    return result;
 }
 
 MakeTypeArray :: (array_kind : ArrayKind, element_type : *YalType, count : s64, node_for_debug : *AstNode = null) -> *YalTypeArray #must
 {
-    type := Alloc (YalTypeArray);
+    type : YalTypeArray;
     type.array_kind = array_kind;
 
     if array_kind == .Static
@@ -150,9 +288,25 @@ MakeTypeArray :: (array_kind : ArrayKind, element_type : *YalType, count : s64, 
 
     type.element_type = element_type;
     type.count = count;
-    SetTypeString (type);
+    SetTypeString (*type);
 
-    return type;
+    #if Use_Type_Cache
+    {
+        in_cache := HashSetGetPtr (*g_array_type_cache, *type);
+        if in_cache
+        {
+            g_dedup_types_count += 1;
+            return in_cache.*;
+        }
+    }
+
+    result := Alloc (YalTypeArray, initialize = false);
+    result.* = type;
+
+    #if Use_Type_Cache
+        HashSetInsert (*g_array_type_cache, result);
+
+    return result;
 }
 
 MakeTypeProcedure :: (node : *AstProcedure, parameters : []*YalType, results : []*YalType) -> *YalTypeProcedure #must
@@ -188,23 +342,6 @@ MakeTypeEnum :: (node : *AstEnum, name : string, base_type : *YalType) -> *YalTy
 
     return type;
 }
-
-g_type_invalid : *YalType;
-g_type_void : *YalType;
-g_type_void_ptr : *YalType;
-g_type_s64 : *YalType;
-g_type_u64 : *YalType;
-g_type_s32 : *YalType;
-g_type_u32 : *YalType;
-g_type_s16 : *YalType;
-g_type_u16 : *YalType;
-g_type_s8 : *YalType;
-g_type_u8 : *YalType;
-g_type_u8_ptr : *YalType;
-g_type_f32 : *YalType;
-g_type_f64 : *YalType;
-g_type_bool : *YalType;
-g_type_string : *YalType;
 
 InitBuiltinTypes :: ()
 {

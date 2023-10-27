@@ -6,6 +6,7 @@
 #import "Common";
 #import "Array";
 #import "Hash_Map";
+#import "Hash_Set";
 #import "String_Builder";
 #import "Profiling" (Enable_Profiling = false);
 
@@ -196,6 +197,9 @@ main :: ()
     checking_time := Basic.to_float64_seconds (checking_end - checking_start);
 
     ExitIfError ();
+
+    #if Use_Type_Cache
+        Println ("Deduplicated % types\n", g_dedup_types_count);
 
     codegen_start := Basic.current_time_monotonic ();
 
