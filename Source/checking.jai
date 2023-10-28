@@ -384,7 +384,9 @@ CollectAllSymbolsInFile :: (file : *YalFile)
 
 SetDeclarationType :: (decl : *AstDeclaration, type : *YalType)
 {
-    Assert (decl, decl.type == null, "Declaration alread has a type");
+    // Changing the type after it has been set can lead to unexpected behavior, because
+    // other nodes might have set their type to this declaration's type already
+    Assert (decl, decl.type == null, "Declaration already has a type");
 
     decl.type = type;
     for :Identifiers decl
@@ -625,12 +627,7 @@ CheckStruct :: (using node : *AstStruct, decl : *AstDeclaration = null)
         for :Identifiers member_decl
         {
             if member_decl.type == g_type_invalid
-            {
-                if decl
-                    SetDeclarationType (decl, g_type_invalid);
-
                 return;
-            }
 
             member := ArrayPush (*members);
             member.name = it.name;
