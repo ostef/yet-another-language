@@ -1335,10 +1335,13 @@ CheckProcedureCall :: (using call : *AstProcedureCall)
         Info (proc_type.node.signature_range, "Here is the signature of the procedure being called");
 
     // @Todo: handle multiple results
+    // Should we set the type to invalid if there was an error when calling the procedure?
     if proc_type.results.count == 0
         type = g_type_void;
     else
         type = proc_type.results[0];
+
+    semantic_meaning = .Value;
 }
 
 CheckSubscript :: (using subscript : *AstSubscript)
