@@ -1507,6 +1507,8 @@ CheckStructFieldAccess :: (using access : *AstFieldAccess)
     if !member
     {
         Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
+        if type_struct.node
+            InfoNoSquiggles (type_struct.node, "Here is the declaration of %", type_struct.as_string);
         return;
     }
 
@@ -1552,6 +1554,8 @@ CheckFieldAccess :: (using access : *AstFieldAccess)
             if !member
             {
                 Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
+                if type_enum.node
+                    InfoNoSquiggles (type_enum.node, "Here is the declaration of %", type_enum.as_string);
                 return;
             }
 
