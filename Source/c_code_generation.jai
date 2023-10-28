@@ -715,7 +715,7 @@ EmitAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
     case .Subscript; #through;
     case .Field_Access; #through;
     case .Procedure_Call; #through;
-    case .Cast;
+    case .Cast; #through;
     case .Size_Of;
         EmitExpression (builder, node);
 
