@@ -69,9 +69,14 @@ void Yal__WriteString (Yal__String str)
     printf ("%.*s", (int)str.count, str.data);
 }
 
-void *Yal__malloc (s64 size)
+void *Yal__malloc (u64 size)
 {
     return malloc (size);
+}
+
+void *Yal__realloc (void *ptr, u64 new_size)
+{
+    return realloc (ptr, new_size);
 }
 
 void Yal__free (void *ptr)

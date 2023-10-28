@@ -1,4 +1,5 @@
-external proc malloc (size : s64) -> *void;
+external proc malloc (size : u64) -> *void;
+external proc realloc (ptr : *void, new_size : u64) -> *void;
 external proc free (ptr : *void);
 external proc WriteString (str : string);
 
@@ -204,7 +205,7 @@ proc MemoryArenaAllocatorProc (op : AllocatorOperation, size : s64, ptr : *void,
         }
 
         var ptr := cast (u64) (cast (*u8) (arena.page + 1) + arena.page.used);
-        var aligned_ptr := (ptr + 7) & ^7;
+        var aligned_ptr := cast (*void) ((cast (s64) ptr + 7) & ^7);
 
         arena.page.used += aligned_size;
         arena.total_used += aligned_size;
