@@ -1709,12 +1709,13 @@ ExprCanImplicitlyCastTo :: inline (
         return false;
     }
 
-    if expr.semantic_meaning == .Constant && expr.value.kind == .Integer
+    if expr.semantic_meaning == .Constant && expr.type.kind != .Enum && expr.value.kind == .Integer
     {
         if !UntypedIntegerValueCanImplicitlyCastTo (expr.value, to_type)
         {
             if to_type.kind == .Integer
-                Error (expr, "This integer value does not fit into a %", to_type.as_string);
+                Error (expr, "This integer value does not fit into a %",
+                    to_type.as_string);
             else if is_binary_expr
                 Error (expr, "Invalid type for % (left type: %, right type: %)",
                     reason, to_type.as_string, expr.type.as_string);
