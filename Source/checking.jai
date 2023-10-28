@@ -828,12 +828,9 @@ CheckLogicalComposition :: (using binary : *AstBinary)
 {
     Assert (binary, op.kind == .Ampersand_Ampersand || op.kind == .Pipe_Pipe, "Invalid op");
 
-    if !TypeCanImplicitlyCastTo (left.type, g_type_bool)
-    || !TypeCanImplicitlyCastTo (right.type, g_type_bool)
-    {
-        Error (binary.left, "Invalid type for binary operator % (left is: %, right is: %)", Token_Names[op.kind], left.type.as_string, right.type.as_string);
+    if !ExprCanImplicitlyCastTo (left, g_type_bool, null, "logical operator", is_binary_expr = false)
+    || !ExprCanImplicitlyCastTo (right, g_type_bool, null, "logical operator", is_binary_expr = false)
         return;
-    }
 
     type = g_type_bool;
 
@@ -1255,6 +1252,7 @@ CheckProcedureCall :: (using call : *AstProcedureCall)
         return;
     }
 
+    has_errors := false;
     proc_type := cast (*YalTypeProcedure) callee.type;
     if passed_arguments.count != proc_type.parameters.count
     {
@@ -1263,8 +1261,7 @@ CheckProcedureCall :: (using call : *AstProcedureCall)
             proc_type.parameters.count, passed_arguments.count
         );
 
-        if proc_type.node
-            Info (proc_type.node.signature_range, "Here is the signature of the procedure being called");
+        has_errors = true;
     }
 
     for i : 0..passed_arguments.count - 1
@@ -1279,11 +1276,12 @@ CheckProcedureCall :: (using call : *AstProcedureCall)
             continue;
 
         param := proc_type.parameters[i];
-        if !TypeCanImplicitlyCastTo (arg.type, param)
-        {
-            Error (arg, "Type mismatch for argument %. Expected % but got %", i + 1, param.as_string, arg.type.as_string);
-        }
+        if !ExprCanImplicitlyCastTo (arg, param, null, "argument", is_binary_expr = false)
+            has_errors = true;
     }
+
+    if has_errors && proc_type.node
+        Info (proc_type.node.signature_range, "Here is the signature of the procedure being called");
 
     // @Todo: handle multiple results
     if proc_type.results.count == 0
@@ -1686,49 +1684,68 @@ CheckBlock :: (using block : *AstBlock)
     }
 }
 
-ExprCanImplicitlyCastTo :: (expr : *AstNode, to : *AstNode, reason : string, is_binary_expr := true) -> bool #must
+ExprCanImplicitlyCastTo :: inline (
+    expr : *AstNode,
+    to_type : *YalType,
+    to_node : *AstNode,
+    reason : string,
+    is_binary_expr := true
+) -> bool #must
 {
     Assert (expr.type != null, "The type of this node is null");
-    Assert (to, to.type != null, "The type of this node is null");
+    if to_node
+        Assert (to_node, to_type != null, "The type of this node is null");
+    else
+        Assert (to_type != null);
 
     if expr.semantic_meaning == .Type
     {
         if is_binary_expr
             Error (expr, "Invalid type for % (left type: %, right type is a type)",
-                reason, to.type.as_string);
+                reason, to_type.as_string);
         else
             Error (expr, "Invalid type for %. Expected % but got a type",
-                reason, to.type.as_string);
+                reason, to_type.as_string);
         return false;
     }
 
     if expr.semantic_meaning == .Constant && expr.value.kind == .Integer
     {
-        if !UntypedIntegerValueCanImplicitlyCastTo (expr.value, to.type)
+        if !UntypedIntegerValueCanImplicitlyCastTo (expr.value, to_type)
         {
-            if to.type.kind == .Integer
-                Error (expr, "This integer value does not fit into a %", to.type.as_string);
+            if to_type.kind == .Integer
+                Error (expr, "This integer value does not fit into a %", to_type.as_string);
             else if is_binary_expr
                 Error (expr, "Invalid type for % (left type: %, right type: %)",
-                    reason, to.type.as_string, expr.type.as_string);
+                    reason, to_type.as_string, expr.type.as_string);
             else
                 Error (expr, "Invalid type for %. Expected % but got %",
-                    reason, to.type.as_string, expr.type.as_string);
+                    reason, to_type.as_string, expr.type.as_string);
             return false;
         }
     }
-    else if !TypeCanImplicitlyCastTo (expr.type, to.type)
+    else if !TypeCanImplicitlyCastTo (expr.type, to_type)
     {
         if is_binary_expr
             Error (expr, "Invalid type for % (left type: %, right type: %)",
-                reason, to.type.as_string, expr.type.as_string);
+                reason, to_type.as_string, expr.type.as_string);
         else
             Error (expr, "Invalid type for %. Expected % but got %",
-                reason, to.type.as_string, expr.type.as_string);
+                reason, to_type.as_string, expr.type.as_string);
         return false;
     }
 
     return true;
+}
+
+ExprCanImplicitlyCastTo :: inline (
+    expr : *AstNode,
+    to : *AstNode,
+    reason : string,
+    is_binary_expr := true
+) -> bool #must
+{
+    return ExprCanImplicitlyCastTo (expr, to.type, to, reason, is_binary_expr);
 }
 
 CheckAssignment :: (using assign : *AstAssignment)
@@ -1789,11 +1806,8 @@ CheckIf :: (using if_stmt : *AstIf)
     if condition.type == g_type_invalid
         return;
 
-    if !TypeCanImplicitlyCastTo (condition.type, g_type_bool)
-    {
-        Error (condition, "Invalid type for condition in if statement. Expected a bool but got %", condition.type.as_string);
+    if !ExprCanImplicitlyCastTo (condition, g_type_bool, null, "condition of if statement", is_binary_expr = false)
         return;
-    }
 
     CheckStatement (body);
 
@@ -1807,11 +1821,8 @@ CheckWhile :: (using while_stmt : *AstWhile)
     if condition.type == g_type_invalid
         return;
 
-    if !TypeCanImplicitlyCastTo (condition.type, g_type_bool)
-    {
-        Error (condition, "Invalid type for condition in while statement. Expected a bool but got %", condition.type.as_string);
+    if !ExprCanImplicitlyCastTo (condition, g_type_bool, null, "condition of while statement", is_binary_expr = false)
         return;
-    }
 
     enclosing_while := context.check.enclosing_while;
     context.check.enclosing_while = while_stmt;
