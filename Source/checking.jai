@@ -1086,7 +1086,7 @@ CheckBinary :: (using binary : *AstBinary)
 
     if semantic_meaning == .Constant
     {
-        Assert (binary, value.kind != .Invalid, "It seems a constant binary operation did not get constant evaluated");
+        Assert (binary, value.kind != .Invalid, "This constant expression did not get constant evaluated");
         // Info (binary, "result is constant: left is %, right is %, result is %", ToString (left.value), ToString (right.value), ToString (value));
     }
 }
@@ -1490,6 +1490,18 @@ CheckArrayFieldAccess :: (using access : *AstFieldAccess)
     case "data";
         type = MakeTypePointer (type_array.element_type, access);
 
+        if left.semantic_meaning == .Mutable
+        {
+            if type_array.array_kind == .Dynamic || type_array.array_kind == .Slice
+                semantic_meaning = .Mutable;
+            else
+                semantic_meaning = .Value;
+        }
+        else
+        {
+            semantic_meaning == .Value;
+        }
+
     case;
         Error (right, "'%' is not a member of type %", ident.name, left.type.as_string);
         return;
@@ -1656,7 +1668,7 @@ CheckFieldAccess :: (using access : *AstFieldAccess)
 
     if semantic_meaning == .Constant
     {
-        Assert (access, value.kind != .Invalid, "It seems a constant unary operation did not get constant evaluated");
+        Assert (access, value.kind != .Invalid, "This constant expression did not get constant evaluated");
         // Info (access, "result is constant: %", ToString (value));
     }
 }
