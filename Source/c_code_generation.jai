@@ -815,6 +815,13 @@ EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
     case .Field_Access;
         access := cast (*AstFieldAccess) node;
 
+        // Special case for accessing .data of a static array
+        if access.left.type.kind == .Array && (cast (*YalTypeArray) access.left.type).array_kind == .Static
+        {
+            EmitExpression (builder, access.left);
+            return;
+        }
+
         // In some cases the C type we accessed does not match the original type in the Yal source code
         // This is the case for the data pointer of slices and dynamic arrays for example
         // When that happens, we cast the expression to the desired type
