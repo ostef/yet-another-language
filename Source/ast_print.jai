@@ -385,3 +385,28 @@ PrintAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
     case .Count;
     }
 }
+
+PrintFile :: (using file : *YalFile)
+{
+    builder : SourceCodeBuilder;
+    for declarations
+    {
+        more_newlines := !ShouldStatementEndInSemicolon (it);
+
+        if it_index != 0 && more_newlines
+            Append (*builder, "\n");
+
+        PrintAstNode (*builder, it);
+
+        if ShouldStatementEndInSemicolon (it)
+            Append (*builder, ";\n");
+        else
+            Append (*builder, "\n");
+
+        if it_index != declarations.count - 1 && more_newlines
+            Append (*builder, "\n");
+    }
+
+    Println ("Ast print-back for file %:", filename);
+    Println (Build (*builder));
+}

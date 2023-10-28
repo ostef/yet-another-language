@@ -76,6 +76,8 @@ PrintUsage :: ()
     write_string ("yal [options*] filename\n", to_standard_error = true);
     write_string ("Valid options are:\n", to_standard_error = true);
     write_string ("  -no_colors: disable ANSI terminal colors\n", to_standard_error = true);
+    write_string ("  -gcc: use GCC as the C compiler to invoke for generated files\n", to_standard_error = true);
+    write_string ("  -print_ast: print the AST for all the files if parsing is successful\n", to_standard_error = true);
 }
 
 PrintProfilingResults :: ()
@@ -120,6 +122,7 @@ main :: ()
 
     args := Basic.get_command_line_arguments ();
 
+    print_ast := false;
     arg_error := false;
     for args
     {
@@ -134,6 +137,10 @@ main :: ()
         {
         case "-no_colors";
             g_build_settings.output_colors = false;
+        case "-gcc";
+            g_build_settings.use_gcc = true;
+        case "-print_ast";
+            print_ast = true;
 
         case;
             Error ("%: unknown option", it);
@@ -181,6 +188,12 @@ main :: ()
 
     parsing_end := Basic.current_time_monotonic ();
     parsing_time := Basic.to_float64_seconds (parsing_end - parsing_start);
+
+    if print_ast
+    {
+        for g_files
+            PrintFile (it);
+    }
 
     ExitIfError ();
 
