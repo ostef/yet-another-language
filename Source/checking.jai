@@ -1686,15 +1686,19 @@ CheckBlock :: (using block : *AstBlock)
     }
 }
 
-ExprCanImplicitlyCastTo :: (expr : *AstNode, to : *AstNode, reason : string) -> bool #must
+ExprCanImplicitlyCastTo :: (expr : *AstNode, to : *AstNode, reason : string, is_binary_expr := true) -> bool #must
 {
     Assert (expr.type != null, "The type of this node is null");
     Assert (to, to.type != null, "The type of this node is null");
 
     if expr.semantic_meaning == .Type
     {
-        Error (expr, "Invalid type for % (left type: %, right type is a type)",
-            reason, to.type.as_string);
+        if is_binary_expr
+            Error (expr, "Invalid type for % (left type: %, right type is a type)",
+                reason, to.type.as_string);
+        else
+            Error (expr, "Invalid type for %. Expected % but got a type",
+                reason, to.type.as_string);
         return false;
     }
 
@@ -1704,16 +1708,23 @@ ExprCanImplicitlyCastTo :: (expr : *AstNode, to : *AstNode, reason : string) -> 
         {
             if to.type.kind == .Integer
                 Error (expr, "This integer value does not fit into a %", to.type.as_string);
-            else
+            else if is_binary_expr
                 Error (expr, "Invalid type for % (left type: %, right type: %)",
+                    reason, to.type.as_string, expr.type.as_string);
+            else
+                Error (expr, "Invalid type for %. Expected % but got %",
                     reason, to.type.as_string, expr.type.as_string);
             return false;
         }
     }
     else if !TypeCanImplicitlyCastTo (expr.type, to.type)
     {
-        Error (expr, "Invalid type for % (left type: %, right type: %)",
-            reason, to.type.as_string, expr.type.as_string);
+        if is_binary_expr
+            Error (expr, "Invalid type for % (left type: %, right type: %)",
+                reason, to.type.as_string, expr.type.as_string);
+        else
+            Error (expr, "Invalid type for %. Expected % but got %",
+                reason, to.type.as_string, expr.type.as_string);
         return false;
     }
 
@@ -1837,16 +1848,8 @@ CheckReturn :: (using return_stmt : *AstReturn)
         if i >= enclosing_proc.results.count
             continue;
 
-        if !TypeCanImplicitlyCastTo (it.type, enclosing_proc.results[i].type)
-        {
-            Error (it,
-                "Invalid type for return value %. Expected % but got %",
-                i + 1,
-                enclosing_proc.results[i].type.as_string,
-                it.type.as_string
-            );
+        if !ExprCanImplicitlyCastTo (it, enclosing_proc.results[i], "return value", is_binary_expr = false)
             Info (enclosing_proc.signature_range, "Here is the signature of the enclosing procedure");
-        }
     }
 }
 
