@@ -1653,6 +1653,19 @@ CheckCast :: (using node : *AstCast)
     }
 }
 
+CheckSizeOf :: (using node : *AstSizeOf)
+{
+    CheckType (type_node);
+
+    if type_node.type == g_type_invalid
+        return;
+
+    type = g_type_s64;
+    semantic_meaning = .Constant;
+    value = .{int_value = type_node.type.size, kind = .Integer};
+    Assert (node, type_node.type.size >= 0, "In size_of expression, type is not sized");
+}
+
 CheckExpression :: (expr : *AstNode)
 {
     expr.type = g_type_invalid;
@@ -1675,6 +1688,8 @@ CheckExpression :: (expr : *AstNode)
         CheckFieldAccess (cast (*AstFieldAccess) expr);
     case .Cast;
         CheckCast (cast (*AstCast) expr);
+    case .Size_Of;
+        CheckSizeOf (cast (*AstSizeOf) expr);
     case;
         Panic (expr, "Invalid expression kind (%)", expr.kind);
     }

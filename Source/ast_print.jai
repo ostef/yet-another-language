@@ -313,6 +313,13 @@ PrintAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
         Append (builder, ") ");
         PrintAstNode (builder, cast_node.expr);
 
+    case .Size_Of;
+        size_of_node := cast (*AstSizeOf) node;
+
+        Append (builder, "size_of (");
+        PrintAstNode (builder, size_of_node.type_node);
+        Append (builder, ") ");
+
     case .Field_Access;
         access := cast (*AstFieldAccess) node;
 

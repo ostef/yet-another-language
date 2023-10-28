@@ -25,6 +25,7 @@ AstKind :: enum u8
             Procedure_Call;
             Subscript;
             Cast;
+            Size_Of;
 
         Expressions_End;
 
@@ -486,6 +487,23 @@ MakeAstCast :: inline (cast_tok : Token, type_node : *AstNode, expr : *AstNode) 
     node.type_node = type_node;
     node.expr = expr;
     node.range = TokenRangeJoin (cast_tok, expr);
+
+    return node;
+}
+
+AstSizeOf :: struct
+{
+    #as using base : AstNode;
+    base.kind = .Size_Of;
+
+    type_node : *AstNode;
+}
+
+MakeAstSizeOf :: inline (size_of_tok : Token, close_paren_tok : Token, type_node : *AstNode) -> *AstSizeOf #must
+{
+    node := Alloc (AstSizeOf);
+    node.type_node = type_node;
+    node.range = TokenRangeJoin (size_of_tok, close_paren_tok);
 
     return node;
 }

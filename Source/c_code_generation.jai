@@ -716,6 +716,7 @@ EmitAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
     case .Field_Access; #through;
     case .Procedure_Call; #through;
     case .Cast;
+    case .Size_Of;
         EmitExpression (builder, node);
 
     case .Expressions_End;
@@ -820,6 +821,13 @@ EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
         EmitFullType (builder, cast_node.type_node.type);
         Append (builder, ")");
         EmitExpression (builder, cast_node.expr);
+        Append (builder, ")");
+
+    case .Size_Of;
+        size_of_node := cast (*AstSizeOf) node;
+
+        Append (builder, "sizeof (");
+        EmitFullType (builder, size_of_node.type_node.type);
         Append (builder, ")");
 
     case .Field_Access;

@@ -550,6 +550,18 @@ ParsePrimaryExpression :: (using file : *YalFile) -> *AstNode #must
 
             return MakeAstCast (tok, type_node, expr);
         }
+        else if tok.kind == .Size_Of
+        {
+            Expect (file, .Open_Paren);
+
+            type_node := ParseType (file);
+            if !type_node
+                return null;
+
+            Expect (file, .Close_Paren);
+
+            return MakeAstSizeOf (tok, PrevToken (lexer), type_node);
+        }
 
         expr := ParseExpression (file, op.precedence);
         if !expr
