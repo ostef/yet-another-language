@@ -1720,6 +1720,11 @@ CheckSizeOf :: (using node : *AstSizeOf)
 CheckExpression :: (expr : *AstNode)
 {
     expr.type = g_type_invalid;
+    defer if expr.type != g_type_invalid
+    {
+        Assert (expr, expr.semantic_meaning != .Invalid,
+            "This expression has been checked but has invalid semantic meaning");
+    }
 
     if expr.kind ==
     {
