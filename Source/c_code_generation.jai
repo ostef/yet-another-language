@@ -12,6 +12,7 @@ CodegenStatus :: enum u8
 C_Header :: #string C
 // ======= Yal typedefs =======
 
+#include <assert.h>
 #include <stdio.h>
 #include <malloc.h>
 
@@ -410,6 +411,7 @@ EmitDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
         Append (builder, "typedef ");
         EmitStruct (builder, cast (*AstStruct) decl.expr, decl.single_identifier.name);
         Append (builder, " %", decl.single_identifier.name);
+
     case .Enum;
         // We don't emit enums since enum members are emitted directly as their value because they are constants
         //EmitEnum (builder, cast (*AstEnum) decl.expr, decl.single_identifier.name);
@@ -600,12 +602,24 @@ EmitFullType :: inline (builder : *SourceCodeBuilder, type : *YalType)
 
 EmitStatement :: (builder : *SourceCodeBuilder, node : *AstNode)
 {
+    is_struct := node.kind == .Declaration && (cast (*AstDeclaration) node).decl_kind == .Struct;
+
+    if is_struct
+        Append (builder, "\n#pragma pack (push, 1)\n");
+
     EmitAstNode (builder, node);
 
     if EmittedStatementShouldEndInSemicolon (node)
         Append (builder, ";");
     else if EmittedStatementShouldEndInComma (node)
         Append (builder, ",");
+
+    if is_struct
+    {
+        Append (builder, "\n#pragma pack (pop)\n");
+        type_struct := cast (*YalTypeStruct) node.type;
+        Append (builder, "static_assert (sizeof (%) == %, \"Mismatching size for emitted struct\");\n", type_struct.name, type_struct.size);
+    }
 }
 
 EmitAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
@@ -962,12 +976,10 @@ EmitCCodeForFile :: (builder : *SourceCodeBuilder, file : *YalFile)
         if it_index != 0 && more_newlines
             Append (builder, "\n");
 
-        EmitDeclaration (builder, it);
+        EmitStatement (builder, it);
 
-        if EmittedStatementShouldEndInSemicolon (it)
-            Append (builder, ";\n");
-        else
-            Append (builder, "\n");
+        Append (builder, "\n");
+
     }
 
     {
