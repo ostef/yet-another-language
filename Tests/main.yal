@@ -126,12 +126,73 @@ proc IntegerImplicitConversion ()
         c = b;  // Should not work
     }*/
 
-    {
+    /*{
         var a : u32 = 10;
         var b : u32;
 
         a = -10;
+    }*/
+}
+
+proc MakeString (count : s64, data : *u8) -> string
+{
+    var result : string;
+    result.data = data;
+    result.count = count;
+
+    return result;
+}
+
+proc WriteUnsignedNumber (val : u64)
+{
+    var buffer : [20]u8;
+
+    var len := 0;
+    var tmp := val;
+    while len == 0 || tmp != 0
+    {
+        tmp /= 10;
+        len += 1;
     }
+
+    var i := 0;
+    while i < len
+    {
+        var digit := cast (u8) val % 10;
+        val /= 10;
+
+        buffer[len - i - 1] = cast (u8) ('0' + digit);
+
+        i += 1;
+    }
+
+    WriteString (MakeString (len, buffer.data));
+}
+
+proc WriteNumber (val : s64)
+{
+    var unsigned_val : u64;
+
+    if val < 0
+    {
+        WriteString ("-");
+        unsigned_val = cast (u64) -val;
+    }
+    else
+    {
+        unsigned_val = cast (u64) val;
+    }
+
+    WriteUnsignedNumber (unsigned_val);
+}
+
+proc StringLength (str : *u8) -> s64
+{
+    var i := 0;
+    while str[i] != 0
+        i += 1;
+
+    return i;
 }
 
 proc Main (args : []string)
@@ -141,7 +202,11 @@ proc Main (args : []string)
     {
         WriteString (args[i]);
         WriteString ("\n");
+
+        var len := StringLength (args[i].data);
+        WriteUnsignedNumber (cast (u64) len);
+        WriteString ("\n");
+
         i += 1;
     }
-
 }

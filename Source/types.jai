@@ -695,3 +695,29 @@ TypeCanImplicitlyCastTo :: (type : *YalType, to : *YalType) -> bool #must
 
     return TypesAreEqual (type, to);
 }
+
+TypeCanExplicitlyCastTo :: (type : *YalType, to : *YalType) -> bool #must
+{
+    if TypeCanImplicitlyCastTo (type, to)
+        return true;
+
+    // All integer types can explicitly cast to one another
+    if type.kind == .Integer && to.kind == .Integer
+        return true;
+
+    // All float types can explicitly cast to integers and vice versa
+    if type.kind == .Float && to.kind == .Integer
+        return true;
+
+    if to.kind == .Float && type.kind == .Integer
+        return true;
+
+    // All integer types can explicitly cast to bool and vice versa
+    if type.kind == .Integer && to.kind == .Bool
+        return true;
+
+    if to.kind == .Integer && type.kind == .Bool
+        return true;
+
+    return false;
+}

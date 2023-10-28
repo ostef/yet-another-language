@@ -24,6 +24,7 @@ AstKind :: enum u8
             Field_Access;
             Procedure_Call;
             Subscript;
+            Cast;
 
         Expressions_End;
 
@@ -466,6 +467,25 @@ MakeAstSubscript :: inline (subscripted : *AstNode, index : *AstNode, close_brac
     node.subscripted = subscripted;
     node.index = index;
     node.range = TokenRangeJoin (subscripted, close_bracket_tok);
+
+    return node;
+}
+
+AstCast :: struct
+{
+    #as using base : AstNode;
+    base.kind = .Cast;
+
+    type_node : *AstNode;
+    expr : *AstNode;
+}
+
+MakeAstCast :: inline (cast_tok : Token, type_node : *AstNode, expr : *AstNode) -> *AstCast #must
+{
+    node := Alloc (AstCast);
+    node.type_node = type_node;
+    node.expr = expr;
+    node.range = TokenRangeJoin (cast_tok, expr);
 
     return node;
 }

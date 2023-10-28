@@ -714,7 +714,8 @@ EmitAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
     case .Unary; #through;
     case .Subscript; #through;
     case .Field_Access; #through;
-    case .Procedure_Call;
+    case .Procedure_Call; #through;
+    case .Cast;
         EmitExpression (builder, node);
 
     case .Expressions_End;
@@ -811,6 +812,15 @@ EmitExpression :: (builder : *SourceCodeBuilder, node : *AstNode)
 
     case .Subscript;
         EmitSubscript (builder, cast (*AstSubscript) node);
+
+    case .Cast;
+        cast_node := cast (*AstCast) node;
+
+        Append (builder, "((");
+        EmitFullType (builder, cast_node.type_node.type);
+        Append (builder, ")");
+        EmitExpression (builder, cast_node.expr);
+        Append (builder, ")");
 
     case .Field_Access;
         access := cast (*AstFieldAccess) node;

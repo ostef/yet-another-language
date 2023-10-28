@@ -305,6 +305,14 @@ PrintAstNode :: (builder : *SourceCodeBuilder, node : *AstNode)
         PrintAstNode (builder, subscript.index);
         Append (builder, "]");
 
+    case .Cast;
+        cast_node := cast (*AstCast) node;
+
+        Append (builder, "cast (");
+        PrintAstNode (builder, cast_node.type_node);
+        Append (builder, ") ");
+        PrintAstNode (builder, cast_node.expr);
+
     case .Field_Access;
         access := cast (*AstFieldAccess) node;
 

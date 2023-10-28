@@ -534,6 +534,23 @@ ParsePrimaryExpression :: (using file : *YalFile) -> *AstNode #must
     {
         ConsumeToken (*lexer);
 
+        if tok.kind == .Cast
+        {
+            Expect (file, .Open_Paren);
+
+            type_node := ParseType (file);
+            if !type_node
+                return null;
+
+            Expect (file, .Close_Paren);
+
+            expr := ParseExpression (file, op.precedence);
+            if !expr
+                return null;
+
+            return MakeAstCast (tok, type_node, expr);
+        }
+
         expr := ParseExpression (file, op.precedence);
         if !expr
             return null;

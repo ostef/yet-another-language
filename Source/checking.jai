@@ -1611,6 +1611,49 @@ CheckFieldAccess :: (using access : *AstFieldAccess)
     }
 }
 
+CheckCast :: (using node : *AstCast)
+{
+    CheckType (type_node);
+    CheckExpression (expr);
+
+    if type_node.type == g_type_invalid || expr.type == g_type_invalid
+        return;
+
+    if !TypeCanExplicitlyCastTo (expr.type, type_node.type)
+    {
+        Error (node, "Cannot cast from % to %", expr.type.as_string, type_node.type.as_string);
+        return;
+    }
+
+    type = type_node.type;
+    /* @Todo
+    if expr.semantic_meaning == .Constant
+    {
+        semantic_meaning = .Constant;
+        if #complete expr.type.kind ==
+        {
+        case .Integer;
+            value = ConstantCast (expr.value, .Integer);
+        case .Float;
+            value = ConstantCast (expr.value, .Float);
+        case .Bool;
+            value = ConstantCast (expr.value, .Boolean);
+        case .String;
+            value = ConstantCast (expr.value, .String);
+        case .Pointer;
+            value = ConstantCast (expr.value, .Pointer);
+        case .Procedure; #through;
+        case .Struct; #through;
+        case .Enum; #through;
+            Panic (node, "This case should have been handled earlier");
+        }
+    }
+    else*/
+    {
+        semantic_meaning = .Value;
+    }
+}
+
 CheckExpression :: (expr : *AstNode)
 {
     expr.type = g_type_invalid;
@@ -1631,7 +1674,8 @@ CheckExpression :: (expr : *AstNode)
         CheckSubscript (cast (*AstSubscript) expr);
     case .Field_Access;
         CheckFieldAccess (cast (*AstFieldAccess) expr);
-
+    case .Cast;
+        CheckCast (cast (*AstCast) expr);
     case;
         Panic (expr, "Invalid expression kind (%)", expr.kind);
     }
