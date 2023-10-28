@@ -65,7 +65,7 @@ typedef struct Yal__DynamicArray
 
 void Yal__WriteString (Yal__String str)
 {
-    printf ("%.*s", str.count, str.data);
+    printf ("%.*s", (int)str.count, str.data);
 }
 
 void *Yal__malloc (s64 size)
