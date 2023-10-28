@@ -950,6 +950,50 @@ CheckModulo :: (using binary : *AstBinary)
     }
 }
 
+CheckPointerArithmeticOperation :: (using binary : *AstBinary)
+{
+    type_pointer := cast (*YalTypePointer) left.type;
+    if type_pointer.pointed_type.kind == .Void
+    {
+        Error (binary, "Cannot perform pointer arithmetic on *void");
+        return;
+    }
+
+    if binary.op.kind ==
+    {
+    case .Plus; #through;
+    case .Plus_Equ; #through;
+    case .Minus; #through;
+    case .Minus_Equ;
+
+    case;
+        Error (binary, "Invalid type for arithmetic operation (left is: %, right is: %)",
+            left.type.as_string, right.type.as_string);
+        return;
+    }
+
+    if right.type.kind != .Integer
+    {
+        Error (binary, "Invalid type for arithmetic operation (left is: %, right is: %)",
+            left.type.as_string, right.type.as_string);
+        return;
+    }
+
+    type = left.type;
+
+    /* @Todo
+    if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
+    {
+        semantic_meaning = .Constant;
+        value = ConstantEvaluate (left.value, right.value, op, binary);
+    }
+    else
+    */
+    {
+        semantic_meaning = .Value;
+    }
+}
+
 CheckArithmeticOperation :: (using binary : *AstBinary)
 {
     Assert (binary,
@@ -958,9 +1002,16 @@ CheckArithmeticOperation :: (using binary : *AstBinary)
         "Invalid op"
     );
 
+    if left.type.kind == .Pointer
+    {
+        CheckPointerArithmeticOperation (binary);
+        return;
+    }
+
     if left.type.kind != .Integer && left.type.kind != .Float
     {
-        Error (binary, "Invalid type for arithmetic operation (left is: %, right is: %)", left.type.as_string, right.type.as_string);
+        Error (binary, "Invalid type for arithmetic operation (left is: %, right is: %)",
+            left.type.as_string, right.type.as_string);
         return;
     }
 
