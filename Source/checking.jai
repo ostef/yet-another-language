@@ -323,7 +323,7 @@ CollectDeclaredSymbols :: (scope : *Scope, node : *$T)
 
 CollectDeclaredSymbolsForUntypedNode :: (scope : *Scope, node : *AstNode)
 {
-    Ignore_Kinds :: AstKind.[
+    Ast_Kinds_To_Ignore :: AstKind.[
         .Invalid,
         .Statements_Begin,
         .Bad_Declaration,
@@ -357,7 +357,7 @@ CollectDeclaredSymbolsForUntypedNode :: (scope : *Scope, node : *AstNode)
         for i : 0..AstKind.Count - 1
         {
             kind := cast (AstKind) i;
-            for Ignore_Kinds
+            for Ast_Kinds_To_Ignore
             {
                 if it == kind
                     continue i;
@@ -530,7 +530,7 @@ CheckInitAssignment :: (using decl : *AstDeclaration)
         return;
     }
 
-    if type && !TypeCanImplicitlyCastTo (expr.type, type)
+    if type && !ExprCanImplicitlyCastTo (expr, decl, "init assignment")
     {
         Error (expr, "Invalid type for assignment (left type: %, right type: %)",
             type.as_string, expr.type.as_string);
@@ -855,11 +855,8 @@ CheckEquality :: (using binary : *AstBinary)
 {
     Assert (binary, op.kind == .Equ_Equ || op.kind == .Bang_Equ, "Invalid op");
 
-    if !TypeCanImplicitlyCastTo (right.type, left.type)
-    {
-        Error (binary.left, "Invalid type for comparison (left is: %, right is: %)", left.type.as_string, right.type.as_string);
+    if !ExprCanImplicitlyCastTo (right, left, "comparison")
         return;
-    }
 
     type = g_type_bool;
     if left.semantic_meaning == .Constant && right.semantic_meaning == .Constant
@@ -878,11 +875,13 @@ CheckArithmeticComparison :: (using binary : *AstBinary)
     Assert (binary, op.kind == .Less || op.kind == .Less_Equ || op.kind == .Greater || op.kind == .Greater_Equ, "Invalid op");
 
     if left.type.kind != .Integer && left.type.kind != .Float
-    || !TypeCanImplicitlyCastTo (right.type, left.type)
     {
         Error (binary, "Invalid type for comparison (left is: %, right is: %)", left.type.as_string, right.type.as_string);
         return;
     }
+
+    if !ExprCanImplicitlyCastTo (right, left, "comparison")
+        return;
 
     type = g_type_bool;
 
@@ -907,11 +906,15 @@ CheckBitOperation :: (using binary : *AstBinary)
         "Invalid op"
     );
 
-    if left.type.kind != .Integer || !TypeCanImplicitlyCastTo (right.type, left.type)
+    if left.type.kind != .Integer
     {
-        Error (binary, "Invalid type for bit operation (left is: %, right is: %)", left.type.as_string, right.type.as_string);
+        Error (binary, "Invalid type for bit operation (left is: %, right is: %)",
+            left.type.as_string, right.type.as_string);
         return;
     }
+
+    if !ExprCanImplicitlyCastTo (right, left, "bit operation")
+        return;
 
     type = left.type;
 
@@ -930,11 +933,15 @@ CheckModulo :: (using binary : *AstBinary)
 {
     Assert (binary, op.kind == .Percent || op.kind == .Percent_Equ, "Invalid op");
 
-    if left.type.kind != .Integer || !TypeCanImplicitlyCastTo (right.type, left.type)
+    if left.type.kind != .Integer
     {
-        Error (binary, "Invalid type for operator % (left is: %, right is: %)", Token_Names[op.kind], left.type.as_string, right.type.as_string);
+        Error (binary, "Invalid type for operator % (left is: %, right is: %)",
+            Token_Names[op.kind], left.type.as_string, right.type.as_string);
         return;
     }
+
+    if !ExprCanImplicitlyCastTo (right, left, "operator %")
+        return;
 
     type = left.type;
 
@@ -958,11 +965,13 @@ CheckArithmeticOperation :: (using binary : *AstBinary)
     );
 
     if left.type.kind != .Integer && left.type.kind != .Float
-    || !TypeCanImplicitlyCastTo (right.type, left.type)
     {
         Error (binary, "Invalid type for arithmetic operation (left is: %, right is: %)", left.type.as_string, right.type.as_string);
         return;
     }
+
+    if !ExprCanImplicitlyCastTo (right, left, "arithmetic operation")
+        return;
 
     if (op.kind == .Minus || op.kind == .Minus_Equ) && left.type.kind == .Integer && !(cast (*YalTypeInteger) left.type).is_signed
     {
@@ -1636,6 +1645,40 @@ CheckBlock :: (using block : *AstBlock)
     }
 }
 
+ExprCanImplicitlyCastTo :: (expr : *AstNode, to : *AstNode, reason : string) -> bool #must
+{
+    Assert (expr.type != null, "The type of this node is null");
+    Assert (to, to.type != null, "The type of this node is null");
+
+    if expr.semantic_meaning == .Type
+    {
+        Error (expr, "Invalid type for % (left type: %, right type is a type)",
+            reason, to.type.as_string);
+        return false;
+    }
+
+    if expr.semantic_meaning == .Constant && expr.value.kind == .Integer
+    {
+        if !UntypedIntegerValueCanImplicitlyCastTo (expr.value, to.type)
+        {
+            if to.type.kind == .Integer
+                Error (expr, "This integer value does not fit into a %", to.type.as_string);
+            else
+                Error (expr, "Invalid type for % (left type: %, right type: %)",
+                    reason, to.type.as_string, expr.type.as_string);
+            return false;
+        }
+    }
+    else if !TypeCanImplicitlyCastTo (expr.type, to.type)
+    {
+        Error (expr, "Invalid type for % (left type: %, right type: %)",
+            reason, to.type.as_string, expr.type.as_string);
+        return false;
+    }
+
+    return true;
+}
+
 CheckAssignment :: (using assign : *AstAssignment)
 {
     CheckExpression (left);
@@ -1657,33 +1700,7 @@ CheckAssignment :: (using assign : *AstAssignment)
         return;
     }
 
-    if right.semantic_meaning == .Type
-    {
-        Error (right, "Right of assignment is a type");
-        return;
-    }
-
-    if right.semantic_meaning == .Constant && right.value.kind == .Integer
-    {
-        // @Todo: constant integers are not necessarily untyped
-        if !UntypedIntegerValueCanImplicitlyCastTo (right.value, left.type)
-        {
-            if left.type.kind == .Integer
-                Error (right, "This integer value does not fit into a %", left.type.as_string);
-            else
-                Error (right, "Invalid type for assignment (left type: %, right type: %)",
-                    left.type.as_string, right.type.as_string);
-            return;
-        }
-    }
-    else if !TypeCanImplicitlyCastTo (right.type, left.type)
-    {
-        Error (right, "Invalid type for assignment (left type: %, right type: %)",
-            left.type.as_string, right.type.as_string);
-        return;
-    }
-
-    // @Hack: AstAssignment and AstBinary have the same memory layout, so we use
+    // @Cleanup @Hack: AstAssignment and AstBinary have the same memory layout, so we use
     // the routines to check binary expressions for assignments, which may lead
     // to unexpected behavior
     if op.kind ==
@@ -1703,6 +1720,10 @@ CheckAssignment :: (using assign : *AstAssignment)
     case .Less_Less_Equ; #through;
     case .Greater_Greater_Equ;
         CheckBitOperation (cast (*AstBinary) assign);
+
+    case;
+        if !ExprCanImplicitlyCastTo (right, left, "assignment")
+            return;
     }
 
     // Reset the type and semantic meaning, plain statements don't have those
