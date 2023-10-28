@@ -693,13 +693,33 @@ TypeCanImplicitlyCastTo :: (type : *YalType, to : *YalType) -> bool #must
     if type.kind == .Integer
         return inline TypeIntegerCanImplicitlyCastTo (cast (*YalTypeInteger) type, to);
 
+    if type.kind == .Pointer && to.kind == .Pointer
+    {
+        type_pointer := cast (*YalTypePointer) type;
+        to_pointer := cast (*YalTypePointer) to;
+
+        // Implicit cast is possible from *void to *T and from *T to *void
+        if type_pointer.pointed_type.kind == .Void || to_pointer.pointed_type.kind == .Void
+            return true;
+    }
+
     return TypesAreEqual (type, to);
 }
 
 TypeCanExplicitlyCastTo :: (type : *YalType, to : *YalType) -> bool #must
 {
-    if TypeCanImplicitlyCastTo (type, to)
+    // All pointer types can explicitly cast to one another
+    if type.kind == .Pointer && to.kind == .Pointer
         return true;
+
+    // All pointer types can explicitly cast to integers and vice versa
+    // @Robustness: maybe this isn't a good idea, and we should only allow
+    // pointer cast to 64-bit integers?
+    if type.kind == .Pointer && to.kind == .Integer
+        return true;
+
+    if to.kind == .Pointer && type.kind == .Integer
+        return false;
 
     // All integer types can explicitly cast to one another
     if type.kind == .Integer && to.kind == .Integer
@@ -719,5 +739,5 @@ TypeCanExplicitlyCastTo :: (type : *YalType, to : *YalType) -> bool #must
     if to.kind == .Integer && type.kind == .Bool
         return true;
 
-    return false;
+    return inline TypeCanImplicitlyCastTo (type, to);
 }

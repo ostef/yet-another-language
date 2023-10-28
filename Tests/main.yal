@@ -5,58 +5,19 @@ external proc WriteString (str : string);
 const Pi := 3.1415926;
 const Tau := Pi * 2.0;
 
-var foo : [1][2][3]*int;
-
-struct Node
-{
-    var parent : *Node;
-    var first_child : *Node;
-    var next : *Node;
-    var prev : *Node;
-}
-
-typedef AllocatorProc = proc (AllocatorOperation, size : s64, ptr : *void, new_size : s64) -> *void;
-
-struct Allocator
-{
-    var data : *void;
-    var procedure : AllocatorProc;
-}
-
-struct FooBar
-{
-    var data : *void;
-    var another : *Another;
-}
-
-struct Another
-{
-    var a : int;
-    var b : int;
-    var c : int;
-}
-
-proc AAAlloc (op : AllocatorOperation)
-{
-    var allocator : Allocator;
-    //allocator.foobar = 10;
-    allocator.data = null;
-    //allocator.procedure = null;
-
-    var ptr := &allocator;
-    ptr.data = null;
-
-    var foobar : FooBar;
-    foobar.another.a = foobar.another.b;
-
-    var another := *foobar.another;
-}
-
 enum AllocatorOperation u8
 {
     Alloc;
     Free;
     Resize;
+}
+
+typedef AllocatorProc = proc (AllocatorOperation, size : s64, ptr : *void, new_size : s64, data : *void) -> *void;
+
+struct Allocator
+{
+    var data : *void;
+    var procedure : AllocatorProc;
 }
 
 proc ToRads (x : float) -> float
@@ -96,42 +57,9 @@ proc Abs (x : float) -> float
 proc Sign (x : float) -> float
 {
     if x < 0.0
-        return -1.0;
+        return -1;
 
-    return 1.0;
-}
-
-proc Recursive2 ()
-{
-    Recursive1 ();
-}
-
-proc Recursive1 ()
-{
-    Recursive2 ();
-}
-
-proc IntegerImplicitConversion ()
-{
-    /*{
-        var a : s64;
-        var b : u64;
-        var c : u32;
-
-        a = b;  // Should not work
-        b = a;  // Should not work
-        a = c;  // Should work
-        c = a;  // Should not work
-        b = c;  // Should work
-        c = b;  // Should not work
-    }*/
-
-    /*{
-        var a : u32 = 10;
-        var b : u32;
-
-        a = -10;
-    }*/
+    return 1;
 }
 
 proc MakeString (count : s64, data : *u8) -> string
@@ -193,6 +121,98 @@ proc StringLength (str : *u8) -> s64
         i += 1;
 
     return i;
+}
+
+proc Alloc (size : s64, allocator : Allocator) -> *void
+{
+    if size <= 0
+        return null;
+
+    return allocator.procedure (AllocatorOperation.Alloc, size, null, 0, allocator.data);
+}
+
+proc Free (ptr : *void, allocator : Allocator)
+{
+    if ptr == null
+        return;
+
+    allocator.procedure (AllocatorOperation.Free, 0, ptr, 0, allocator.data);
+}
+
+struct MemoryArenaPage
+{
+    var prev : *MemoryArenaPage;
+    var size : s64;
+    var used : s64;
+}
+
+struct MemoryArena
+{
+    var page_allocator : Allocator;
+    var total_size : s64;
+    var total_used : s64;
+    var page : *MemoryArenaPage;
+    var default_page_size : s64;
+}
+
+proc MemoryArenaFreePages (arena : *MemoryArena, until : *MemoryArenaPage)
+{
+    while arena.page != null && arena.page != until
+    {
+        var prev := arena.page.prev;
+
+        arena.total_size -= arena.page.size;
+        arena.total_used -= arena.page.used;
+        Free (arena.page, arena.page_allocator);
+
+        arena.page = prev;
+    }
+}
+
+proc MemoryArenaAddPage (arena : *MemoryArena, size : s64) -> bool
+{
+    if size < arena.default_page_size
+        size = arena.default_page_size;
+
+    var page := cast (*MemoryArenaPage) Alloc (size_of (MemoryArenaPage) + size, arena.page_allocator);
+    if page == null
+        return false;
+
+    page.size = size;
+    page.prev = arena.page;
+
+    arena.total_size += size;
+    arena.page = page;
+
+    return true;
+}
+
+proc MemoryArenaAllocatorProc (op : AllocatorOperation, size : s64, ptr : *void, new_size : s64, data : *void) -> *void
+{
+    var arena := cast (*MemoryArena) data;
+
+    if op == AllocatorOperation.Alloc || op == AllocatorOperation.Resize
+    {
+        if size <= 0
+            return null;
+
+        var aligned_size := (size + 7) & ^7;
+        if arena.page != null || arena.page.used + aligned_size > arena.page.size
+        {
+            if !MemoryArenaAddPage (arena, aligned_size)
+                return null;
+        }
+
+        var ptr := cast (u64) (cast (*u8) (arena.page + 1) + arena.page.used);
+        var aligned_ptr := (ptr + 7) & ^7;
+
+        arena.page.used += aligned_size;
+        arena.total_used += aligned_size;
+
+        return cast (*void) aligned_ptr;
+    }
+
+    return null;
 }
 
 proc Main (args : []string)
