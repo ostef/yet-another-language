@@ -394,7 +394,7 @@ AssertionFailed :: (location : Source_Code_Location, message : string)
 
     write_strings (location.fully_pathed_filename, ":", to_standard_error = true);
     write_number (location.line_number, to_standard_error = true);
-    write_string (",", to_standard_error = true);
+    write_string (":", to_standard_error = true);
     write_number (location.character_number, to_standard_error = true);
 
     write_string ("\n", to_standard_error = true);
