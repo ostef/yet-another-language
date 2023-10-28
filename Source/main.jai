@@ -171,10 +171,12 @@ main :: ()
     parsing_start := Basic.current_time_monotonic ();
 
     total_lines_of_code := 0;
+    total_bytes_processed := 0;
     for g_files
     {
         ParseFile (it);
         total_lines_of_code += it.line;
+        total_bytes_processed += it.byte_index;
     }
 
     parsing_end := Basic.current_time_monotonic ();
@@ -204,6 +206,7 @@ main :: ()
     codegen_start := Basic.current_time_monotonic ();
 
     total_emitted_lines_of_code := 0;
+    total_emitted_bytes := 0;
     for g_files
     {
         builder : SourceCodeBuilder;
@@ -211,6 +214,7 @@ main :: ()
         EmitCCodeForFile (*builder, it);
 
         total_emitted_lines_of_code += builder.current_line;
+        total_emitted_bytes += builder.count;
 
         it.emitted_c_code = Build (*builder);
     }
@@ -305,15 +309,15 @@ main :: ()
         Print ("\n");
 
         Print ("Total lines of C code emitted: %", total_emitted_lines_of_code);
-        if total_emitted_lines_of_code > total_lines_of_code
+        if total_emitted_bytes > total_bytes_processed
         {
-            Println (" (emitted code is {}%% bigger than source code)",
-                Round (total_emitted_lines_of_code / cast (float) total_lines_of_code * 100) - 100);
+            Println (", emitted code is {}%% bigger than source code",
+                Round (total_emitted_bytes / cast (float) total_bytes_processed * 100) - 100);
         }
-        else
+        else    // Honestly I don't even know how that would be possible but let's handle it anyway
         {
-            Println (" (emitted code is {}%% smaller than source code)",
-                100 - Round (total_emitted_lines_of_code / cast (float) total_lines_of_code * 100));
+            Println (", emitted code is {}%% smaller than source code",
+                100 - Round (total_emitted_bytes / cast (float) total_bytes_processed * 100));
         }
 
         memory_usage := context.temporary_storage.high_water_mark;
