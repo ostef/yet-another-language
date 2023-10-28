@@ -203,11 +203,15 @@ main :: ()
 
     codegen_start := Basic.current_time_monotonic ();
 
+    total_emitted_lines_of_code := 0;
     for g_files
     {
         builder : SourceCodeBuilder;
 
         EmitCCodeForFile (*builder, it);
+
+        total_emitted_lines_of_code += builder.current_line;
+
         it.emitted_c_code = Build (*builder);
     }
 
@@ -298,15 +302,29 @@ main :: ()
         Println ("  C compiler: {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, c_compiler_time, time_unit, Round (c_compiler_time_percent));
         Println ("  => Total:   {:~*.2} %, {:.0} lines of code per second", max_leading_digits + 3, total_time, time_unit, total_lines_of_code / total_time_sec);
 
+        Print ("\n");
+
+        Print ("Total lines of C code emitted: %", total_emitted_lines_of_code);
+        if total_emitted_lines_of_code > total_lines_of_code
+        {
+            Println (" (emitted code is {}%% bigger than source code)",
+                Round (total_emitted_lines_of_code / cast (float) total_lines_of_code * 100) - 100);
+        }
+        else
+        {
+            Println (" (emitted code is {}%% smaller than source code)",
+                100 - Round (total_emitted_lines_of_code / cast (float) total_lines_of_code * 100));
+        }
+
         memory_usage := context.temporary_storage.high_water_mark;
         if memory_usage < 1000
-            Println ("\nTotal memory used by the compiler: % bytes", memory_usage);
+            Println ("Total memory used by the compiler: % bytes", memory_usage);
         else if memory_usage < 1000_000
-            Println ("\nTotal memory used by the compiler: % kilo-bytes", memory_usage / 1000);
+            Println ("Total memory used by the compiler: % kilo-bytes", memory_usage / 1000);
         else if memory_usage < 1000_000_000
-            Println ("\nTotal memory used by the compiler: % mega-bytes", memory_usage / 1000_000);
+            Println ("Total memory used by the compiler: % mega-bytes", memory_usage / 1000_000);
         else if memory_usage < 1000_000_000_000
-            Println ("\nTotal memory used by the compiler: % giga-bytes", memory_usage / 1000_000_000);
+            Println ("Total memory used by the compiler: % giga-bytes", memory_usage / 1000_000_000);
     }
 }
 
