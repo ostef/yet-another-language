@@ -719,7 +719,7 @@ TypeCanExplicitlyCastTo :: (type : *YalType, to : *YalType) -> bool #must
         return true;
 
     if to.kind == .Pointer && type.kind == .Integer
-        return false;
+        return true;
 
     // All integer types can explicitly cast to one another
     if type.kind == .Integer && to.kind == .Integer
