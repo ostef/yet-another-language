@@ -1,4 +1,5 @@
 // @Todo: mangle names
+// @Cleanup: we could probably cleanup the emitted code by using macros
 
 CodegenStatus :: enum u8
 {
@@ -15,6 +16,7 @@ C_Header :: #string C
 #include <assert.h>
 #include <stdio.h>
 #include <malloc.h>
+#include <string.h>
 
 typedef          char      s8;
 typedef unsigned char      u8;
@@ -83,6 +85,17 @@ void Yal__free (void *ptr)
 {
     free (ptr);
 }
+
+void *Yal__memset (void *ptr, u8 val, s64 size)
+{
+    return memset (ptr, val, size);
+}
+
+void *Yal__memcpy (void *dest, void *src, s64 size)
+{
+    return memcpy (dest, src, size);
+}
+
 C
 
 C_Entry_Point :: #string C
@@ -390,7 +403,8 @@ EmitVariableDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration
 
 EmitDeclaration :: (builder : *SourceCodeBuilder, decl : *AstDeclaration)
 {
-    Assert (decl, decl.codegen_status != .Generating_Forward_Decl && decl.codegen_status != .Generating, "Circular dependency when emitting C code");
+    Assert (decl, decl.codegen_status != .Generating_Forward_Decl && decl.codegen_status != .Generating,
+        "Circular dependency when emitting C code");
 
     if decl.codegen_status == .Generated
         return;
