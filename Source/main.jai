@@ -1,7 +1,9 @@
-// @Todo: handle integer literal conversions to smaller and unsigned integers as well as floats
-
 // I'm thinking about making enum values start at 1 unless specified otherwise, so 0 is by
 // default used as an 'invalid' enum value, which is convenient because 0 is the default initialized value
+
+// @Todo: implicit bool conversion of integers and pointers in if and while condition expr
+// @Todo: autocast operator
+// @Todo: what to do with pointer arithmetic of zero sized types
 
 #import "Common";
 #import "Array";

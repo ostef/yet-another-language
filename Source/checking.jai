@@ -1,3 +1,8 @@
+// @Todo: redeclaring a variable in a procedure body does
+// not give an identifier redeclaration error if the same
+// name exists in the procedure signature.
+// Should we handle that as an error ?
+
 SemanticMeaning :: enum u8
 {
     Invalid;
