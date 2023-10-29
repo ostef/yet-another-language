@@ -636,8 +636,16 @@ EmitStatement :: (builder : *SourceCodeBuilder, node : *AstNode)
     if is_struct
     {
         Append (builder, "\n#pragma pack (pop)\n");
+
         type_struct := cast (*YalTypeStruct) node.type;
-        Append (builder, "static_assert (sizeof (%) == %, \"Mismatching size for emitted struct\");\n", type_struct.name, type_struct.size);
+        if g_build_settings.use_gcc
+        {
+            Append (builder, "_Static_assert (sizeof (%) == %, \"Mismatching size for emitted struct\");\n", type_struct.name, type_struct.size);
+        }
+        else
+        {
+            Append (builder, "static_assert (sizeof (%) == %, \"Mismatching size for emitted struct\");\n", type_struct.name, type_struct.size);
+        }
     }
 }
 
