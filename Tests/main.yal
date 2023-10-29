@@ -1,10 +1,17 @@
 external proc malloc (size : u64) -> *void;
 external proc realloc (ptr : *void, new_size : u64) -> *void;
 external proc free (ptr : *void);
+external proc memset (ptr : *void, val : u8, size : s64) -> *void;
+external proc memcpy (dest : *void, src : *void, size : s64) -> *void;
 external proc WriteString (str : string);
 
 const Pi := 3.1415926;
 const Tau := Pi * 2.0;
+
+// I'd like this to be const but we don't have struct literals yet
+var crt_allocator : Allocator;
+var temp_allocator : Allocator;
+var temp_storage : MemoryArena;
 
 enum AllocatorOperation u8
 {
@@ -129,7 +136,11 @@ proc Alloc (size : s64, allocator : Allocator) -> *void
     if size <= 0
         return null;
 
-    return allocator.procedure (AllocatorOperation.Alloc, size, null, 0, allocator.data);
+    var result := allocator.procedure (AllocatorOperation.Alloc, size, null, 0, allocator.data);
+    if result != null
+        memset (result, 0, size);
+
+    return result;
 }
 
 proc Free (ptr : *void, allocator : Allocator)
@@ -192,25 +203,44 @@ proc MemoryArenaAllocatorProc (op : AllocatorOperation, size : s64, ptr : *void,
 {
     var arena := cast (*MemoryArena) data;
 
-    if op == AllocatorOperation.Alloc || op == AllocatorOperation.Resize
+    if op == AllocatorOperation.Free
+        return null;
+
+    if op == AllocatorOperation.Resize
+        size = new_size;
+
+    if size <= 0
+        return null;
+
+    var aligned_size := (size + 7) & ^7;
+    if arena.page != null || arena.page.used + aligned_size > arena.page.size
     {
-        if size <= 0
+        if !MemoryArenaAddPage (arena, aligned_size)
             return null;
+    }
 
-        var aligned_size := (size + 7) & ^7;
-        if arena.page != null || arena.page.used + aligned_size > arena.page.size
-        {
-            if !MemoryArenaAddPage (arena, aligned_size)
-                return null;
-        }
+    var result_ptr := cast (u64) (cast (*u8) (arena.page + 1) + arena.page.used);
+    var aligned_ptr := cast (*void) ((cast (s64) result_ptr + 7) & ^7);
 
-        var ptr := cast (u64) (cast (*u8) (arena.page + 1) + arena.page.used);
-        var aligned_ptr := cast (*void) ((cast (s64) ptr + 7) & ^7);
+    arena.page.used += aligned_size;
+    arena.total_used += aligned_size;
 
-        arena.page.used += aligned_size;
-        arena.total_used += aligned_size;
+    return cast (*void) aligned_ptr;
+}
 
-        return cast (*void) aligned_ptr;
+proc CRTAllocatorProc (op : AllocatorOperation, size : s64, ptr : *void, new_size : s64, data : *void) -> *void
+{
+    if op == AllocatorOperation.Alloc
+    {
+        return malloc (cast (u64) size);
+    }
+    else if op == AllocatorOperation.Resize
+    {
+        return realloc (ptr, cast (u64) new_size);
+    }
+    else if op == AllocatorOperation.Free
+    {
+        free (ptr);
     }
 
     return null;
@@ -218,6 +248,14 @@ proc MemoryArenaAllocatorProc (op : AllocatorOperation, size : s64, ptr : *void,
 
 proc Main (args : []string)
 {
+    crt_allocator.procedure = CRTAllocatorProc;
+
+    temp_storage.default_page_size = 4096;
+    temp_storage.page_allocator = crt_allocator;
+
+    temp_allocator.data = &temp_storage;
+    temp_allocator.procedure = MemoryArenaAllocatorProc;
+
     var i := 0;
     while i < args.count
     {
