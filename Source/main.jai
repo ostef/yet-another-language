@@ -78,8 +78,12 @@ else
 
 PlatformInit :: ()
 {
-    g_stdout_has_colors = true;
-    g_stderr_has_colors = true;
+    libc :: #system_library "libc";
+    isatty :: (fd : s32) -> s32 #foreign libc;
+
+    // @Todo: ensure stdout and stderr can handle colors
+    g_stdout_has_colors = cast (bool) isatty (1);
+    g_stderr_has_colors = cast (bool) isatty (2);
     g_build_settings.use_gcc = true;
 }
 
