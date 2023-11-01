@@ -44,6 +44,9 @@ BuildSettings :: struct
 g_stdout_has_colors, g_stderr_has_colors : bool;
 g_build_settings : BuildSettings;
 
+#if OS == .WINDOWS
+{
+
 PlatformInit :: ()
 {
     Kernel32 :: #system_library "Kernel32";
@@ -67,6 +70,19 @@ PlatformInit :: ()
 
     if mode & 0x04
         g_stderr_has_colors = true;
+}
+
+}
+else
+{
+
+PlatformInit :: ()
+{
+    g_stdout_has_colors = true;
+    g_stderr_has_colors = true;
+    g_build_settings.use_gcc = true;
+}
+
 }
 
 PrintUsage :: ()
@@ -246,15 +262,18 @@ main :: ()
         filename := String.path_strip_extension (it.filename);
         basename := String.path_filename (filename);
         c_filename := FormatString ("%.generated.c", filename);
-        exe_filename := FormatString ("%.exe", basename);
+        #if OS == .WINDOWS
+           output_filename := FormatString ("%.exe", basename);
+        else
+           output_filename := basename;
 
         File.write_entire_file (c_filename, it.emitted_c_code);
 
         command : string;
         if g_build_settings.use_gcc
-            command = FormatString ("gcc % -o %", c_filename, exe_filename);
+            command = FormatString ("gcc % -o %", c_filename, output_filename);
         else
-            command = FormatString ("cl % /nologo /link /OUT:%", c_filename, exe_filename);
+            command = FormatString ("cl % /nologo /link /OUT:%", c_filename, output_filename);
         command_strings := Process.break_command_into_strings (command);
 
         Println ("> %", command);
