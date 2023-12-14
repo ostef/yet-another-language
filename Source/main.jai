@@ -8,7 +8,6 @@
 #import "Common";
 #import "Hash_Map";
 #import "Hash_Set";
-#import "String_Builder";
 #import "Profiling" (Enable_Profiling = false);
 
 Basic :: #import "Basic";
@@ -248,9 +247,10 @@ main :: ()
         EmitCCodeForFile (*builder, it);
 
         total_emitted_lines_of_code += builder.current_line;
-        total_emitted_bytes += builder.count;
 
         it.emitted_c_code = Build (*builder);
+
+        total_emitted_bytes += it.emitted_c_code.count;
     }
 
     codegen_end := Basic.current_time_monotonic ();
@@ -323,6 +323,7 @@ main :: ()
         parsing_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else parsing_time / total_time) * 100;
         checking_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else checking_time / total_time) * 100;
         codegen_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else codegen_time / total_time) * 100;
+        yal_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else yal_time / total_time) * 100;
         c_compiler_time_percent := cast (float) (ifx total_time < 0.00001 then 0.0 else c_compiler_time / total_time) * 100;
 
         time_unit_mult, time_unit := ChooseTimeUnit (total_time);
@@ -336,24 +337,47 @@ main :: ()
         max_leading_digits := DecimalLength (cast (u64) Max (Max (Max (parsing_time, checking_time), Max (codegen_time, total_time)), Max (yal_time, c_compiler_time)));
 
         Println ("\nTiming information (processed % lines of code):", total_lines_of_code);
-        Println ("  Parsing:    {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, parsing_time, time_unit, Round (parsing_time_percent));
-        Println ("  Checking:   {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, checking_time, time_unit, Round (checking_time_percent));
-        Println ("  Codegen:    {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, codegen_time, time_unit, Round (codegen_time_percent));
-        Println ("  => Total:   {:~*.2} %, {:4.0}%% of total time\n", max_leading_digits + 3, yal_time, time_unit, Round (codegen_time_percent));
-        Println ("  C compiler: {:~*.2} %, {:4.0}%% of total time", max_leading_digits + 3, c_compiler_time, time_unit, Round (c_compiler_time_percent));
-        Println ("  => Total:   {:~*.2} %, {:.0} lines of code per second", max_leading_digits + 3, total_time, time_unit, total_lines_of_code / total_time_sec);
+        time_fmt := FormatFloat.{
+            value=parsing_time,
+            width=max_leading_digits + 3,
+            trailing_width=2,
+            zero_removal=.NO
+        };
+        time_percent_fmt := FormatInt.{
+            value=cast (int) Round (parsing_time_percent),
+            minimum_digits=4,
+            padding=#char " "
+        };
 
-        Print ("\n");
+        Println ("  Parsing:    % %, %\% of total time", time_fmt, time_unit, time_percent_fmt);
+
+        time_fmt.value = checking_time;
+        time_percent_fmt.value = cast (int) Round (checking_time_percent);
+        Println ("  Checking:   % %, %\% of total time", time_fmt, time_unit, time_percent_fmt);
+
+        time_fmt.value = codegen_time;
+        time_percent_fmt.value = cast (int) Round (codegen_time_percent);
+        Println ("  Codegen:    % %, %\% of total time", time_fmt, time_unit, time_percent_fmt);
+
+        time_fmt.value = yal_time;
+        time_percent_fmt.value = cast (int) Round (yal_time_percent);
+        Println ("  => Total:   % %, %\% of total time\n", time_fmt, time_unit, time_percent_fmt);
+
+        time_fmt.value = c_compiler_time;
+        time_percent_fmt.value = cast (int) Round (c_compiler_time_percent);
+        Println ("  C compiler: % %, %\% of total time", time_fmt, time_unit, time_percent_fmt);
+
+        Println ("  => Total:   % %, % lines of code per second\n", total_time, time_unit, cast (int) (total_lines_of_code / total_time_sec));
 
         Print ("Total lines of C code emitted: %", total_emitted_lines_of_code);
         if total_emitted_bytes > total_bytes_processed
         {
-            Println (", emitted code is {}%% bigger than source code",
+            Println (", emitted code is %\% bigger than source code",
                 Round (total_emitted_bytes / cast (float) total_bytes_processed * 100) - 100);
         }
         else    // Honestly I don't even know how that would be possible but let's handle it anyway
         {
-            Println (", emitted code is {}%% smaller than source code",
+            Println (", emitted code is %\% smaller than source code",
                 100 - Round (total_emitted_bytes / cast (float) total_bytes_processed * 100));
         }
 

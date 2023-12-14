@@ -64,7 +64,8 @@ PrintTokenLine :: (builder : *StringBuilder, range : TokenRange, print_squiggles
 
         if current_line == range.line_end || current_line >= range.line_start && current_line < range.line_start + g_build_settings.max_reported_lines - 1
         {
-            StringBuilderAppend (builder, " {:*} | ", line_digits, current_line);
+            line_value := FormatInt.{value=current_line, minimum_digits=line_digits, padding=#char " "};
+            StringBuilderAppend (builder, " % | ", line_value);
 
             if line_start > range.byte_offset && line_start < range.byte_offset + range_length
                 SetColor (builder, .Highlight);
@@ -361,7 +362,7 @@ InfoNoSquiggles :: inline (range : TokenRange, fmt_str : string, args : ..Any)
     context.print_squiggles = prev;
 }
 
-AssertionFailed :: (location : Source_Code_Location, message : string)
+AssertionFailed :: (location : Source_Code_Location, message : string) -> bool
 {
     print_stack_trace :: (node: *Stack_Trace_Node) {  // @Cutnpaste from modules/Basic, but wihtout calling print.
         while node {
@@ -414,7 +415,8 @@ AssertionFailed :: (location : Source_Code_Location, message : string)
     }
 
     __runtime_support_disable_stack_trace = true;
-    debug_break();
+
+    return true;
 }
 
 #scope_file

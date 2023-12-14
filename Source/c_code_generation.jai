@@ -787,16 +787,20 @@ EmitValue :: (builder : *SourceCodeBuilder, value : ConstantValue, type : *YalTy
         return true;
     case .Float;
         if type.size == 4
-            Append (builder, "{:~.7}f", value.float_value);
+            Append (builder, "%f", FormatFloat.{value=value.float_value, trailing_width=7, zero_removal=.ONE_ZERO_AFTER_DECIMAL});
         else
-            Append (builder, "{:~.17}", value.float_value);
+            Append (builder, "%", FormatFloat.{value=value.float_value, trailing_width=17, zero_removal=.ONE_ZERO_AFTER_DECIMAL});
         return true;
     case .Boolean;
         Append (builder, "%", value.bool_value);
         return true;
     case .String;
-        Append (builder, "(Yal__String){{ sizeof ({0:'}) - 1, {0:'} }", value.string_value);
-        // Append (builder, "{:'}", value.string_value);
+        Append (builder, "(Yal__String){{ sizeof (");
+        AppendStringLiteral (builder, value.string_value);
+        Append (builder, ") - 1, ");
+        AppendStringLiteral (builder, value.string_value);
+        Append (builder, " }");
+
         return true;
     case .Pointer;
         Append (builder, "%", cast (*void) value.pointer_value);

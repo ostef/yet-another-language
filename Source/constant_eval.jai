@@ -39,7 +39,10 @@ ToString :: (value : ConstantValue) -> string #must
     case .Boolean;
         return FormatString ("%", value.bool_value);
     case .String;
-        return FormatString ("{:'}", value.string_value);
+        builder : StringBuilder;
+        StringBuilderAppendStringLiteral (*builder, value.string_value);
+
+        return StringBuilderBuild (*builder);
     case .Pointer;
         return FormatString ("%", cast (*void) value.pointer_value);
     case .Procedure;

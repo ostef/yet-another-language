@@ -83,16 +83,22 @@ Append :: (using builder : *SourceCodeBuilder, str : string)
         AppendByte (builder, str[i]);
 }
 
-Append :: (using builder : *SourceCodeBuilder, fmt_str : string, args : ..Any)
+AppendStringLiteral :: (using builder : *SourceCodeBuilder, str : string)
 {
-    fmt :: #import "Fmt";
-
-    fmt.format (builder, fmt_str, ..args);
+    StringBuilderAppendStringLiteral (*base, str);
 }
 
-Build :: inline (builder : *SourceCodeBuilder, reset_builder := true, allocator := context.allocator) -> string #must
+Append :: (using builder : *SourceCodeBuilder, format_string : string, args : ..Any)
 {
-    str := StringBuilderBuild (*builder.base, reset_builder, allocator);
+    // @Speed
+    formatted := FormatString (Temp, format_string, ..args);
+    Append (builder, formatted);
+}
+@PrintLike
+
+Build :: inline (builder : *SourceCodeBuilder, allocator := context.allocator, reset_builder := true) -> string #must
+{
+    str := StringBuilderBuild (*builder.base, allocator, reset_builder);
 
     if reset_builder
     {

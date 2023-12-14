@@ -81,7 +81,7 @@ Token_Symbols :: string.[
 {
     builder : StringBuilder;
 
-    StringBuilderAppendLine (*builder, "TokenKind :: enum u8\n{{");
+    StringBuilderAppendLine (*builder, "TokenKind :: enum u8\n{");
     StringBuilderAppendLine (*builder, "    Invalid;");
     StringBuilderAppendLine (*builder, "    Comment;");
     StringBuilderAppendLine (*builder, "    Symbols_Begin;");

@@ -418,10 +418,10 @@ ReportCircularDependencyErrorAndExit :: (decl : *AstDeclaration)
         PrintTokenLine (*builder, it, print_squiggles = false);
     }
 
-    Print (StringBuilderBuild (*builder), to_stderr = true);
+    Print (StringBuilderBuild (*builder), to_standard_error = true);
 
     SetOutputColor (.Error);
-    Println ("Exiting...", to_stderr = true);
+    Println ("Exiting...", to_standard_error = true);
     SetOutputColor (.None);
 
     PrintProfilingResults ();
