@@ -54,8 +54,9 @@ Recover :: (using file : *YalFile, stop_at : ..TokenKind)
         if MatchToken (*lexer, .Semicolon)
             break;
 
+        // Stop at things that can start a statement
         if NextTokenIs (*lexer,
-            .Var, .Const, .Struct, .Enum, .Proc,
+            .Var, .Const, .Struct, .Enum, .Proc, .External,
             .If, .Else, .For, .While, .Continue, .Break,
             .Switch, .Case, .Fallthrough, .Defer, .Using
         )
