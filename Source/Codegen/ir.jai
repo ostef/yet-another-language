@@ -13,11 +13,9 @@ IROperand :: struct
     kind : Kind;
     type : *IRType;
 
-    #place type;
-    symbol : *IRSymbol;
-
     union
     {
+        symbol : *IRSymbol;
         bool_value : bool;
         u8_value : u8;
         s8_value : s8;
@@ -37,7 +35,7 @@ Op :: MakeIROperand;
 MakeIROperand :: inline (symbol : *IRSymbol) -> IROperand #must
 {
     Assert (symbol != null);
-    return .{kind=.Named_Value, symbol=symbol};
+    return .{kind=.Named_Value, type=symbol.type, symbol=symbol};
 }
 
 MakeIROperand :: inline (value : bool) -> IROperand #must
@@ -108,8 +106,8 @@ IRSymbolKind :: enum u8
 
 IRSymbol :: struct
 {
-    type : *IRType; // DO NOT MOVE THIS MEMBER! See IROperand
     name : string;
+    type : *IRType;
     symbol_kind : IRSymbolKind;
     // Based on symbol_kind, one of the following is valid.
     // - if it's a global symbol then `module` is valid,
@@ -125,7 +123,7 @@ IRSymbol :: struct
 
 VerifyName :: (name : string, user_defined := true) -> bool
 {
-    if !IRAssert (name.count > 0, "Invalid name")
+    if !IRAssert (name.count > 0, "Empty name")
         return false;
 
     if user_defined && Basic.is_digit (name[0])
