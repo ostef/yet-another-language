@@ -479,7 +479,8 @@ Assert :: (range : TokenRange, assertion : bool, fmt_str : string, args : ..Any,
 
         message := StringBuilderBuild (*builder);
 
-        context.assertion_failed (location, message);
+        if context.assertion_failed (location, message)
+            debug_break ();
     }
 }
 @PrintLike
@@ -500,7 +501,8 @@ Panic :: (range : TokenRange, fmt_str : string, args : ..Any, location := #calle
 
         message := StringBuilderBuild (*builder);
 
-        context.assertion_failed (location, message);
+        if context.assertion_failed (location, message)
+            debug_break ();
     }
 }
 @PrintLike

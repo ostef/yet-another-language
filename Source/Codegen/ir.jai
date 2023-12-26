@@ -232,7 +232,8 @@ IRAssert :: (assertion : bool, format_string : string, args : ..Any, location :=
 
         message := StringBuilderBuild (*builder);
 
-        context.ir_assertion_failed (location, message);
+        if context.ir_assertion_failed (location, message)
+            debug_break ();
     }
 
     return assertion;
@@ -255,7 +256,8 @@ IRPanic :: (format_string : string, args : ..Any, location := #caller_location)
 
         message := StringBuilderBuild (*builder);
 
-        context.ir_assertion_failed (location, message);
+        if context.ir_assertion_failed (location, message)
+            debug_break ();
     }
 }
 @PrintLike
@@ -273,7 +275,8 @@ IRAssert :: (instr : IRInstr, assertion : bool, format_string : string, args : .
 
         message := StringBuilderBuild (*builder);
 
-        context.ir_assertion_failed (location, message);
+        if context.ir_assertion_failed (location, message)
+            debug_break ();
     }
 
     return assertion;
@@ -296,7 +299,8 @@ IRPanic :: (instr : IRInstr, format_string : string, args : ..Any, location := #
 
         message := StringBuilderBuild (*builder);
 
-        context.ir_assertion_failed (location, message);
+        if context.ir_assertion_failed (location, message)
+            debug_break ();
     }
 }
 @PrintLike
