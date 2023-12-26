@@ -145,11 +145,13 @@ IsTerminatorInstruction :: inline (instr : IRInstrKind) -> bool #must
     return false;
 }
 
-IsInstructionValid :: (instr : IRInstr) -> bool #must
+VerifyInstruction :: (instr : IRInstr) -> bool
 {
     if #complete instr.kind ==
     {
-    case .Invalid;
+    case .Invalid; #through;
+    case;
+        IRPanic (instr, "Invalid instruction");
         return false;
 
     case .Add; #through;
@@ -158,13 +160,21 @@ IsInstructionValid :: (instr : IRInstr) -> bool #must
     case .Div; #through;
     case .Rem;
         binop := cast (*IRInstrBinop) *instr;
-        return IsNumericType (binop.left.type.*) && TypesAreEqual (binop.left.type, binop.right.type);
+        if !IRAssert (instr, IsNumericType (binop.left.type.*), "Invalid type for instruction operands, should be numeric")
+            return false;
+
+        if !IRAssert (instr, TypesAreEqual (binop.left.type, binop.right.type), "Type mismatch for instruction operands")
+            return false;
 
     case .And; #through;
     case .Or; #through;
     case .Xor;
         binop := cast (*IRInstrBinop) *instr;
-        return IsIntegralType (binop.left.type.*) && TypesAreEqual (binop.left.type, binop.right.type);
+        IRAssert (instr, IsIntegralType (binop.left.type.*),
+            "Invalid type for instruction operands, should be integral");
+
+        IRAssert (instr, TypesAreEqual (binop.left.type, binop.right.type),
+            "Type mismatch for instruction operands");
 
     case .Comp_Eq; #through;
     case .Comp_Ne; #through;
@@ -173,29 +183,44 @@ IsInstructionValid :: (instr : IRInstr) -> bool #must
     case .Comp_Le; #through;
     case .Comp_Ge;
         binop := cast (*IRInstrBinop) *instr;
-        return IsFirstClassType (binop.left.type.*) && TypesAreEqual (binop.left.type, binop.right.type);
+        if !IRAssert (instr, IsFirstClassType (binop.left.type.*), "Invalid type for instruction operands, should be first class")
+            return false;
+
+        if !IRAssert (instr, TypesAreEqual (binop.left.type, binop.right.type), "Type mismatch for instruction operands")
+            return false;
 
     case .Shift_Left; #through;
     case .Shift_Right;
         binop := cast (*IRInstrBinop) *instr;
-        return IsIntegerType (binop.left.type.kind) && binop.right.type.kind == .U8;
+        if !IRAssert (instr, IsIntegerType (binop.left.type.kind), "Invalid type for first operand, should be an integer")
+            return false;
+
+        if !IRAssert (instr, binop.right.type.kind == .U8, "Invalid type for second operand, should be a u8")
+            return false;
 
     case .Call;
         call := cast (*IRInstrCall) *instr;
-        if call.callee.type.kind != .Pointer
+
+        if !IRAssert (instr, call.callee.type.kind == .Pointer,
+            "Invalid type for callee operand, should be a pointer to a procedure")
             return false;
 
-        if call.callee.type.pointer.type.kind != .Procedure
+        if !IRAssert (instr, call.callee.type.pointer.type.kind == .Procedure,
+            "Invalid type for callee operand, should be a pointer to a procedure")
             return false;
 
         proc_type := call.callee.type.pointer.type;
 
-        if call.args.count != proc_type.procedure.param_types.count
+        if !IRAssert (instr, call.args.count == proc_type.procedure.param_types.count,
+            "Invalid number of argument provided for procedure call, expected % but got %",
+            proc_type.procedure.param_types.count,
+            call.args.count
+        )
             return false;
 
         for call.args
         {
-            if !TypesAreEqual (it.type, proc_type.procedure.param_types[it_index])
+            if !IRAssert (instr, TypesAreEqual (it.type, proc_type.procedure.param_types[it_index]), "Invalid type for argument %", it_index)
                 return false;
         }
 
@@ -204,46 +229,57 @@ IsInstructionValid :: (instr : IRInstr) -> bool #must
     case .Branch;
         branch := cast (*IRInstrBranch) *instr;
 
-        return branch.condition.type.kind == .Bool
-            && branch.label_true.type.kind == .Label
-            && branch.label_false.type.kind == .Label;
+        if !IRAssert (instr, branch.condition.type.kind == .Bool, "Invalid type for branch condition")
+            return false;
+        if !IRAssert (instr, branch.label_true.type.kind == .Label, "Invalid type for branch true label")
+            return false;
+        if !IRAssert (instr, branch.label_false.type.kind == .Label, "Invalid type for branch falsee label")
+            return false;
 
     case .Return;
         ret := cast (*IRInstrReturn) *instr;
 
-        return IsFirstClassType (ret.value.type.kind);
+        if !IRAssert (instr, IsFirstClassType (ret.value.type.kind), "Invalid type for return value, should be a first class type")
+            return false;
 
     case .Load;
         load := cast (*IRInstrLoad) *instr;
 
-        return load.src_pointer.type.kind == .Pointer;
+        if !IRAssert (instr, load.src_pointer.type.kind == .Pointer, "Invalid type for source operand, should be a pointer type")
+            return false;
 
     case .Store;
         store := cast (*IRInstrStore) *instr;
 
-        return store.dst_pointer.type.kind == .Pointer
-            && TypesAreEqual (store.dst_pointer.type.pointer.type, store.src_value.type);
+        if !IRAssert (instr, store.dst_pointer.type.kind == .Pointer, "Invalid type for dest operand, should be a pointer type")
+            return false;
+
+        if !IRAssert (instr, TypesAreEqual (store.dst_pointer.type.pointer.type, store.src_value.type), "Type mismatch for instruction operands")
+            return false;
 
     case .Access;
-        Panic (instr, "Not yet handled");
+        IRPanic (instr, "Not yet handled");
+        return false;
 
     case .Alloca;
         alloca := cast (*IRInstrAlloca) *instr;
 
-        return alloca.count.type.kind == .S64;
+        if !IRAssert (instr, alloca.count.type.kind == .S64, "Invalid type for count operand, should be s64")
+            return false;
 
     case .Phi;
         phi := cast (*IRInstrPhi) *instr;
 
         for phi.inputs
         {
-            if it_index != 0 && !TypesAreEqual (phi.inputs[0].result_value.type, it.result_value.type)
+            if it_index != 0
+            && !IRAssert (instr, TypesAreEqual (phi.inputs[0].result_value.type, it.result_value.type), "Type mismatch for result value")
                 return false;
 
-            if !IsFirstClassType (it.result_value.type.kind)
+            if !IRAssert (instr, IsFirstClassType (it.result_value.type.kind), "Invalid type for result value, should be a first class type")
                 return false;
 
-            if it.from_label.type.kind != .Label
+            if !IRAssert (instr, it.from_label.type.kind == .Label, "Invalid type for label operand")
                 return false;
         }
 
@@ -252,11 +288,14 @@ IsInstructionValid :: (instr : IRInstr) -> bool #must
     case .Cast;
         cast_instr := cast (*IRInstrCast) *instr;
 
-        return IsFirstClassType (cast_instr.dst_type.kind)
-            && IsFirstClassType (cast_instr.src_value.type.kind);
+        if !IRAssert (instr, IsFirstClassType (cast_instr.dst_type.kind), "Invalid type for cast, should be first class")
+            return false;
+
+        if !IRAssert (instr, IsFirstClassType (cast_instr.src_value.type.kind), "Invalid type for cast source operand, should be first class")
+            return false;
     }
 
-    return false;
+    return true;
 }
 
 GetResultType :: (using builder : *IRBuilder, instr : IRInstr) -> *IRType #must
@@ -305,7 +344,7 @@ GetResultType :: (using builder : *IRBuilder, instr : IRInstr) -> *IRType #must
         return g_ir_type_void;
 
     case .Access;
-        Panic (instr, "Not yet handled");
+        IRPanic (instr, "Not yet handled");
         return g_ir_type_void;
 
     case .Alloca;
@@ -325,10 +364,11 @@ GetResultType :: (using builder : *IRBuilder, instr : IRInstr) -> *IRType #must
 PushInstr :: (using builder : *IRBuilder, instr : IRInstr) -> *IRInstr
 {
     Assert (current_basic_block != null);
-    Assert (instr, IsInstructionValid (instr), "Invalid instruction params");
+
+    VerifyInstruction (instr);
 
     if instr.kind == .Phi && current_basic_block.instructions.count != 0
-        Panic (instr, "Phi should be the first instruction in a basic block");
+        IRPanic (instr, "Phi should be the first instruction in a basic block");
 
     return ArrayPush (*current_basic_block.instructions, instr);
 }

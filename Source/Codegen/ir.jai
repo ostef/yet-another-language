@@ -1,5 +1,7 @@
 // This intermediate representation follows closely LLVM's
 
+#add_context ir_assertion_failed := AssertionFailed;
+
 IROperand :: struct
 {
     Kind :: enum u8
@@ -121,18 +123,27 @@ IRSymbol :: struct
     };
 }
 
-VerifyName :: (name : string, user_defined := true)
+VerifyName :: (name : string, user_defined := true) -> bool
 {
-    Assert (name.count > 0);
+    if !IRAssert (name.count > 0, "Invalid name")
+        return false;
 
     if user_defined && Basic.is_digit (name[0])
-        Panic ("%: user defined names cannot start with a digit", name);
+    {
+        IRPanic ("%: user defined names cannot start with a digit", name);
+        return false;
+    }
 
     for i : 0..name.count - 1
     {
         if !Basic.is_alnum (name[i])
-            Panic ("%: names must contain alpha numeric characters", name);
+        {
+            IRPanic ("%: names must contain alpha numeric characters", name);
+            return false;
+        }
     }
+
+    return true;
 }
 
 IsGlobalSymbol :: (using symbol : *IRSymbol) -> bool #must
@@ -208,7 +219,48 @@ AppendAssertFailureOrPanicMessage :: (builder : *StringBuilder, instr : IRInstr,
 }
 @PrintLike
 
-Assert :: (instr : IRInstr, assertion : bool, format_string : string, args : ..Any, location := #caller_location)
+IRAssert :: (assertion : bool, format_string : string, args : ..Any, location := #caller_location) -> bool
+{
+    if !assertion && !context.handling_assertion_failure
+    {
+        context.handling_assertion_failure = true;
+        defer context.handling_assertion_failure = false;
+
+        builder : StringBuilder;
+
+        AppendAssertFailureOrPanicMessage (*builder, format_string, ..args);
+
+        message := StringBuilderBuild (*builder);
+
+        context.ir_assertion_failed (location, message);
+    }
+
+    return assertion;
+}
+@PrintLike
+
+IRPanic :: (format_string : string, args : ..Any, location := #caller_location)
+{
+    if !context.handling_assertion_failure
+    {
+        context.handling_assertion_failure = true;
+        defer context.handling_assertion_failure = false;
+
+        context.panicking = true;
+        defer context.panicking = false;
+
+        builder : StringBuilder;
+
+        AppendAssertFailureOrPanicMessage (*builder, format_string, ..args);
+
+        message := StringBuilderBuild (*builder);
+
+        context.ir_assertion_failed (location, message);
+    }
+}
+@PrintLike
+
+IRAssert :: (instr : IRInstr, assertion : bool, format_string : string, args : ..Any, location := #caller_location) -> bool
 {
     if !assertion && !context.handling_assertion_failure
     {
@@ -221,12 +273,14 @@ Assert :: (instr : IRInstr, assertion : bool, format_string : string, args : ..A
 
         message := StringBuilderBuild (*builder);
 
-        context.assertion_failed (location, message);
+        context.ir_assertion_failed (location, message);
     }
+
+    return assertion;
 }
 @PrintLike
 
-Panic :: (instr : IRInstr, format_string : string, args : ..Any, location := #caller_location)
+IRPanic :: (instr : IRInstr, format_string : string, args : ..Any, location := #caller_location)
 {
     if !context.handling_assertion_failure
     {
@@ -242,7 +296,7 @@ Panic :: (instr : IRInstr, format_string : string, args : ..Any, location := #ca
 
         message := StringBuilderBuild (*builder);
 
-        context.assertion_failed (location, message);
+        context.ir_assertion_failed (location, message);
     }
 }
 @PrintLike
@@ -274,14 +328,19 @@ MakeUniqueName :: (table : *IRSymbolTable, name := "", allocator := context.allo
 InsertUniqueSymbol :: inline (table : *IRSymbolTable, symbol : *IRSymbol)
 {
     _, exists := HashMapInsert (table, symbol.name, symbol);
-    Assert (!exists, "Redeclaration of symbol '%'", symbol.name);
+    IRAssert (!exists, "Redeclaration of symbol '%'", symbol.name);
 }
 
 CreateIRProcedure :: (module : *IRModule, name : string, param_types : []*IRType, return_type : *IRType) -> *IRProcedure #must
 {
     // @Todo: procedure name overloading
     VerifyName (name);
-    Assert (IsFirstClassType (return_type.kind));
+
+    IRAssert (
+        IsFirstClassType (return_type.kind),
+        "Procedure return types can only be first class types (got %)",
+        IRTypeToString (return_type)
+    );
 
     proc_ptr, exists := HashMapInsert (*module.procedures, name);
     if exists
@@ -311,7 +370,10 @@ CreateIRProcedure :: (module : *IRModule, name : string, param_types : []*IRType
 
 GetParam :: inline (proc : *IRProcedure, index : int) -> *IRSymbol #must
 {
-    Assert (index >= 0 && index < proc.type.procedure.param_types.count, "Invalid param index % for proc %", index, IRTypeToString (proc.type));
+    IRAssert (
+        index >= 0 && index < proc.type.procedure.param_types.count,
+        "Invalid param index % for proc %", index, IRTypeToString (proc.type)
+    );
 
     return *proc.param_symbols[index];
 }
