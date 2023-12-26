@@ -334,7 +334,7 @@ GetResultType :: (using builder : *IRBuilder, instr : IRInstr) -> *IRType #must
         return g_ir_type_void;
 
     case .Return;
-        return current_basic_block.proc.type.procedure.return_type;
+        return g_ir_type_void;
 
     case .Load;
         load := cast (*IRInstrLoad) *instr;
