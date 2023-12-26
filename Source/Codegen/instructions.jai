@@ -145,7 +145,7 @@ IsTerminatorInstruction :: inline (instr : IRInstrKind) -> bool #must
     return false;
 }
 
-VerifyInstruction :: (instr : IRInstr) -> bool
+VerifyInstruction :: (using builder : *IRBuilder, instr : IRInstr) -> bool
 {
     if #complete instr.kind ==
     {
@@ -163,7 +163,7 @@ VerifyInstruction :: (instr : IRInstr) -> bool
         if !IRAssert (instr, IsNumericType (binop.left.type.*), "Invalid type for instruction operands, should be numeric")
             return false;
 
-        if !IRAssert (instr, TypesAreEqual (binop.left.type, binop.right.type), "Type mismatch for instruction operands")
+        if !IRAssert (instr, IRTypesAreEqual (binop.left.type, binop.right.type), "Type mismatch for instruction operands")
             return false;
 
     case .And; #through;
@@ -173,7 +173,7 @@ VerifyInstruction :: (instr : IRInstr) -> bool
         IRAssert (instr, IsIntegralType (binop.left.type.*),
             "Invalid type for instruction operands, should be integral");
 
-        IRAssert (instr, TypesAreEqual (binop.left.type, binop.right.type),
+        IRAssert (instr, IRTypesAreEqual (binop.left.type, binop.right.type),
             "Type mismatch for instruction operands");
 
     case .Comp_Eq; #through;
@@ -186,7 +186,7 @@ VerifyInstruction :: (instr : IRInstr) -> bool
         if !IRAssert (instr, IsFirstClassType (binop.left.type.*), "Invalid type for instruction operands, should be first class")
             return false;
 
-        if !IRAssert (instr, TypesAreEqual (binop.left.type, binop.right.type), "Type mismatch for instruction operands")
+        if !IRAssert (instr, IRTypesAreEqual (binop.left.type, binop.right.type), "Type mismatch for instruction operands")
             return false;
 
     case .Shift_Left; #through;
@@ -220,7 +220,7 @@ VerifyInstruction :: (instr : IRInstr) -> bool
 
         for call.args
         {
-            if !IRAssert (instr, TypesAreEqual (it.type, proc_type.procedure.param_types[it_index]), "Invalid type for argument %", it_index)
+            if !IRAssert (instr, IRTypesAreEqual (it.type, proc_type.procedure.param_types[it_index]), "Invalid type for argument %", it_index)
                 return false;
         }
 
@@ -254,7 +254,7 @@ VerifyInstruction :: (instr : IRInstr) -> bool
         if !IRAssert (instr, store.dst_pointer.type.kind == .Pointer, "Invalid type for dest operand, should be a pointer type")
             return false;
 
-        if !IRAssert (instr, TypesAreEqual (store.dst_pointer.type.pointer.type, store.src_value.type), "Type mismatch for instruction operands")
+        if !IRAssert (instr, IRTypesAreEqual (store.dst_pointer.type.pointer.type, store.src_value.type), "Type mismatch for instruction operands")
             return false;
 
     case .Access;
@@ -270,10 +270,14 @@ VerifyInstruction :: (instr : IRInstr) -> bool
     case .Phi;
         phi := cast (*IRInstrPhi) *instr;
 
+        if !IRAssert (instr, current_basic_block.instructions.count == 0,
+            "Phi should the the first instruction in a basic block")
+            return false;
+
         for phi.inputs
         {
             if it_index != 0
-            && !IRAssert (instr, TypesAreEqual (phi.inputs[0].result_value.type, it.result_value.type), "Type mismatch for result value")
+            && !IRAssert (instr, IRTypesAreEqual (phi.inputs[0].result_value.type, it.result_value.type), "Type mismatch for result value")
                 return false;
 
             if !IRAssert (instr, IsFirstClassType (it.result_value.type.kind), "Invalid type for result value, should be a first class type")
@@ -361,14 +365,11 @@ GetResultType :: (using builder : *IRBuilder, instr : IRInstr) -> *IRType #must
     }
 }
 
-PushInstr :: (using builder : *IRBuilder, instr : IRInstr) -> *IRInstr
+PushInstr :: inline (using builder : *IRBuilder, instr : IRInstr) -> *IRInstr
 {
     Assert (current_basic_block != null);
 
-    VerifyInstruction (instr);
-
-    if instr.kind == .Phi && current_basic_block.instructions.count != 0
-        IRPanic (instr, "Phi should be the first instruction in a basic block");
+    VerifyInstruction (builder, instr);
 
     return ArrayPush (*current_basic_block.instructions, instr);
 }

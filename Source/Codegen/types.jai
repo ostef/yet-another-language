@@ -205,31 +205,34 @@ IsFirstClassType :: inline (kind : IRType.Kind) -> bool #must
     return false;
 }
 
-TypesAreEqual :: (a : IRType, b : IRType) -> bool #must
+IRTypesAreEqual :: (a : *IRType, b : *IRType) -> bool #must
 {
+    if a == b
+        return true;
+
     if a.kind != b.kind
         return false;
 
-    if IsPrimitiveType (a)
+    if IsPrimitiveType (a.kind)
         return true;
 
     if a.kind == .Pointer
-        return TypesAreEqual (a.pointer.type, b.pointer.type);
+        return IRTypesAreEqual (a.pointer.type, b.pointer.type);
 
     if a.kind == .Array
-        return a.array.count == b.array.count && TypesAreEqual (a.array.type, b.array.type);
+        return a.array.count == b.array.count && IRTypesAreEqual (a.array.type, b.array.type);
 
     if a.kind == .Procedure
     {
         if a.procedure.param_types.count != b.procedure.param_types.count
             return false;
 
-        if !TypesAreEqual (a.procedure.return_type, b.procedure.return_type)
+        if !IRTypesAreEqual (a.procedure.return_type, b.procedure.return_type)
             return false;
 
         for a.procedure.param_types
         {
-            if !TypesAreEqual (it, b.procedure.param_types[it_index])
+            if !IRTypesAreEqual (it, b.procedure.param_types[it_index])
                 return false;
         }
     }
@@ -241,7 +244,7 @@ TypesAreEqual :: (a : IRType, b : IRType) -> bool #must
 
         for a.aggregate.member_types
         {
-            if !TypesAreEqual (it, b.aggregate.member_types[it_index])
+            if !IRTypesAreEqual (it, b.aggregate.member_types[it_index])
                 return false;
         }
     }
