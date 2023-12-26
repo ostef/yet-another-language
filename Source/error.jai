@@ -242,6 +242,7 @@ Error :: (fmt_str : string, args : ..Any)
 
     IncrementErrorCounter ();
 }
+@PrintLike
 
 Report :: (range : TokenRange, color : OutputColor, category : string, fmt_str : string, args : ..Any)
 {
@@ -263,6 +264,7 @@ Report :: (range : TokenRange, color : OutputColor, category : string, fmt_str :
 
     write_string (StringBuilderBuild (*builder), to_standard_error = true);
 }
+@PrintLike
 
 ReportWithoutSourceCode :: (range : TokenRange, color : OutputColor, category : string, fmt_str : string, args : ..Any)
 {
@@ -282,12 +284,14 @@ ReportWithoutSourceCode :: (range : TokenRange, color : OutputColor, category : 
 
     write_string (StringBuilderBuild (*builder), to_standard_error = true);
 }
+@PrintLike
 
 Error :: inline (range : TokenRange, fmt_str : string, args : ..Any)
 {
     Report (range, .Error, "Error", fmt_str, ..args);
     IncrementErrorCounter ();
 }
+@PrintLike
 
 ErrorNoSquiggles :: inline (range : TokenRange, fmt_str : string, args : ..Any)
 {
@@ -296,17 +300,20 @@ ErrorNoSquiggles :: inline (range : TokenRange, fmt_str : string, args : ..Any)
     Error (range, fmt_str, ..args);
     context.print_squiggles = prev;
 }
+@PrintLike
 
 Warning :: inline (range : TokenRange, fmt_str : string, args : ..Any)
 {
     Report (range, .Warning, "Warning", fmt_str, ..args);
 }
+@PrintLike
 
 SyntaxError :: inline (range : TokenRange, fmt_str : string, args : ..Any)
 {
     Report (range, .Error, "Syntax Error", fmt_str, ..args);
     IncrementErrorCounter ();
 }
+@PrintLike
 
 ExpectedError :: (prev : Token, tok : Token, kinds : ..TokenKind)
 {
@@ -348,11 +355,13 @@ Info :: inline (range : TokenRange, fmt_str : string, args : ..Any)
 {
     Report (range, .Info, "Info", fmt_str, ..args);
 }
+@PrintLike
 
 InfoWithoutSourceCode :: inline (range : TokenRange, fmt_str : string, args : ..Any)
 {
     ReportWithoutSourceCode (range, .Info, "Info", fmt_str, ..args);
 }
+@PrintLike
 
 InfoNoSquiggles :: inline (range : TokenRange, fmt_str : string, args : ..Any)
 {
@@ -361,6 +370,7 @@ InfoNoSquiggles :: inline (range : TokenRange, fmt_str : string, args : ..Any)
     Info (range, fmt_str, ..args);
     context.print_squiggles = prev;
 }
+@PrintLike
 
 AssertionFailed :: (location : Source_Code_Location, message : string) -> bool
 {
@@ -441,6 +451,7 @@ AppendAssertFailureOrPanicMessage :: (builder : *StringBuilder, range : TokenRan
     else
         StringBuilderAppend (builder, "<cannot print token line because the file is invalid>\n");
 }
+@PrintLike
 
 #scope_export
 
@@ -460,6 +471,7 @@ Assert :: (range : TokenRange, assertion : bool, fmt_str : string, args : ..Any,
         context.assertion_failed (location, message);
     }
 }
+@PrintLike
 
 Panic :: (range : TokenRange, fmt_str : string, args : ..Any, location := #caller_location)
 {
@@ -480,3 +492,4 @@ Panic :: (range : TokenRange, fmt_str : string, args : ..Any, location := #calle
         context.assertion_failed (location, message);
     }
 }
+@PrintLike
