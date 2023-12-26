@@ -370,14 +370,14 @@ CreateIRProcedure :: (module : *IRModule, name : string, param_types : []*IRType
     return proc;
 }
 
-GetParam :: inline (proc : *IRProcedure, index : int) -> *IRSymbol #must
+GetParam :: inline (proc : *IRProcedure, index : int) -> IROperand #must
 {
     IRAssert (
         index >= 0 && index < proc.type.procedure.param_types.count,
         "Invalid param index % for proc %", index, IRTypeToString (proc.type)
     );
 
-    return *proc.param_symbols[index];
+    return MakeIROperand (*proc.param_symbols[index]);
 }
 
 CreateIRBasicBlock :: (proc : *IRProcedure, name : string) -> *IRBasicBlock #must
