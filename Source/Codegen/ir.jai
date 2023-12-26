@@ -277,7 +277,7 @@ InsertUniqueSymbol :: inline (table : *IRSymbolTable, symbol : *IRSymbol)
     Assert (!exists, "Redeclaration of symbol '%'", symbol.name);
 }
 
-CreateProcedure :: (module : *IRModule, name : string, param_types : []*IRType, return_type : *IRType) -> *IRProcedure #must
+CreateIRProcedure :: (module : *IRModule, name : string, param_types : []*IRType, return_type : *IRType) -> *IRProcedure #must
 {
     // @Todo: procedure name overloading
     VerifyName (name);
@@ -316,7 +316,7 @@ GetParam :: inline (proc : *IRProcedure, index : int) -> *IRSymbol #must
     return *proc.param_symbols[index];
 }
 
-CreateBasicBlock :: (proc : *IRProcedure, name : string) -> *IRBasicBlock #must
+CreateIRBasicBlock :: (proc : *IRProcedure, name : string) -> *IRBasicBlock #must
 {
     VerifyName (name);
 
