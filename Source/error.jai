@@ -429,6 +429,17 @@ AssertionFailed :: (location : Source_Code_Location, message : string) -> bool
     return true;
 }
 
+AppendAssertFailureOrPanicMessage :: (builder : *StringBuilder, fmt_str : string, args : ..Any)
+{
+    SetColor (builder, .Fatal_Error);
+    StringBuilderAppend (builder, "Fatal Error: ");
+    SetColor (builder, .None);
+
+    StringBuilderAppend (builder, fmt_str, ..args);
+    StringBuilderAppend (builder, "\n");
+}
+@PrintLike
+
 #scope_file
 
 AppendAssertFailureOrPanicMessage :: (builder : *StringBuilder, range : TokenRange, fmt_str : string, args : ..Any)
