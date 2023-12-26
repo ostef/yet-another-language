@@ -427,6 +427,15 @@ EmitCall :: inline (builder : *IRBuilder, callee : IROperand, args : []IROperand
     return PushInstr (builder, instr, value_name);
 }
 
+EmitCall :: inline (builder : *IRBuilder, callee : IROperand, args : []IROperand)
+{
+    instr : IRInstrCall;
+    instr.callee = callee;
+    instr.args = args;
+
+    PushInstr (builder, instr);
+}
+
 EmitBranch :: inline (builder : *IRBuilder, condition : IROperand, label_true : IROperand, label_false : IROperand)
 {
     instr : IRInstrBranch;
