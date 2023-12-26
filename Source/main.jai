@@ -30,6 +30,11 @@ JaiC :: #import "Compiler";
 #load "types.jai";
 #load "c_code_generation.jai";
 
+#load "Codegen/ir.jai";
+#load "Codegen/types.jai";
+#load "Codegen/instructions.jai";
+#load "Codegen/ir_to_string.jai";
+
 BuildSettings :: struct
 {
     max_errors := 20;

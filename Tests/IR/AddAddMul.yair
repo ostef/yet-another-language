@@ -1,0 +1,8 @@
+proc @AddAddMul (f32, f32, f32) f32
+{
+    %ab = add f32 %0, f32 %1
+    %bc = add f32 %1, f32 %2
+    %abbc = mul f32 %ab, f32 %bc
+
+    return f32 %abbc
+}
