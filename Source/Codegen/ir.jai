@@ -98,6 +98,7 @@ IRSymbolKind :: enum u8
     Invalid;
     Global_Value;
     Local_Value;
+    Procedure_Param;
     Procedure;
     Basic_Block;
     Type;
@@ -183,6 +184,7 @@ IRProcedure :: struct
     entry_block : *IRBasicBlock;
     basic_blocks : [..]*IRBasicBlock;
     symbol_table : IRSymbolTable;
+    param_symbols : []IRSymbol;
 }
 
 IRBuilder :: struct
@@ -279,6 +281,7 @@ CreateProcedure :: (module : *IRModule, name : string, param_types : []*IRType, 
 {
     // @Todo: procedure name overloading
     VerifyName (name);
+    Assert (IsFirstClassType (return_type.kind));
 
     proc_ptr, exists := HashMapInsert (*module.procedures, name);
     if exists
@@ -288,7 +291,16 @@ CreateProcedure :: (module : *IRModule, name : string, param_types : []*IRType, 
     proc.module = module;
     proc.name = name;
     proc.type = MakeIRProcedureType (param_types, return_type);
-    Assert (IsFirstClassType (return_type.kind));
+
+    proc.param_symbols = AllocArray (IRSymbol, param_types.count);
+    for * param, i : proc.param_symbols
+    {
+        param.name = FormatString ("%", i);
+        param.type = param_types[i];
+        param.symbol_kind = .Procedure_Param;
+        param.proc = proc;
+        InsertUniqueSymbol (*proc.symbol_table, param);
+    }
 
     proc_ptr.* = proc;
 
@@ -299,9 +311,9 @@ CreateProcedure :: (module : *IRModule, name : string, param_types : []*IRType, 
 
 GetParam :: inline (proc : *IRProcedure, index : int) -> *IRSymbol #must
 {
-    Assert (index >= 0 && index < proc.type.procedure.param_types.count);
+    Assert (index >= 0 && index < proc.type.procedure.param_types.count, "Invalid param index % for proc %", index, IRTypeToString (proc.type));
 
-    return HashMapGet (*proc.symbol_table, FormatString (Temp, "%", index));
+    return *proc.param_symbols[index];
 }
 
 CreateBasicBlock :: (proc : *IRProcedure, name : string) -> *IRBasicBlock #must
