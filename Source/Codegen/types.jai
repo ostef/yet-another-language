@@ -46,6 +46,64 @@ IRType :: struct
     };
 }
 
+HashIRType :: (type : *IRType) -> u64 #must
+{
+    return fnv1a_hash (type, size_of (IRType));
+}
+
+MemcmpIRTypes :: (a : *IRType, b : *IRType) -> int #must
+{
+    return memcmp (a, b, size_of (IRType));
+}
+
+HashIRTypeProcedure :: (type : *IRType) -> u64 #must
+{
+    Assert (type.kind == .Procedure);
+
+    result := fnv1a_hash (cast (u64) type.procedure.return_type);
+
+    for type.procedure.param_types
+        result = fnv1a_hash (cast (u64) it, result);
+
+    return result;
+}
+
+ShallowCompareIRTypeProcedure :: (a : *IRType, b : *IRType) -> bool #must
+{
+    Assert (a.kind == .Procedure);
+    Assert (b.kind == .Procedure);
+
+    if a.procedure.param_types.count != b.procedure.param_types.count
+        return false;
+
+    if a.procedure.return_type != b.procedure.return_type
+        return false;
+
+    for i : 0..a.procedure.param_types.count - 1
+    #no_abc
+    {
+        if a.procedure.param_types[i] != b.procedure.param_types[i]
+            return false;
+    }
+
+    return true;
+}
+
+IRTypeCache :: HashSet (
+    *IRType,
+    hash_func = (val) => HashIRType (val),
+    comp_func = (a, b) => MemcmpIRTypes (a, b) == 0
+);
+
+g_ir_pointer_type_cache : IRTypeCache;
+g_ir_array_type_cache : IRTypeCache;
+
+g_ir_proc_type_cache :  HashSet (
+    *IRType,
+    hash_func = (val) => HashIRTypeProcedure (val),
+    comp_func = (a, b) => ShallowCompareIRTypeProcedure (a, b)
+);
+
 IsPrimitiveType :: inline (kind : IRType.Kind) -> bool #must
 {
     if kind ==
@@ -234,19 +292,56 @@ InitIRTypes :: ()
 
 MakeIRProcedureType :: inline (param_types : []*IRType, return_type : *IRType) -> *IRType #must
 {
+    type : IRType;
+    type.kind = .Procedure;
+    type.procedure.return_type = return_type;
+    type.procedure.param_types = param_types;
+
+    in_cache := HashSetGetPtr (*g_ir_proc_type_cache, *type);
+    if in_cache
+        return in_cache.*;
+
     result := Alloc (IRType);
-    result.kind = .Procedure;
-    result.procedure.return_type = return_type;
-    result.procedure.param_types = param_types;
+    result.* = type;
+
+    HashSetInsert (*g_ir_pointer_type_cache, result);
 
     return result;
 }
 
-MakeIRPointerType :: inline (type : *IRType) -> *IRType #must
+MakeIRPointerType :: inline (pointed_type : *IRType) -> *IRType #must
 {
+    type : IRType;
+    type.kind = .Pointer;
+    type.pointer.type = pointed_type;
+
+    in_cache := HashSetGetPtr (*g_ir_pointer_type_cache, *type);
+    if in_cache
+        return in_cache.*;
+
     result := Alloc (IRType);
-    result.kind = .Pointer;
-    result.pointer.type = type;
+    result.* = type;
+
+    HashSetInsert (*g_ir_pointer_type_cache, result);
+
+    return result;
+}
+
+MakeIRArrayType :: inline (element_type : *IRType, count : s64) -> *IRType #must
+{
+    type : IRType;
+    type.kind = .Array;
+    type.array.type = element_type;
+    type.array.count = count;
+
+    in_cache := HashSetGetPtr (*g_ir_array_type_cache, *type);
+    if in_cache
+        return in_cache.*;
+
+    result := Alloc (IRType);
+    result.* = type;
+
+    HashSetInsert (*g_ir_array_type_cache, result);
 
     return result;
 }
