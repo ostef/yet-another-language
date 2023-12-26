@@ -347,6 +347,15 @@ IRInstrToString :: inline (instr : IRInstr, allocator := context.allocator) -> s
     return StringBuilderBuild (*builder, allocator = allocator);
 }
 
+IRTypeToString :: inline (type : IRType, allocator := context.allocator) -> string #must
+{
+    builder : StringBuilder;
+    builder.allocator = Temp;
+    AppendIRType (*builder, type);
+
+    return StringBuilderBuild (*builder, allocator = allocator);
+}
+
 IRBasicBlockToString :: inline (bb : IRBasicBlock, allocator := context.allocator) -> string #must
 {
     builder : StringBuilder;
