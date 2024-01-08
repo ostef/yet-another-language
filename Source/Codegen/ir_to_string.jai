@@ -338,38 +338,38 @@ AppendIRModule :: (builder : *StringBuilder, module : IRModule)
     }
 }
 
-IRInstrToString :: inline (instr : IRInstr, allocator := context.allocator) -> string #must
+IRInstrToString :: inline (instr : IRInstr) -> string #must
 {
     builder : StringBuilder;
     builder.allocator = Temp;
     AppendIRInstr (*builder, instr);
 
-    return StringBuilderBuild (*builder, allocator = allocator);
+    return StringBuilderBuild (*builder);
 }
 
-IRTypeToString :: inline (type : IRType, allocator := context.allocator) -> string #must
+IRTypeToString :: inline (type : IRType) -> string #must
 {
     builder : StringBuilder;
     builder.allocator = Temp;
     AppendIRType (*builder, type);
 
-    return StringBuilderBuild (*builder, allocator = allocator);
+    return StringBuilderBuild (*builder);
 }
 
-IRBasicBlockToString :: inline (bb : IRBasicBlock, allocator := context.allocator) -> string #must
+IRBasicBlockToString :: inline (bb : IRBasicBlock) -> string #must
 {
     builder : StringBuilder;
     builder.allocator = Temp;
     AppendIRBasicBlock (*builder, bb);
 
-    return StringBuilderBuild (*builder, allocator = allocator);
+    return StringBuilderBuild (*builder);
 }
 
-IRProcedureToString :: inline (proc : IRProcedure, allocator := context.allocator) -> string #must
+IRProcedureToString :: inline (proc : IRProcedure) -> string #must
 {
     builder : StringBuilder;
     builder.allocator = Temp;
     AppendIRProcedure (*builder, proc);
 
-    return StringBuilderBuild (*builder, allocator = allocator);
+    return StringBuilderBuild (*builder);
 }

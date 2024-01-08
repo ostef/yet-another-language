@@ -429,7 +429,7 @@ ParseStringLiteral :: (token : Token) -> string, bool
         return "", false;
     }
 
-    return MakeString (index, buffer), true;
+    return .{index, buffer}, true;
 }
 
 ParseCharLiteral :: (token : Token) -> s64, bool
@@ -542,7 +542,7 @@ ParseFloatLiteral :: (token : Token) -> float64, bool
         index += 1;
     }
 
-    result, ok := Basic.string_to_float64 (MakeString (index, str));
+    result, ok := Basic.string_to_float64 (.{index, str});
     if !ok
         SyntaxError (token, "Invalid float literal");
 

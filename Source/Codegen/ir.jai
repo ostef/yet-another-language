@@ -303,7 +303,7 @@ IRPanic :: (instr : IRInstr, format_string : string, args : ..Any, location := #
 }
 @PrintLike
 
-MakeUniqueName :: (table : *IRSymbolTable, name := "", allocator := context.allocator) -> string #must
+MakeUniqueName :: (table : *IRSymbolTable, name := "") -> string #must
 {
     AllocatorScope (Temp);
 
@@ -324,7 +324,7 @@ MakeUniqueName :: (table : *IRSymbolTable, name := "", allocator := context.allo
         number += 1;
     }
 
-    return StringClone (test_name, allocator);
+    return StringClone (test_name);
 }
 
 InsertUniqueSymbol :: inline (table : *IRSymbolTable, symbol : *IRSymbol)

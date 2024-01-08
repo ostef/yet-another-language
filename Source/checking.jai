@@ -415,7 +415,7 @@ ReportCircularDependencyErrorAndExit :: (decl : *AstDeclaration)
         Assert (file != null);
 
         StringBuilderAppend (*builder, "%:%:%\n", file.filename, it.line_start, it.char_start);
-        PrintTokenLine (*builder, it, print_squiggles = false);
+        PrintTokenLine (*builder, it,, print_squiggles = false);
     }
 
     Print (StringBuilderBuild (*builder), to_standard_error = true);

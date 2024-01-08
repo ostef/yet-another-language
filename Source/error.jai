@@ -36,7 +36,7 @@ AppendIndentation :: (builder : *StringBuilder, col : int, size : int, char : u8
 
 #add_context print_squiggles := true;
 
-PrintTokenLine :: (builder : *StringBuilder, range : TokenRange, print_squiggles := context.print_squiggles)
+PrintTokenLine :: (builder : *StringBuilder, range : TokenRange)
 {
     file := GetFile (range.file_id);
     Assert (file != null);
@@ -60,7 +60,7 @@ PrintTokenLine :: (builder : *StringBuilder, range : TokenRange, print_squiggles
         while line_start + line_len < str.count && str[line_start + line_len] != #char "\n"
             line_len += 1;
 
-        line_str := MakeString (line_len, str.data + line_start);
+        line_str := string.{line_len, str.data + line_start};
 
         if current_line == range.line_end || current_line >= range.line_start && current_line < range.line_start + g_build_settings.max_reported_lines - 1
         {
@@ -102,7 +102,7 @@ PrintTokenLine :: (builder : *StringBuilder, range : TokenRange, print_squiggles
         if line_start + line_len < str.count && str[line_start + line_len] == #char "\n"
             line_len += 1;
 
-        if print_squiggles
+        if context.print_squiggles
         {
             if (current_line >= range.line_start && current_line < range.line_start + g_build_settings.max_reported_lines - 1) || current_line == range.line_end
             {
@@ -148,7 +148,7 @@ PrintTokenLine :: (builder : *StringBuilder, range : TokenRange, print_squiggles
             break;
     }
 
-    if !print_squiggles
+    if !context.print_squiggles
         StringBuilderAppend (builder, "\n");
 }
 
@@ -295,10 +295,7 @@ Error :: inline (range : TokenRange, fmt_str : string, args : ..Any)
 
 ErrorNoSquiggles :: inline (range : TokenRange, fmt_str : string, args : ..Any)
 {
-    prev := context.print_squiggles;
-    context.print_squiggles = false;
-    Error (range, fmt_str, ..args);
-    context.print_squiggles = prev;
+    Error (range, fmt_str, ..args,, print_squiggles = false);
 }
 @PrintLike
 
@@ -365,10 +362,7 @@ InfoWithoutSourceCode :: inline (range : TokenRange, fmt_str : string, args : ..
 
 InfoNoSquiggles :: inline (range : TokenRange, fmt_str : string, args : ..Any)
 {
-    prev := context.print_squiggles;
-    context.print_squiggles = false;
-    Info (range, fmt_str, ..args);
-    context.print_squiggles = prev;
+    Info (range, fmt_str, ..args,, print_squiggles = false);
 }
 @PrintLike
 

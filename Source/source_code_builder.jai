@@ -91,14 +91,14 @@ AppendStringLiteral :: (using builder : *SourceCodeBuilder, str : string)
 Append :: (using builder : *SourceCodeBuilder, format_string : string, args : ..Any)
 {
     // @Speed
-    formatted := FormatString (Temp, format_string, ..args);
+    formatted := FormatString (format_string, ..args,, Temp);
     Append (builder, formatted);
 }
 @PrintLike
 
-Build :: inline (builder : *SourceCodeBuilder, allocator := context.allocator, reset_builder := true) -> string #must
+Build :: inline (builder : *SourceCodeBuilder, reset_builder := true) -> string #must
 {
-    str := StringBuilderBuild (*builder.base, allocator, reset_builder);
+    str := StringBuilderBuild (*builder.base, reset_builder);
 
     if reset_builder
     {

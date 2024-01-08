@@ -327,7 +327,7 @@ TokenRangeToString :: (using range : TokenRange) -> string #must
         end += 1;
     }
 
-    return MakeString (end - start, start);
+    return .{end - start, start};
 }
 
 TokenToString :: inline (tok : Token) -> string #must
