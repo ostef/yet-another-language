@@ -1,0 +1,213 @@
+typedef EntityId = u64;
+
+#placeholder Entity_Types;
+#placeholder Entity_VTables;
+
+#insert -> string
+{
+    var builder : StringBuilder;
+
+    Appendln (*builder, "const Entity_VTables := EntityVTable.[");
+    Appendln (*builder, "    .{},");
+
+    for i : 1..Entity_Types.count - 1
+    {
+        var type := Entity_Types[i];
+
+        Appendln (*builder, "    vtable_of (IEntity, %),", type);
+    }
+
+    Appendln (*builder, "];");
+
+    return StringBuilderBuild (*builder);
+}
+
+struct EntityTypeDecorator
+{
+    all_entity_types : [..]*YalType;
+}
+
+impl EntityTypeDecorator : IYalDecorator
+{
+    proc ProcessNode (using self : *Self, context : YalDecoratorContext) -> bool
+    {
+        if context.node.kind != .Struct
+            return false;
+
+        var struct_node := cast (*YalAstStruct) context.node;
+
+        ArrayPush (*all_entity_types, struct_node.type);
+
+        return true;
+    }
+
+    proc OnTypecheckedAll (using self : *Self)
+    {
+        var builder : StringBuilder;
+
+        Appendln (*builder, "const Entity_Types := typeid.[");
+        Appendln (*builder, "    void,");
+
+        for type : all_entity_types
+        {
+            Appendln (*builder, "    %,", cast (typeid) type);
+        }
+
+        Appendln (*builder, "];");
+
+        var code := StringBuilderBuild (*builder);
+
+        YalInsertCodeString (code);
+    }
+}
+
+struct World
+{
+    #insert -> string
+    {
+        var builder : StringBuilder;
+
+        for Entity_Types
+        {
+            Appendln (*builder, "%1_storage : EntityStorage (%1);", it);
+        }
+
+        return StringBuilderBuild (*builder);
+    }
+}
+
+struct Entity
+{
+    // readonly means you can only modify the fields in functions that are in
+    // the same file, or files that are #loaded from here
+
+    readonly id : EntityId;
+    readonly name : string;
+    readonly local_position : Vec3f;
+    readonly local_rotation : Quatf;
+    readonly local_scale : Vec3f;
+    readonly world_transform : Mat4f;
+    readonly parent : EntityId;
+    readonly children : [..]EntityId;
+}
+
+proc SetLocalPosition (entity : *Entity, local_position : Vec3f)
+{
+    entity.local_position = local_position;
+    UpdateWorldTransform (entity);
+}
+
+proc SetLocalRotation (entity : *Entity, local_rotation : Quatf)
+{
+    entity.local_rotation = local_rotation;
+    UpdateWorldTransform (entity);
+}
+
+proc SetLocalScale (entity : *Entity, local_scale : Vec3f)
+{
+    entity.local_scale = local_scale;
+    UpdateWorldTransform (entity);
+}
+
+proc SetLocalTransform (entity : *Entity, local_position : Vec3f, local_rotation : Quatf, local_scale : Vec3f)
+{
+    entity.local_position = local_position;
+    entity.local_rotation = local_rotation;
+    entity.local_scale = local_scale;
+    UpdateWorldTransform (entity);
+}
+
+proc UpdateWorldTransform (using entity : *Entity)
+{
+    var local_transform := Mat4fLocRotScale (local_position, local_rotation, local_scale);
+    world_transform = parent_world_transform * local_transform;
+}
+
+proc AttachEntity (world : *World, entity_id : EntityId, to : EntityId)
+{
+    var entity, err := GetEntity (world, entity_id);
+    Assert (entity != null, "Entity does not exist (%)", err);
+
+    AttachEntity (world, entity, to);
+}
+
+proc AttachEntity (world : *World, entity : *Entity, to : EntityId)
+{
+    Assert (entity.parent == 0, "Entity is already attached to another entity");
+
+    var parent, err := GetEntity (world, to);
+    Assert (parent != null, "Entity does not exist (%)", err);
+
+    ArrayPush (*parent.children, entity.id);
+
+    entity.parent = to;
+    entity.parent_world_transform = parent.world_transform;
+
+    var vtable := GetEntityVTable (entity);
+    vtable.OnAttach (world, entity);
+}
+
+proc DetachEntity (world : *World, entity_id : EntityId)
+{
+    var entity, err := GetEntity (world, entity_id);
+    Assert (entity != null, "Entity does not exist (%)", err);
+
+    DetachEntity (world, entity);
+}
+
+proc DetachEntity (world : *World, entity : *Entity)
+{
+    if !entity.parent
+        return;
+
+    var parent := GetEntity (world, entity.parent);
+
+    var child_index := ArrayFindFirst (parent.children, entity.id);
+    Assert (child_index != -1);
+
+    ArrayRemove (*parent.children, child_index);
+
+    entity.parent = 0;
+    entity.parent_world_transform = .{};
+
+    var vtable := GetEntityVTable (entity);
+    vtable.OnDetach (world, entity);
+}
+
+interface IEntity
+{
+    // Self can only be used by pointer
+    proc OnSpawn (world : *World, self : *Self) {}
+    proc OnDespawn (world : *World, self : *Self) {}
+    proc OnAttach (world : *World, self : *Self) {}
+    proc OnDetach (world : *World, self : *Self) {}
+    proc ParallelUpdate (self : *Self, delta_time : float) {}
+    proc Update (world : *World, self : *Self, delta_time : float) {}
+}
+
+// vtable_struct_of returns a struct containing function pointers of a given interface
+// One thing to note is that all instances of *Self in these function pointers
+// are set to *void. It is the responsibility of the caller to make sure that
+// what is passed is of the correct type
+typedef EntityVTable = vtable_struct_of (IEntity);
+
+inline proc GetEntityVTable (entity : *Entity) -> EntityVTable
+{
+    var type_id := GetEntityTypeId (entity);
+
+    return Entity_VTables[type_id];
+}
+
+inline proc GetEntityVTable (type_id : EntityTypeId) -> EntityVTable
+{
+    return Entity_VTables[type_id];
+}
+
+@EntityType ()
+struct Player
+{
+}
+
+impl Player : IEntity
+{
+}

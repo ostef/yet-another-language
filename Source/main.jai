@@ -19,21 +19,21 @@ Process :: #import "Process";
 String :: #import "String";
 JaiC :: #import "Compiler";
 
-#load "tokens.jai";
-#load "ast.jai";
-#load "ast_print.jai";
-#load "source_code_builder.jai";
-#load "parsing.jai";
 #load "error.jai";
-#load "constant_eval.jai";
-#load "checking.jai";
-#load "types.jai";
-#load "c_code_generation.jai";
+#load "Frontend/tokens.jai";
+#load "Frontend/ast.jai";
+#load "Frontend/ast_print.jai";
+#load "Frontend/source_code_builder.jai";
+#load "Frontend/parsing.jai";
+#load "Frontend/constant_eval.jai";
+#load "Frontend/checking.jai";
+#load "Frontend/types.jai";
 
-#load "Codegen/ir.jai";
-#load "Codegen/types.jai";
-#load "Codegen/instructions.jai";
-#load "Codegen/ir_to_string.jai";
+#load "Backend/c_code_generation.jai";
+#load "Backend/ir.jai";
+#load "Backend/types.jai";
+#load "Backend/instructions.jai";
+#load "Backend/ir_to_string.jai";
 
 BuildSettings :: struct
 {
@@ -269,9 +269,9 @@ main :: ()
     {
         filename := String.path_strip_extension (it.filename);
         basename := String.path_filename (filename);
-        c_filename := FormatString ("%.generated.c", filename);
+        c_filename := SPrint ("%.generated.c", filename);
         #if OS == .WINDOWS
-           output_filename := FormatString ("%.exe", basename);
+           output_filename := SPrint ("%.exe", basename);
         else
            output_filename := basename;
 
@@ -279,9 +279,9 @@ main :: ()
 
         command : string;
         if g_build_settings.use_gcc
-            command = FormatString ("gcc % -o %", c_filename, output_filename);
+            command = SPrint ("gcc % -o %", c_filename, output_filename);
         else
-            command = FormatString ("cl % /nologo /link /OUT:%", c_filename, output_filename);
+            command = SPrint ("cl % /nologo /link /OUT:%", c_filename, output_filename);
         command_strings := Process.break_command_into_strings (command);
 
         Println ("> %", command);

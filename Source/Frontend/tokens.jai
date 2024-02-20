@@ -68,7 +68,7 @@ Token_Symbols :: string.[
         b := Token_Symbols[i * 2 - 1];
         if a.count > b.count
         {
-            message := FormatString ("Token_Symbols should be sorted by longest to shortest (symbol % is after % even though it is longer)", a, b);
+            message := SPrint ("Token_Symbols should be sorted by longest to shortest (symbol % is after % even though it is longer)", a, b);
 
             JaiC.compiler_report (message, #location (Token_Symbols));
         }

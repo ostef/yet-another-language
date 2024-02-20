@@ -33,20 +33,20 @@ ToString :: (value : ConstantValue) -> string #must
     case .Invalid;
         return StringClone ("<invalid>");
     case .Integer;
-        return FormatString ("%", value.int_value);
+        return SPrint ("%", value.int_value);
     case .Float;
-        return FormatString ("%", value.float_value);
+        return SPrint ("%", value.float_value);
     case .Boolean;
-        return FormatString ("%", value.bool_value);
+        return SPrint ("%", value.bool_value);
     case .String;
         builder : StringBuilder;
         StringBuilderAppendStringLiteral (*builder, value.string_value);
 
         return StringBuilderBuild (*builder);
     case .Pointer;
-        return FormatString ("%", cast (*void) value.pointer_value);
+        return SPrint ("%", cast (*void) value.pointer_value);
     case .Procedure;
-        return FormatString ("%", value.procedure_node);
+        return SPrint ("%", value.procedure_node);
     }
 }
 

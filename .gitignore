@@ -1,4 +1,4 @@
-Modules/LLVM-17/
+Source/Modules/LLVM-17/
 __pycache__/
 *.blend1
 obj/
@@ -8,9 +8,6 @@ obj/
 *.pdb
 *.exe
 .vscode/
-Cubed
-imgui.ini
-data/faithless/
 *.generated.c
 *.generated.cpp
 main

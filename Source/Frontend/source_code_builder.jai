@@ -91,7 +91,7 @@ AppendStringLiteral :: (using builder : *SourceCodeBuilder, str : string)
 Append :: (using builder : *SourceCodeBuilder, format_string : string, args : ..Any)
 {
     // @Speed
-    formatted := FormatString (format_string, ..args,, Temp);
+    formatted := SPrint (format_string, ..args,, Temp);
     Append (builder, formatted);
 }
 @PrintLike

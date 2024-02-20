@@ -165,11 +165,11 @@ IncrementErrorCounter :: inline ()
     g_error_counter += 1;
 }
 
-Highlight_Color_Str :: "\x1b[0;36m";
-Info_Color_Str      :: "\x1b[1;32m";
-Warning_Color_Str   :: "\x1b[1;33m";
-Error_Color_Str     :: "\x1b[1;31m";
-Fatal_Color_Str     :: "\x1b[1;35m";
+Yal_Highlight_Color_Str :: "\x1b[0;36m";
+Yal_Info_Color_Str      :: "\x1b[1;32m";
+Yal_Warning_Color_Str   :: "\x1b[1;33m";
+Yal_Error_Color_Str     :: "\x1b[1;31m";
+Yal_Fatal_Color_Str     :: "\x1b[1;35m";
 
 SetOutputColor :: (color : OutputColor, stderr := true)
 {
@@ -187,15 +187,15 @@ SetOutputColor :: (color : OutputColor, stderr := true)
     case .None;
         write_string ("\x1b[0m", to_standard_error = stderr);
     case .Highlight;
-        write_string (Highlight_Color_Str, to_standard_error = stderr);
+        write_string (Yal_Highlight_Color_Str, to_standard_error = stderr);
     case .Info;
-        write_string (Info_Color_Str, to_standard_error = stderr);
+        write_string (Yal_Info_Color_Str, to_standard_error = stderr);
     case .Warning;
-        write_string (Warning_Color_Str, to_standard_error = stderr);
+        write_string (Yal_Warning_Color_Str, to_standard_error = stderr);
     case .Error;
-        write_string (Error_Color_Str, to_standard_error = stderr);
+        write_string (Yal_Error_Color_Str, to_standard_error = stderr);
     case .Fatal_Error;
-        write_string (Fatal_Color_Str, to_standard_error = stderr);
+        write_string (Yal_Fatal_Color_Str, to_standard_error = stderr);
     }
 }
 
@@ -215,15 +215,15 @@ SetColor :: (builder : *StringBuilder, color : OutputColor, stderr := true)
     case .None;
         StringBuilderAppend (builder, "\x1b[0m");
     case .Highlight;
-        StringBuilderAppend (builder, Highlight_Color_Str);
+        StringBuilderAppend (builder, Yal_Highlight_Color_Str);
     case .Info;
-        StringBuilderAppend (builder, Info_Color_Str);
+        StringBuilderAppend (builder, Yal_Info_Color_Str);
     case .Warning;
-        StringBuilderAppend (builder, Warning_Color_Str);
+        StringBuilderAppend (builder, Yal_Warning_Color_Str);
     case .Error;
-        StringBuilderAppend (builder, Error_Color_Str);
+        StringBuilderAppend (builder, Yal_Error_Color_Str);
     case .Fatal_Error;
-        StringBuilderAppend (builder, Fatal_Color_Str);
+        StringBuilderAppend (builder, Yal_Fatal_Color_Str);
     }
 }
 

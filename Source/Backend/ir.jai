@@ -318,8 +318,8 @@ MakeUniqueName :: (table : *IRSymbolTable, name := "") -> string #must
             break;
 
         test_name = ifx name
-            then FormatString ("%.%", name, number)
-            else FormatString ("unnamed.%", number);
+            then SPrint ("%.%", name, number)
+            else SPrint ("unnamed.%", number);
 
         number += 1;
     }
@@ -356,7 +356,7 @@ CreateIRProcedure :: (module : *IRModule, name : string, param_types : []*IRType
     proc.param_symbols = AllocArray (IRSymbol, param_types.count);
     for * param, i : proc.param_symbols
     {
-        param.name = FormatString ("%", i);
+        param.name = SPrint ("%", i);
         param.type = param_types[i];
         param.symbol_kind = .Procedure_Param;
         param.proc = proc;
@@ -401,4 +401,11 @@ ScopeBasicBlock :: (builder : *IRBuilder, block : *IRBasicBlock) #expand
     prev := builder.current_basic_block;
     builder.current_basic_block = block;
     `defer builder.current_basic_block = prev;
+}
+
+SetEntryBlock :: (proc : *IRProcedure, block : *IRBasicBlock)
+{
+    Assert (proc.entry_block == null);
+
+    proc.entry_block = block;
 }

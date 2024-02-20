@@ -1,0 +1,208 @@
+struct YalContext
+{
+    assertion_failure_callback : YalAssertCallback;
+
+    allocator : YalAllocator;
+    temp_allocator : YalAllocator;
+
+    log_category : string;
+    logger : YalLogger;
+}
+
+struct YalSourceLocation
+{
+    filename : string;
+    line_number, character_number : u32;
+}
+
+typedef YalAssertCallback = proc (
+    message : string,
+    source_location : YalSourceLocation
+) -> debug_break : bool;
+
+enum YalLogFlags
+{
+    Error;
+    Warning;
+    File_Only;
+}
+
+struct YalLogInfo
+{
+    flags : YalLogFlags;
+    category : string;
+    source_module_name : string;
+    source_location : YalSourceLocation;
+}
+
+typedef YalLoggerCallback = proc (data : *void, message : string, info : YalLogInfo);
+
+struct YalLogger
+{
+    data : *void;
+    callback : YalLoggerCallback;
+}
+
+// The allocator is not structured using interfaces because we would have to
+// either store many different function pointers in the allocator struct, or
+// store a pointer to the vtable which means one extra indirection. Both of
+// these situations are not good for size and/or performance.
+
+enum YalAllocatorOperation
+{
+    Allocate;
+    Resize;
+    Free;
+}
+
+typedef YalAllocatorCallback = proc (
+    data : *void,
+    operation : YalAllocatorOperation,
+    size : s64,
+    ptr : *void,
+    new_size : s64
+) -> *void;
+
+struct YalAllocator
+{
+    data : *void;
+    callback : YalAllocatorCallback;
+}
+
+struct YalDecoratorContext
+{
+    node : *YalAstNode;
+}
+
+interface IYalDecorator
+{
+    proc ProcessNode (self : *Self, context : YalDecoratorContext) -> bool;
+    proc OnTypecheckedAll (self : *Self) {}
+}
+
+enum u8 YalTypeKind
+{
+    Void;
+    Integer;
+    Float;
+    Bool;
+    String;
+    Array;
+    Pointer;
+    Procedure;
+    Enum;
+    Struct;
+    Interface;
+    Interface_Self;
+}
+
+struct YalType
+{
+    kind : YalTypeKind;
+    size : s64;
+}
+
+struct YalInteger
+{
+    #as using _ : YalType;
+    kind = .Integer;
+
+    is_signed : bool;
+}
+
+enum u8 YalArrayKind
+{
+    Static;
+    View;
+    Dynamic;
+}
+
+struct YalArray
+{
+    #as using _ : YalType;
+    kind = .Array;
+
+    element_type : *YalType;
+    element_count : s64;
+    array_kind : YalArrayKind;
+}
+
+struct YalPointer
+{
+    #as using _ : YalType;
+    kind = .Pointer;
+
+    pointer_to : *YalType;
+}
+
+enum_flags u8 YalProcedureFlags
+{
+    Calling_Convention_C;
+}
+
+struct YalProcedure
+{
+    #as using _ : YalType;
+    kind = .Procedure;
+
+    flags : YalProcedureFlags;
+    parameter_types : []*YalType;
+    result_types : []*YalType;
+}
+
+struct YalEnumMember
+{
+    name : string;
+    value : s64;
+}
+
+enum_flags u8 YalEnumFlags
+{
+    Enum_Flags;
+}
+
+struct YalEnum
+{
+    #as using _ : YalType;
+    kind = .Enum;
+
+    name : string;
+    base_type : *YalType;
+    flags : YalEnumFlags;
+    members : []YalEnumMember;
+}
+
+struct YalStructMember
+{
+    name : string;
+    offset : s64;
+    type : *YalType;
+}
+
+enum_flags u8 YalStructFlags
+{
+    Union;
+    Bitfield;
+    VTable;
+}
+
+struct YalStruct
+{
+    #as using _ : YalType;
+    kind = .Struct;
+
+    name : string;
+    vtable_of_interface : *YalInterface;
+    flags : YalStructFlags;
+    members : []YalStructMember;
+}
+
+struct YalInterface
+{
+    #as using _ : YalType;
+    kind = .Interface;
+
+    name : string;
+    procedures : []*YalProcedure;
+    implementations : []*YalType;
+}

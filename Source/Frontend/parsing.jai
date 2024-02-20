@@ -350,7 +350,7 @@ Operators :: OperatorInfo.[
         b := Operators[i + 1];
         if a.precedence > b.precedence
         {
-            message := FormatString ("Operators should be sorted by order of precedence");
+            message := SPrint ("Operators should be sorted by order of precedence");
 
             JaiC.compiler_report (message, #location (Token_Symbols));
         }
