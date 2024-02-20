@@ -1,3 +1,3 @@
 #!/bin/sh
 
-jai -import_dir ../../Cubed/modules Source/main.jai $@
+jai -import_dir ../Modules Source/main.jai $@
