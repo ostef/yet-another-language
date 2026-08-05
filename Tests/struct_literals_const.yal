@@ -1,0 +1,36 @@
+#include "basic.yal.ignore";
+
+const Vec2f = struct {
+    var x: float;
+    var y: float;
+}
+
+const Vec3f = struct {
+    var x: float;
+    var y: float;
+    var z: float;
+}
+
+const Vec4f = struct {
+    var x: float;
+    var y: float;
+    var z: float;
+    var w: float;
+}
+
+const main = func() -> s32 {
+    const a = Vec2f.{1,2};
+    Assert(a.x == 1);
+    Assert(a.y == 2);
+
+    const b = Vec3f.{1,2,3};
+    Assert(b.x == 1);
+    Assert(b.y == 2);
+    Assert(b.z == 3);
+
+    const c = Vec4f.{1,2,3,4};
+    Assert(c.x == 1);
+    Assert(c.y == 2);
+    Assert(c.z == 3);
+    Assert(c.w == 4);
+}

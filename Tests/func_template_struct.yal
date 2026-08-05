@@ -1,0 +1,39 @@
+#include "basic.yal.ignore";
+
+const Vector = struct($T: type_id, $N: int) {
+    var values: [N]T;
+}
+
+const DotExplicit = func($T: type_id, $N: int, a: Vector(T, N), b: Vector(T, N)) -> T {
+    var result: T;
+    for i: 0..<N {
+        result += a.values[i] * b.values[i];
+    }
+
+    return result;
+}
+
+const Dot = func(a: Vector($T, $N), b: Vector(T, N)) -> T {
+    var result: T;
+    for i: 0..<N {
+        result += a.values[i] * b.values[i];
+    }
+
+    return result;
+}
+
+const main = func() -> s32 {
+    var a: Vector(int, 2);
+    a.values[0] = 1;
+    a.values[1] = 3;
+
+    var b: Vector(int, 2);
+    b.values[0] = 2;
+    b.values[1] = 5;
+
+    var x = DotExplicit(int, 2, a, b);
+    Assert(x == 1 * 2 + 3 * 5);
+
+    var y = Dot(a, b);
+    Assert(y == 1 * 2 + 3 * 5);
+}

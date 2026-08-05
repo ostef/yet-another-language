@@ -1,0 +1,3 @@
+const Foo = enum u8 {
+    A = 1234567;
+}

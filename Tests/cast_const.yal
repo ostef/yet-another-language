@@ -1,0 +1,141 @@
+#include "basic.yal.ignore";
+
+const Foo = enum {
+    A;
+    B;
+    C;
+}
+
+const Foo32 = enum u32 {
+    A;
+    B;
+    C;
+}
+
+const Foo16 = enum u16 {
+    A;
+    B;
+    C;
+}
+
+const Foo8 = enum u8 {
+    A;
+    B;
+    C;
+}
+
+const main = func() -> s32 {
+    {
+        const a = 10.0;
+        const b = cast(int, a);
+        Assert(b == 10);
+    }
+    {
+        const a = 10;
+        const b = cast(float, a);
+        Assert(b == 10.0);
+    }
+    {
+        const a = Foo.A;
+        const b = cast(int, a);
+        Assert(b == 0);
+    }
+    {
+        const a = 0;
+        const b = cast(Foo, a);
+        Assert(b == Foo.A);
+    }
+    {
+        const a = true;
+        const b = cast(int, a);
+        Assert(b == 1);
+    }
+    {
+        const a = 10;
+        const b = cast(bool, a);
+        Assert(b == true);
+    }
+
+    {
+        const a: s8 = -128;
+        const b = cast(u8, a);
+        Assert(b == 128);
+    }
+    {
+        const a: s8 = -1;
+        const b = cast(u8, a);
+        Assert(b == 255);
+    }
+    {
+        const a: u8 = 128;
+        const b = cast(s8, a);
+        Assert(b == -128);
+    }
+    {
+        const a: u8 = 255;
+        const b = cast(s8, a);
+        Assert(b == -1);
+    }
+
+    {
+        const a: s16 = -32768;
+        const b = cast(u16, a);
+        Assert(b == 32768);
+    }
+    {
+        const a: s16 = -1;
+        const b = cast(u16, a);
+        Assert(b == 65535);
+    }
+    {
+        const a: u16 = 32768;
+        const b = cast(s16, a);
+        Assert(b == -32768);
+    }
+    {
+        const a: u16 = 65535;
+        const b = cast(s16, a);
+        Assert(b == -1);
+    }
+
+    {
+        const a: s32 = -2147483648;
+        const b = cast(u32, a);
+        Assert(b == 2147483648);
+    }
+    {
+        const a: s32 = -1;
+        const b = cast(u32, a);
+        Assert(b == 4294967295);
+    }
+    {
+        const a: u32 = 2147483648;
+        const b = cast(s32, a);
+        Assert(b == -2147483648);
+    }
+    {
+        const a: u32 = 4294967295;
+        const b = cast(s32, a);
+        Assert(b == -1);
+    }
+    {
+        const a: s64 = -9223372036854775808;
+        const b = cast(u64, a);
+        Assert(b == 9223372036854775808);
+    }
+    {
+        const a: s64 = -1;
+        const b = cast(u64, a);
+        Assert(b == 18446744073709551615);
+    }
+    {
+        const a: u64 = 9223372036854775808;
+        const b = cast(s64, a);
+        Assert(b == -9223372036854775808);
+    }
+    {
+        const a: u64 = 18446744073709551615;
+        const b = cast(s64, a);
+        Assert(b == -1);
+    }
+}

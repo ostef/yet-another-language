@@ -1,0 +1,11 @@
+const Vector = struct(T: type_id, N: int) {
+    var values: [N]T;
+}
+
+const Foo = func(v: Vector($T, 2)) {
+}
+
+const main = func() -> s32 {
+    var v: Vector(float, 2);
+    Foo(v);
+}

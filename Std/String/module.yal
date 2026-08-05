@@ -1,0 +1,310 @@
+const Std = #import "Std";
+const Mem = #import "Std/Memory";
+
+#include "builder.yal";
+
+const FromCString = func(cstr: *u8) -> string {
+    var result: string;
+    result.data = cstr;
+    result.count = CStringLength(cstr);
+
+    return result;
+}
+
+const CStringLength = func(cstr: *u8) -> int {
+    var i = 0;
+    while cstr[i] != 0 {
+        i += 1;
+    }
+
+    return i;
+}
+
+const CStringEquals = func(a: *u8, b: *u8) -> bool {
+    return CompareCStrings(a, b) == 0;
+}
+
+const CompareCStrings = func(a: *u8, b: *u8) -> int {
+    var i = 0;
+    while a[i] != 0 && b[i] != 0 && a[i] == b[i] {
+        i += 1;
+    }
+
+    return cast(int, a[i]) - cast(int, b[i]);
+}
+
+const CompareCStringsUntil = func(a: *u8, b: *u8, until: int) -> int {
+    var i = 0;
+    while i < until && a[i] != 0 && b[i] != 0 && a[i] == b[i] {
+        i += 1;
+    }
+
+    if i == until {
+        return 0;
+    }
+
+    return cast(int, a[i]) - cast(int, b[i]);
+}
+
+const Compare = func(a: string, b: string) -> int {
+    var until: int;
+    if a.count < b.count {
+        until = a.count;
+    } else {
+        until = b.count;
+    }
+
+    var i = 0;
+    while i < until && a[i] == b[i] {
+        i += 1;
+    }
+
+    if i == until {
+        if a.count == b.count {
+            return 0;
+        } else if a.count < b.count {
+            return -cast(int, b[i]);
+        } else {
+            return cast(int, a[i]);
+        }
+    }
+
+    return cast(int, a[i]) - cast(int, b[i]);
+}
+
+const StartsWith = func(str: string, with: string) -> bool {
+    if str.count < with.count {
+        return false;
+    }
+
+    return Mem.Compare(str.data, with.data, with.count) == 0;
+}
+
+const EndsWith = func(str: string, with: string) -> bool {
+    if str.count < with.count {
+        return false;
+    }
+
+    return Mem.Compare(str.data + str.count - with.count, with.data, with.count) == 0;
+}
+
+const SubString = func(str: string, first_byte_index: int, num_bytes: int) -> string {
+    if first_byte_index < 0 {
+        first_byte_index = 0;
+        num_bytes -= -first_byte_index;
+    } else if first_byte_index >= str.count {
+        first_byte_index = str.count;
+        num_bytes = 0;
+    }
+
+    if first_byte_index + num_bytes > str.count {
+        num_bytes = str.count - first_byte_index;
+    }
+
+    var result: string;
+    result.data = str.data + first_byte_index;
+    result.count = num_bytes;
+
+    return result;
+}
+
+const TrimLeft = func(str: string, count: int) -> string {
+    if count >= str.count {
+        return "";
+    }
+
+    var result: string;
+    result.data = str.data + count;
+    result.count = str.count - count;
+
+    return result;
+}
+
+const TrimRight = func(str: string, count: int) -> string {
+    if count >= str.count {
+        return "";
+    }
+
+    var result: string;
+    result.data = str.data;
+    result.count = str.count - count;
+
+    return result;
+}
+
+const CloneToCString = func(str: string) -> *u8 {
+    var cstr = cast(*u8, Mem.Alloc(str.count + 1));
+    if cstr == null {
+        return null;
+    }
+
+    var i = 0;
+    while i < str.count {
+        cstr[i] = str[i];
+    }
+
+    cstr[i] = 0;
+
+    return cstr;
+}
+
+const Clone = func(str: string) -> string {
+    var result: string;
+    result.data = cast(*u8, Mem.Alloc(str.count));
+    if result.data == null {
+        return "";
+    }
+
+    result.count = str.count;
+
+    Mem.Copy(result.data, str.data, str.count);
+
+    return result;
+}
+
+const FindFirstOf = func(str: string, of: string) -> int {
+    for i: 0..<str.count {
+        var stri = str[i];
+
+        for j: 0..<of.count {
+            if stri == of[j] {
+                return i;
+            }
+        }
+    }
+
+    return -1;
+}
+
+const FindLastOf = func(str: string, of: string) -> int {
+    for i: 0=..str.count - 1 {
+        var stri = str[i];
+
+        for j: 0..<of.count {
+            if stri == of[j] {
+                return i;
+            }
+        }
+    }
+
+    return -1;
+}
+
+const FindFirstString = func(str: string, to_find: string) -> int {
+    for i: 0..<str.count - to_find.count {
+        var substr: string;
+        substr.data = str.data + i;
+        substr.count = to_find.count;
+
+        if substr == to_find {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+const FindLastString = func(str: string, to_find: string) -> int {
+    for i: 0=..str.count - to_find.count - 1 {
+        var substr: string;
+        substr.data = str.data + i;
+        substr.count = to_find.count;
+
+        if substr == to_find {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+const FindFirstChar = func(str: string, to_find: u8) -> int {
+    var s: string;
+    s.data = &to_find;
+    s.count = 1;
+
+    return FindFirstString(str, s);
+}
+
+const FindLastChar = func(str: string, to_find: u8) -> int {
+    var s: string;
+    s.data = &to_find;
+    s.count = 1;
+
+    return FindLastString(str, s);
+}
+
+const FindFirst = func {
+    FindFirstChar;
+    FindFirstString;
+}
+
+const FindLast = func {
+    FindLastChar;
+    FindLastString;
+}
+
+const ContainsOneOf = func(str: string, of: string) -> bool {
+    return FindFirstOf(str, of) >= 0;
+}
+
+const ContainsString = func(str: string, to_find: string) -> bool {
+    return FindFirstString(str, to_find) >= 0;
+}
+
+const ContainsChar = func(str: string, to_find: u8) -> bool {
+    return FindFirstChar(str, to_find) >= 0;
+}
+
+const Contains = func {
+    ContainsChar;
+    ContainsString;
+}
+
+const IsUpper = func(char: u8) -> bool {
+    return char >= 'A' && char <= 'Z';
+}
+
+const IsLower = func(char: u8) -> bool {
+    return char >= 'a' && char <= 'z';
+}
+
+const IsDigit = func(char: u8) -> bool {
+    return char >= '0' && char <= '9';
+}
+
+const IsAlpha = func(char: u8) -> bool {
+    return IsUpper(char) || IsLower(char);
+}
+
+const IsAlphaUnderscore = func(char: u8) -> bool {
+    return IsUpper(char) || IsLower(char) || char == '_';
+}
+
+const IsAlphaNumUnderscore = func(char: u8) -> bool {
+    return IsAlphaUnderscore(char) || IsDigit(char);
+}
+
+const IsSpace = func(char: u8) -> bool {
+    return char == ' ' || char == '\t' || char == '\r' || char == '\n';
+}
+
+const IsPrintable = func(char: u8) -> bool {
+    return char >= 0x20 && char <= 0x7f;
+}
+
+const ToUpper = func(char: u8) -> u8 {
+    if IsLower(char) {
+        return char - ('a' - 'A');
+    }
+
+    return char;
+}
+
+const ToLower = func(char: u8) -> u8 {
+    if IsUpper(char) {
+        return char + ('a' - 'A');
+    }
+
+    return char;
+}

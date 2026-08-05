@@ -1,0 +1,10 @@
+const Foo = func() {
+    const Bar = func() {
+    }
+
+    Bar();
+}
+
+const main = func() -> s32 {
+    Foo();
+}

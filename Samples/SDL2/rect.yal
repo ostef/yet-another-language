@@ -1,0 +1,26 @@
+const Point = struct {
+    var x: s32;
+    var y: s32;
+}
+
+const Rect = struct {
+    var x: s32;
+    var y: s32;
+    var w: s32;
+    var h: s32;
+}
+
+@external @library(Lib_SDL2) {
+
+@symbol("SDL_HasIntersection")
+const HasIntersection = func(A: *Rect, B: *Rect) -> Bool;
+@symbol("SDL_IntersectRect")
+const IntersectRect = func(A: *Rect, B: *Rect, result: *Rect) -> Bool;
+@symbol("SDL_UnionRect")
+const UnionRect = func(A: *Rect, B: *Rect, result: *Rect);
+@symbol("SDL_EnclosePoints")
+const EnclosePoints = func(points: *Point, count: s32, clip: *Rect, result: *Rect) -> Bool;
+@symbol("SDL_IntersectRectAndLine")
+const IntersectRectAndLine = func(rect: *Rect, X1: *s32, Y1: *s32, X2: *s32, Y2: *s32) -> Bool;
+
+}

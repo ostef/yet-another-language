@@ -1,0 +1,151 @@
+// An interface defines a set of procedures to be implemented for a specific type
+const IEntity = interface {
+    OnSpawn: func(self: *Self);
+    OnDespawn: func(self: *Self);
+    OnUpdate: func(self: *Self);
+}
+
+// You can ensure an interface only gets implemented for types that meet certain constraints:
+const IComponent = interface #where TypeIsComponent(Self) {
+    OnCreate: func(self: *Self, entity: *Entity);
+    OnDestroy: func(self: *Self, entity: *Entity);
+    OnUpdate: func(self: *Self);
+}
+
+const TypeIsComponent = func(type: type_id) -> bool {
+    // ...
+    return true;
+}
+
+const Player = struct {}
+
+impl IEntity : Player {
+    OnSpawn = func(self: *Player) {
+    }
+
+    // Self can be used instead of Player
+    OnDespawn = func(self: *Self) {
+    }
+
+    OnUpdate = func(self: *Self) {
+    }
+}
+
+// Interfaces are only a typechecking feature, and can be thought of a template to
+// follow. There is no codegen associated with interfaces.
+// When expecting an interface type as a parameter of a procedure, this means the
+// procedure is polymorphic.
+// If you want to use an interface at run-time and perform what's known as runtime
+// dispatch, you will have to create a AnyInterface struct that implements the
+// interface yourself. At the library level we can provide code generation
+// functionality to generate this struct automatically.
+// The reason for this is that I do not want to encourage using dynamic dispatch
+// everywhere as well as encouraging a single way of doing dynamic dispatch.
+// For example one might want to provide the vtable with a pointer indirection, to
+// reduce the size of the interface struct itself, or even access the vtable by
+// indexing into an array.
+// One problem with this of course is that library writers will have to be careful
+// to provide specialization of functions using dynamic dispatch, so users can use
+// interfaces from another language.
+// Another problem is that it might prevent the compiler from doing certain optimizations
+
+cronst AnyIEntity = struct {
+    var value: *void;
+    var vtable: *vtable_type_of(IEntity);
+}
+
+// vtable_type_of returns a struct type that contains function pointers
+// vtable_of returns a pointer to that struct for a specific type that implements the interface
+
+impl IEntity : AnyIEntity {
+    OnSpawn = func(self: *Self) {
+        Assert(self.vtable != null, "IEntity is null");
+        self.vtable.OnSpawn(self.value);
+    }
+
+    // Self can be used instead of Player
+    OnDespawn = func(self: *Self) {
+        Assert(self.vtable != null, "IEntity is null");
+        self.vtable.OnDespawn(self.value);
+    }
+
+    OnUpdate = func(self: *Self) {
+        Assert(self.vtable != null, "IEntity is null");
+        self.vtable.OnUpdate(self.value);
+    }
+}
+
+// Alternatively:
+// #insert #run MakeAnyInterfaceType(IEntity, "AnyIEntity");
+
+// Example of what this would look like in C:
+/*
+typedef struct {
+    void (*OnSpawn)(void *self);
+    void (*OnDespawn)(void *self);
+    void (*OnUpdate)(void *self);
+} IEntityVTable;
+
+typedef struct {
+    void *value;
+    IEntityVTable vtable;
+} AnyIEntity;
+
+typedef struct {
+} Player;
+
+void PlayerOnSpawn(Player *self) {
+}
+
+void PlayerOnDespawn(Player *self) {
+}
+
+void PlayerOnUpdate(Player *self) {
+}
+
+const IEntityVTable Player_IEntity_VTable = {
+    PlayerOnSpawn,
+    PlayerOnDespawn,
+    PlayerOnUpdate,
+};
+
+AnyIEntity PlayerToAnyIEntity(Player *player) {
+    return (AnyIEntity){
+        player,
+        &Player_IEntity_VTable,
+    };
+}
+*/
+
+const Player.ToAnyIEntity = func(player: *Player) -> AnyIEntity {
+    return .{
+        value=player,
+        vtable=vtable_of(IEntity, Player),
+    };
+}
+
+const AnyIEntity.GetValue = func(self: *AnyIEntity, $T: typeid) -> *T {
+    if !self.vtable {
+        Panic("Interface concrete type is null");
+        return null;
+    }
+
+    if self.vtable != vtable_of(T, IEntity) {
+        Panic("Interface concrete type is not %", T);
+        return null;
+    }
+
+    return cast(*T, self.value);
+}
+
+const main = func(args: []string) -> s32 {
+    var player: Player;
+
+    // We call into an interface by specifiying the interface name
+    IEntity.OnSpawn(&player);
+
+    var any = player.ToAnyIEntity();
+    IEntity.OnUpdate(&any);
+
+    var player_ptr = any.GetValue(Player);
+}

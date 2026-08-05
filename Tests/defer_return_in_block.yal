@@ -1,0 +1,16 @@
+#include "basic.yal.ignore";
+
+const Foo = func(x: *int) {
+    x.* = 10;
+    defer x.* = 1;
+
+    if true {
+        return;
+    }
+}
+
+const main = func() -> s32 {
+    var x: int;
+    Foo(&x);
+    Assert(x == 1);
+}

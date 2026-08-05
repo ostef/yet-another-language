@@ -1,0 +1,15 @@
+#include "basic.yal.ignore";
+
+const Str = """end
+hello
+end;
+
+const Str2 = """here
+nothere
+herebutnotreallyhere
+here;
+
+const main = func() -> s32 {
+    Assert(Str == "hello");
+    Assert(Str2 == "nothere\nherebutnotreallyhere");
+}

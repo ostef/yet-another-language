@@ -1,0 +1,14 @@
+#include "basic.yal.ignore";
+
+// In this test, I am testing that the empty string has a null data field
+// I am not sure why I wrote this test to be honest, it does not seem very important
+// whether the field is null or not.
+// In fact, when interfacing with C empty strings being null could cause issues
+// In Jai, empty strings are null and that has not caused problems
+const main = func() -> s32 {
+    const Str = "";
+    Assert(Str.data == null);
+
+    var str = "";
+    Assert(str.data == null);
+}

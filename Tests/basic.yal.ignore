@@ -1,0 +1,107 @@
+#if Target_OS == .Windows {
+    const libc = "msvcr100.dll";
+} else #if Target_OS == .Linux {
+    const libc = "libc.so.6";
+} else #if Target_OS == .MacOS {
+    const libc = "libSystem.dylib";
+} else {
+    #assert false, "Unsupported target OS";
+}
+
+@external @library(libc) {
+    const memset = func(dst: *void, value: u32, size: u64) -> *void;
+    const memcpy = func(dst: *void, src: *void, size: u64) -> *void;
+    const malloc = func(size: u64) -> *void;
+    const realloc = func(ptr: *void, new_size: u64) -> *void;
+    const free = func(ptr: *void);
+    const putchar = func(char: u8) -> s32;
+    const printf = func(fmt: *u8, ...) -> s32;
+}
+
+const WriteInt = func(x: int) {
+    if x < 0 {
+        putchar('-');
+        x = -x;
+    }
+
+    WriteUint(cast(uint, x));
+}
+
+const WriteUint = func(x: uint) {
+    var buffer: [65]u8;
+
+    var num_digits = 0;
+    var x2 = x;
+    while num_digits < 1 || x2 > 0 {
+        num_digits += 1;
+        x2 /= 10;
+    }
+
+    var i = 0;
+    while i < num_digits {
+        var digit = cast(u8, x % 10);
+        x /= 10;
+
+        buffer[num_digits - i - 1] = '0' + digit;
+        i += 1;
+    }
+
+    i = 0;
+    while i < num_digits {
+        putchar(buffer[i]);
+        i += 1;
+    }
+}
+
+const WriteHex = func(x: uint) {
+    const Hex_Digits = "0123456789abcdef";
+    var digits = Hex_Digits;
+
+    var buffer: [65]u8;
+
+    var num_digits = 0;
+    var x2 = x;
+    while num_digits < 1 || x2 > 0 {
+        num_digits += 1;
+        x2 /= 16;
+    }
+
+    var i = 0;
+    while i < num_digits {
+        var digit = cast(u8, x % 16);
+        x /= 16;
+
+        buffer[num_digits - i - 1] = digits[digit];
+        i += 1;
+    }
+
+    i = 0;
+    while i < num_digits {
+        putchar(buffer[i]);
+        i += 1;
+    }
+}
+
+const WritePtr = func(ptr: *void) {
+    WriteHex(bitcast(uint, ptr));
+}
+
+const WriteString = func(str: string) {
+    var i = 0;
+    while i < str.count {
+        putchar(str[i]);
+        i += 1;
+    }
+}
+
+const Println = func(str: string) {
+    WriteString(str);
+    WriteString("\n");
+}
+
+const Assert = func(x: bool) {
+    if !x {
+        WriteString("Assertion failed!\n");
+        debug_break;
+    }
+}

@@ -1,0 +1,7 @@
+const Foo = func(a: int, $T: type_id, $N: T, foo: []$U, $M: $V) {
+}
+
+const main = func() -> s32 {
+    var arr: []string;
+    Foo(10, int, 50, arr, "Hello World");
+}

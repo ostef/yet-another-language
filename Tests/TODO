@@ -1,0 +1,13 @@
+* Casts:
+- Integer to integer
+- Float to float
+- Integer to float
+- Float to integer
+- Pointer to pointer
+- Pointer to integer
+- integer to pointer
+* Subscript:
+- non constant string subscript
+- constant string subscript
+- str.data[i] does not seem to work
+- pointer subscript

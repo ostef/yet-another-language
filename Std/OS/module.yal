@@ -1,0 +1,8 @@
+// This module defines an abstraction layer for basic interaction with the operating system
+// (things like access to the file system, access to system information, etc)
+
+const Std = #import "Std";
+const Mem = #import "Std/Memory";
+const Array = #import "Std/Array";
+
+#include "file_system.yal";

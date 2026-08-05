@@ -1,0 +1,658 @@
+OutputColor :: enum {
+    None;
+    SourceCode;
+    SourceCodeHighlight;
+    Info;
+    Warning;
+    Error;
+    FatalError;
+
+    Comment;
+    Value;
+    Instruction;
+}
+
+Yal_Source_Code_Color_Str :: "\x1b[0;96m";
+Yal_Source_Code_Highlight_Color_Str :: "\x1b[0;91m";
+Yal_Info_Color_Str      :: "\x1b[1;32m";
+Yal_Warning_Color_Str   :: "\x1b[1;33m";
+Yal_Error_Color_Str     :: "\x1b[1;31m";
+Yal_Fatal_Color_Str     :: "\x1b[1;35m";
+Yal_Comment_Color_Str   :: "\x1b[1;32m";
+Yal_Value_Color_Str      :: "\x1b[1;96m";
+Yal_Instruction_Color_Str :: "\x1b[1;35m";
+
+g_error_counter : int;
+
+ShortenFilename :: (filename : string) -> string {
+    if StringStartsWith(filename, g_initial_working_directory) {
+        str := StringAdvance(filename, g_initial_working_directory.count);
+        if str.count > 0 && str[0] == #char "/" {
+            str = StringAdvance(str, 1);
+        }
+
+        if str.count == 0 {
+            return filename;
+        }
+
+        return str;
+    }
+
+    return filename;
+}
+
+DecimalLength :: inline (val : u64) -> int {
+    if !val {
+        return 1;
+    }
+
+    i := 0;
+    while val {
+        i += 1;
+        val /= 10;
+    }
+
+    return i;
+}
+
+AppendIndentation :: (builder : *StringBuilder, col : int, size : int, char : u8 = #char " ") -> int {
+    count := size - (col % size);
+    for i : 0..count - 1 {
+        StringBuilderAppendByte(builder,  char);
+    }
+
+    return count;
+}
+
+#add_context print_squiggles := true;
+
+GetLine :: (str : string, line_index : int) -> string {
+    start := 0;
+    end := String.find_index_from_left(str, #char "\n");
+    if end < 0 {
+        end = str.count;
+    }
+
+    i := 0;
+    while i < line_index && end < str.count {
+        start = end + 1;
+        new_end := String.find_index_from_left(str, #char "\n", start);
+        if new_end < 0 {
+            end = str.count;
+            break;
+        } else {
+            end = new_end;
+        }
+
+        i += 1;
+    }
+
+    return .{count=end-start, data=str.data+start};
+}
+
+GetFirstLine :: (range : TokenRange) -> string {
+    str := TokenRangeToString(range);
+    newline := String.find_index_from_left(str, #char "\n");
+    if newline >= 0 {
+        str.count = newline;
+    }
+
+    return str;
+}
+
+PrintTokenLine :: (builder : *StringBuilder, range : TokenRange) {
+    file := GetFile(range.file_id);
+    Assert(file != null);
+
+    range_length := TokenRangeToString(range).count;
+
+    str := file.text;
+    line_start := range.byte_offset;
+    while line_start > 0 && str[line_start - 1] != #char "\n" {
+        line_start -= 1;
+    }
+
+    printed_ellipsis := false;
+    current_line := range.line_start;
+    line_digits := DecimalLength(cast(u64) range.line_end);
+    num_printed_lines := 0;
+
+    while true {
+        line_len := 0;
+
+        defer {
+            current_line += 1;
+
+            line_start += line_len;
+
+            if line_start >= range.byte_offset + range_length {
+                break;
+            }
+        }
+
+        empty_line := true;
+        while line_start + line_len < str.count && str[line_start + line_len] != #char "\n" {
+            if !Basic.is_space(str[line_start + line_len]) {
+                empty_line = false;
+            }
+
+            line_len += 1;
+        }
+
+        if empty_line {
+            if line_start + line_len < str.count && str[line_start + line_len] == #char "\n" {
+                line_len += 1;
+            }
+
+            continue;
+        }
+
+        line_str := string.{line_len, str.data + line_start};
+
+        if num_printed_lines < g_build_settings.max_reported_lines - 1 || current_line == range.line_end  {
+            line_value := FormatInt.{value=current_line, minimum_digits=line_digits, padding=#char " "};
+            StringBuilderAppend(builder, " % | ", line_value);
+
+            if line_start > range.byte_offset && line_start < range.byte_offset + range_length {
+                SetColor(builder, .SourceCodeHighlight);
+            } else {
+                SetColor(builder, .SourceCode);
+            }
+
+            column := 0;
+            for j : 0..line_len - 1 {
+                if line_start + j == range.byte_offset {
+                    SetColor(builder, .SourceCodeHighlight);
+                }
+
+                if line_str[j] == #char "\t" {
+                    column += AppendIndentation(builder, column, g_build_settings.tab_size);
+                } else {
+                    StringBuilderAppendByte(builder, line_str[j]);
+                    column += 1;
+                }
+
+                if line_start + j == range.byte_offset + range_length - 1 {
+                    SetColor(builder, .SourceCode);
+                }
+            }
+
+            StringBuilderAppend(builder, "\n");
+            SetColor(builder, .None);
+        } else if !printed_ellipsis {
+            StringBuilderAppend(builder, "(...)\n");
+            printed_ellipsis = true;
+        }
+
+        if line_start + line_len < str.count && str[line_start + line_len] == #char "\n" {
+            line_len += 1;
+        }
+
+        if context.print_squiggles {
+            if num_printed_lines < g_build_settings.max_reported_lines - 1 || current_line == range.line_end {
+                for j : 0..line_digits - 1 {
+                    StringBuilderAppend(builder, " ");
+                }
+                StringBuilderAppend(builder, "    ");
+                SetColor(builder, .SourceCodeHighlight);
+
+                column := 0;
+                for j : 0..line_len - 1 {
+                    if line_start + j >= range.byte_offset && line_start + j < range.byte_offset + range_length {
+                        if j < line_str.count && line_str[j] == #char "\t" {
+                            column += AppendIndentation(builder, column, g_build_settings.tab_size, #char "~");
+                        } else {
+                            StringBuilderAppend(builder, "~");
+                            column += 1;
+                        }
+                    } else if j < line_str.count && line_str[j] == #char "\t" {
+                        column += AppendIndentation(builder, column, g_build_settings.tab_size);
+                    } else {
+                        StringBuilderAppend(builder, " ");
+                        column += 1;
+                    }
+                }
+
+                StringBuilderAppend(builder, "\n");
+                SetColor(builder, .None);
+            }
+        }
+
+        num_printed_lines += 1;
+    }
+
+    if !context.print_squiggles {
+        StringBuilderAppend(builder, "\n");
+    }
+}
+
+IncrementErrorCounter :: inline () {
+    if g_error_counter >= g_build_settings.max_errors {
+        SetOutputColor(.Error);
+        write_string("Found too many errors, exiting...\n", to_standard_error = true);
+        SetOutputColor(.None);
+        Basic.exit(1);
+    }
+
+    g_error_counter += 1;
+}
+
+SetOutputColor :: (color : OutputColor, stderr := true) {
+    if !g_build_settings.output_colors {
+        return;
+    }
+
+    if stderr && !g_stderr_has_colors {
+        return;
+    }
+
+    if !stderr && !g_stdout_has_colors {
+        return;
+    }
+
+    if #complete color == {
+    case .None;
+        write_string("\x1b[0m", to_standard_error = stderr);
+    case .SourceCode;
+        write_string(Yal_Source_Code_Color_Str, to_standard_error = stderr);
+    case .SourceCodeHighlight;
+        write_string(Yal_Source_Code_Highlight_Color_Str, to_standard_error = stderr);
+    case .Info;
+        write_string(Yal_Info_Color_Str, to_standard_error = stderr);
+    case .Warning;
+        write_string(Yal_Warning_Color_Str, to_standard_error = stderr);
+    case .Error;
+        write_string(Yal_Error_Color_Str, to_standard_error = stderr);
+    case .FatalError;
+        write_string(Yal_Fatal_Color_Str, to_standard_error = stderr);
+    case .Comment;
+        write_string(Yal_Comment_Color_Str, to_standard_error = stderr);
+    case .Value;
+        write_string(Yal_Value_Color_Str, to_standard_error = stderr);
+    case .Instruction;
+        write_string(Yal_Instruction_Color_Str, to_standard_error = stderr);
+    }
+}
+
+SetColor :: (builder : *StringBuilder, color : OutputColor, stderr := true) {
+    if !g_build_settings.output_colors {
+        return;
+    }
+
+    if stderr && !g_stderr_has_colors {
+        return;
+    }
+
+    if !stderr && !g_stdout_has_colors {
+        return;
+    }
+
+    if #complete color == {
+    case .None;
+        StringBuilderAppend(builder, "\x1b[0m");
+    case .SourceCode;
+        StringBuilderAppend(builder, Yal_Source_Code_Color_Str);
+    case .SourceCodeHighlight;
+        StringBuilderAppend(builder, Yal_Source_Code_Highlight_Color_Str);
+    case .Info;
+        StringBuilderAppend(builder, Yal_Info_Color_Str);
+    case .Warning;
+        StringBuilderAppend(builder, Yal_Warning_Color_Str);
+    case .Error;
+        StringBuilderAppend(builder, Yal_Error_Color_Str);
+    case .FatalError;
+        StringBuilderAppend(builder, Yal_Fatal_Color_Str);
+    case .Comment;
+        StringBuilderAppend(builder, Yal_Comment_Color_Str);
+    case .Value;
+        StringBuilderAppend(builder, Yal_Value_Color_Str);
+    case .Instruction;
+        StringBuilderAppend(builder, Yal_Instruction_Color_Str);
+    }
+}
+
+Warning :: (fmt_str : string, args : ..Any) {
+    builder : StringBuilder;
+
+    SetColor(*builder, .Warning);
+    StringBuilderAppend(*builder, "Warning: ");
+    SetColor(*builder, .None);
+
+    StringBuilderAppend(*builder, fmt_str, ..args);
+    StringBuilderAppend(*builder, "\n");
+
+    write_string(StringBuilderBuild(*builder), to_standard_error = true);
+}
+@PrintLike
+
+Error :: (fmt_str : string, args : ..Any) {
+    builder : StringBuilder;
+
+    SetColor(*builder, .Error);
+    StringBuilderAppend(*builder, "Error: ");
+    SetColor(*builder, .None);
+
+    StringBuilderAppend(*builder, fmt_str, ..args);
+    StringBuilderAppend(*builder, "\n");
+
+    write_string(StringBuilderBuild(*builder), to_standard_error = true);
+
+    IncrementErrorCounter();
+}
+@PrintLike
+
+Report :: (range : TokenRange, color : OutputColor, category : string, fmt_str : string, args : ..Any) {
+    builder : StringBuilder;
+
+    file := GetFile(range.file_id);
+    Assert(file != null);
+
+    StringBuilderAppend(*builder, "%:%:%, ", ShortenFilename(file.filename), range.line_start, range.char_start);
+
+    SetColor(*builder, color);
+    StringBuilderAppend(*builder, "%: ", category);
+    SetColor(*builder, .None);
+
+    StringBuilderAppend(*builder, fmt_str, ..args);
+    StringBuilderAppend(*builder, "\n\n");
+
+    PrintTokenLine(*builder, range);
+
+    write_string(StringBuilderBuild(*builder), to_standard_error = true);
+}
+@PrintLike
+
+ReportWithoutSourceCode :: (range : TokenRange, color : OutputColor, category : string, fmt_str : string, args : ..Any) {
+    builder : StringBuilder;
+
+    file := GetFile(range.file_id);
+    Assert(file != null);
+
+    StringBuilderAppend(*builder, "%:%:%, ", ShortenFilename(file.filename), range.line_start, range.char_start);
+
+    SetColor(*builder, color);
+    StringBuilderAppend(*builder, "%: ", category);
+    SetColor(*builder, .None);
+
+    StringBuilderAppend(*builder, fmt_str, ..args);
+    StringBuilderAppend(*builder, "\n");
+
+    write_string(StringBuilderBuild(*builder), to_standard_error = true);
+}
+@PrintLike
+
+Error :: inline (range : TokenRange, fmt_str : string, args : ..Any) {
+    Report(range, .Error, "Error", fmt_str, ..args);
+    IncrementErrorCounter();
+}
+@PrintLike
+
+ErrorNoSquiggles :: inline (range : TokenRange, fmt_str : string, args : ..Any) {
+    Error(range, fmt_str, ..args,, print_squiggles = false);
+}
+@PrintLike
+
+Warning :: inline (range : TokenRange, fmt_str : string, args : ..Any) {
+    Report(range, .Warning, "Warning", fmt_str, ..args);
+}
+@PrintLike
+
+SyntaxError :: inline (range : TokenRange, fmt_str : string, args : ..Any) {
+    Report(range, .Error, "Syntax Error", fmt_str, ..args);
+    IncrementErrorCounter();
+}
+@PrintLike
+
+ExpectedError :: (prev : Token, tok : Token, kinds : ..TokenKind) {
+    err_builder : StringBuilder;
+
+    if kinds.count == 1 {
+        StringBuilderAppend(*err_builder, "Expected %", Token_Names[kinds[0]]);
+    } else {
+        StringBuilderAppend(*err_builder, "Expected one of ");
+
+        for kinds {
+            if it_index == kinds.count - 1 {
+                StringBuilderAppend(*err_builder, " or ");
+            } else if it_index != 0 {
+                StringBuilderAppend(*err_builder, ", ");
+            }
+
+            StringBuilderAppend(*err_builder, Token_Names[it]);
+        }
+    }
+
+    StringBuilderAppend(*err_builder, " after %", Token_Names[prev.kind]);
+
+    lexeme := Token_Lexemes[tok.kind];
+    tok_string := TokenToString(tok);
+    if !lexeme && tok_string.count > 0 && tok_string.count < 15 {
+        StringBuilderAppend(*err_builder, ", but got % '%' instead", Token_Names[tok.kind], tok_string);
+    } else {
+        StringBuilderAppend(*err_builder, ", but got % instead", Token_Names[tok.kind]);
+    }
+
+    Report(TokenRangeJoin(prev, tok), .Error, "Syntax Error", "%", StringBuilderBuild(*err_builder));
+    IncrementErrorCounter();
+}
+
+Info :: inline (range : TokenRange, fmt_str : string, args : ..Any) {
+    Report(range, .Info, "Info", fmt_str, ..args);
+}
+@PrintLike
+
+InfoWithoutSourceCode :: inline (range : TokenRange, fmt_str : string, args : ..Any) {
+    ReportWithoutSourceCode(range, .Info, "Info", fmt_str, ..args);
+}
+@PrintLike
+
+InfoNoSquiggles :: inline (range : TokenRange, fmt_str : string, args : ..Any) {
+    Info(range, fmt_str, ..args,, print_squiggles = false);
+}
+@PrintLike
+
+DebugLogChannel :: enum_flags {
+    Parsing;
+    Scopes;
+    Dependencies;
+    Checking;
+    Templates;
+    Codegen;
+    Interpreter;
+
+    All :: Parsing | Scopes | Dependencies | Checking | Templates | Codegen | Interpreter;
+}
+
+#if Enable_Debug_Print {
+
+DbgInfo :: ($channel : DebugLogChannel, range : TokenRange, fmt_str : string, args : ..Any) #expand {
+    if g_build_settings.debug_log & channel {
+        Info(range, fmt_str, ..args,, print_squiggles = false);
+    }
+}
+@PrintLike
+
+DbgPrint :: ($channel : DebugLogChannel, fmt_str : string, args : ..Any) #expand {
+    if g_build_settings.debug_log & channel {
+        Print(fmt_str, ..args);
+    }
+}
+@PrintLike
+
+DbgPrintln :: ($channel : DebugLogChannel, fmt_str : string, args : ..Any) #expand {
+    if g_build_settings.debug_log & channel {
+        Println(fmt_str, ..args);
+    }
+}
+@PrintLike
+
+} else {
+
+DbgInfo :: ($channel : DebugLogChannel, #discard range : TokenRange, #discard fmt_str : string, #discard args : ..Any) #expand {
+}
+@PrintLike
+
+DbgPrint :: ($channel : DebugLogChannel, #discard fmt_str : string, #discard args : ..Any) #expand {
+}
+@PrintLike
+
+DbgPrintln :: ($channel : DebugLogChannel, #discard fmt_str : string, #discard args : ..Any) #expand {
+}
+@PrintLike
+
+}
+
+AssertionFailed :: (location : Source_Code_Location, message : string) -> bool {
+    print_stack_trace :: (node: *Stack_Trace_Node) {  // @Cutnpaste from modules/Basic, but wihtout calling print.
+        while node {
+            // There are two different line numbers available.
+            // node.info.location has a line number, but this is the location of
+            // the start of the function. That may be useful in some cases, but often
+            // what we really want is the line number of the function call, which is
+            // stored in node.line_number. That's what we print in this case.
+
+            if node.info {
+                write_string(node.info.location.fully_pathed_filename, to_standard_error = true);
+                write_string(":", to_standard_error = true);
+                write_nonnegative_number(node.line_number, to_standard_error = true);
+                write_string(": ", to_standard_error = true);
+                if node.info.name {
+                    write_string(node.info.name, to_standard_error = true);
+                } else {
+                    write_string("(anonymous function)", to_standard_error = true);
+                }
+                write_string("\n", to_standard_error = true);
+            }
+
+            node = node.next;
+        }
+    }
+
+    SetOutputColor(.FatalError);
+
+    if context.panicking {
+        write_string("Panic at file ", to_standard_error = true);
+    } else {
+        write_string("Assertion failed at file ", to_standard_error = true);
+    }
+
+    write_strings(location.fully_pathed_filename, ":", to_standard_error = true);
+    write_number(location.line_number, to_standard_error = true);
+    write_string(":", to_standard_error = true);
+    write_number(location.character_number, to_standard_error = true);
+
+    write_string("\n", to_standard_error = true);
+    SetOutputColor(.None);
+
+    write_string(message, to_standard_error = true);
+
+    if message.count > 0 && message[message.count - 1] != #char "\n" {
+        write_string("\n", to_standard_error = true);
+    }
+
+    write_string("\n", to_standard_error = true);
+
+    if context.stack_trace {
+        write_string("Stack trace:\n", to_standard_error = true);
+        print_stack_trace(context.stack_trace);
+    }
+
+    __runtime_support_disable_stack_trace = true;
+
+    return true;
+}
+
+AppendAssertFailureOrPanicMessage :: (builder : *StringBuilder, fmt_str : string, args : ..Any) {
+    SetColor(builder, .FatalError);
+    StringBuilderAppend(builder, "Fatal Error: ");
+    SetColor(builder, .None);
+
+    StringBuilderAppend(builder, fmt_str, ..args);
+    StringBuilderAppend(builder, "\n");
+}
+@PrintLike
+
+#scope_file
+
+AppendAssertFailureOrPanicMessage :: (builder : *StringBuilder, range : TokenRange, fmt_str : string, args : ..Any) {
+    if range.file_id == -1 {
+        AppendAssertFailureOrPanicMessage(builder, fmt_str, ..args);
+        return;
+    }
+
+    file := GetFile(range.file_id);
+    if !file {
+        StringBuilderAppend(builder, "<invalid file>, ");
+    } else {
+        StringBuilderAppend(builder, "%:%:%, ", ShortenFilename(file.filename), range.line_start, range.char_start);
+    }
+
+    SetColor(builder, .FatalError);
+    StringBuilderAppend(builder, "Fatal Error: ");
+    SetColor(builder, .None);
+
+    StringBuilderAppend(builder, fmt_str, ..args);
+    StringBuilderAppend(builder, "\n");
+
+    if file {
+        PrintTokenLine(builder, range);
+    } else {
+        StringBuilderAppend(builder, "<cannot print token line because the file is invalid>\n");
+    }
+}
+@PrintLike
+
+#scope_export
+
+#if Enable_Asserts {
+
+Assert :: (range : TokenRange, assertion : bool, fmt_str : string, args : ..Any, location := #caller_location) #expand {
+    if !assertion && !context.handling_assertion_failure {
+        context.handling_assertion_failure = true;
+        defer context.handling_assertion_failure = false;
+
+        builder : StringBuilder;
+
+        AppendAssertFailureOrPanicMessage(*builder, range, fmt_str, ..args);
+
+        message := StringBuilderBuild(*builder);
+
+        if context.assertion_failed(location, message) {
+            debug_break();
+        }
+    }
+}
+@PrintLike
+
+Panic :: (range : TokenRange, fmt_str : string, args : ..Any, location := #caller_location) #expand {
+    if !context.handling_assertion_failure {
+        context.handling_assertion_failure = true;
+        defer context.handling_assertion_failure = false;
+
+        context.panicking = true;
+        defer context.panicking = false;
+
+        builder : StringBuilder;
+
+        AppendAssertFailureOrPanicMessage(*builder, range, fmt_str, ..args);
+
+        message := StringBuilderBuild(*builder);
+
+        if context.assertion_failed(location, message) {
+            debug_break();
+        }
+    }
+}
+@PrintLike
+
+} else {
+
+Assert :: (#discard range : TokenRange, #discard assertion : bool, #discard fmt_str : string, #discard args : ..Any, #discard location := #caller_location) #expand {
+}
+@PrintLike
+
+Panic :: (#discard range : TokenRange, #discard fmt_str : string, #discard args : ..Any, #discard location := #caller_location) #expand {
+}
+@PrintLike
+
+}

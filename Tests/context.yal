@@ -1,0 +1,17 @@
+#include "basic.yal.ignore";
+
+const Foo = func(x: int) {
+    context.thread_id = 4567;
+    Assert(context.thread_id == 4567);
+
+    Assert(x == 0xbadbeef);
+}
+
+const main = func() -> s32 {
+    context.thread_id = 1234;
+    Assert(context.thread_id == 1234);
+
+    var allocator = context.allocator;
+
+    Foo(0xbadbeef);
+}

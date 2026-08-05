@@ -1,0 +1,127 @@
+const Std = #import "Std";
+const Mem = #import "Std/Memory";
+
+// #include "sort.yal";
+
+const Free = func(arr: *[..]$T) {
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = arr.allocator;
+
+    Mem.Free(arr.data);
+    arr.data = null;
+    arr.count = 0;
+    arr.capacity = 0;
+}
+
+const Clear = func(arr: *[..]$T) {
+    arr.count = 0;
+}
+
+const Reserve = func(arr: *[..]$T, new_capacity: int) {
+    if arr.capacity <= new_capacity {
+        return;
+    }
+
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = arr.allocator;
+
+    arr.data = Mem.Realloc(arr.data, arr.capacity * size_of(T), new_capacity * size_of(T));
+    if arr.data == null {
+        arr.capacity = 0;
+        arr.count = 0;
+
+        return;
+    }
+
+    arr.capacity = new_capacity;
+}
+
+const PushDefault = func(arr: *[..]$T) -> *T {
+    if arr.count >= arr.capacity {
+        var new_capacity = arr.capacity * 2;
+        if new_capacity < 8 {
+            new_capacity = 8;
+        }
+
+        Reserve(arr, new_capacity);
+    }
+
+    var ptr = &arr.data[arr.count];
+    arr.count += 1;
+
+    return ptr;
+}
+
+const Push = func(arr: *[..]$T, val: T) -> *T {
+    var ptr = PushDefault(arr);
+    if ptr == null {
+        return null;
+    }
+
+    ptr.* = val;
+
+    return ptr;
+}
+
+//const Push = func {
+//    PushDefault;
+//    PushValue;
+//}
+
+const Pop = func(arr: *[..]$T) -> T {
+    Std.Assert(arr.count > 0, "Array is empty");
+
+    arr.count -= 1;
+
+    return arr.data[arr.count];
+}
+
+const Insert = func(arr: *[..]$T, index: int, val: T) {
+    Std.Assert(index >= 0 && index <= arr.count, "Invalid index");
+
+    if index < arr.count {
+        Push(arr, arr.data[index]);
+    }
+
+    arr.data[index] = val;
+    arr.count += 1;
+}
+
+const Remove = func(arr: *[..]$T, index: int) {
+    Std.Assert(index >= 0 && index < arr.count, "Invalid index");
+
+    arr.data[index] = arr.data[arr.count - 1];
+    arr.count -= 1;
+}
+
+const OrderedInsert = func(arr: *[..]$T, index: int, val: T) {
+    Std.Assert(index >= 0 && index <= arr.count, "Invalid index");
+
+    if arr.count >= arr.capacity {
+        var new_capacity = arr.capacity * 2;
+        if new_capacity < 8 {
+            new_capacity = 8;
+        }
+
+        Reserve(arr, new_capacity);
+    }
+
+    for i: arr.count=..index + 1 {
+        arr.data[i] = arr.data[i - 1];
+    }
+
+    arr.data[index] = val;
+    arr.count += 1;
+}
+
+const OrderedRemove = func(arr: *[..]$T, index: int) {
+    Std.Assert(index >= 0 && index < arr.count, "Invalid index");
+
+    arr.count -= 1;
+
+    for i: index..<arr.count {
+        arr.data[i] = arr.data[i + 1];
+    }
+}

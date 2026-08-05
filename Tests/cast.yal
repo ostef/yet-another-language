@@ -1,0 +1,50 @@
+#include "basic.yal.ignore";
+
+const main = func() -> s32 {
+    {
+        var a = 10;
+        var b = cast(u64, a);
+        Assert(b == 10);
+
+        var c = cast(u8, a);
+        Assert(c == 10);
+
+        a = -10;
+        b = cast(u64, a);
+        WriteUint(b);
+        WriteString("\n");
+    }
+    {
+        var a: u64 = 0;
+        var b = bitcast(*void, a);
+        Assert(b == null);
+    }
+    {
+        var a: s8 = -1;
+        var b = bitcast(u8, a);
+        Assert(b == 0xff);
+        WriteUint(b);
+        WriteString("\n");
+    }
+    {
+        var a: s16 = -1;
+        var b = bitcast(u16, a);
+        Assert(b == 0xffff);
+        WriteUint(b);
+        WriteString("\n");
+    }
+    {
+        var a: s32 = -1;
+        var b = bitcast(u32, a);
+        Assert(b == 0xffffffff);
+        WriteUint(b);
+        WriteString("\n");
+    }
+    {
+        var a: s64 = -1;
+        var b = bitcast(u64, a);
+        Assert(b == 0xffffffffffffffff);
+        WriteUint(b);
+        WriteString("\n");
+    }
+}

@@ -1,0 +1,7 @@
+const A = struct {
+    var b: B;
+}
+
+const B = struct {
+    var a: A;
+}

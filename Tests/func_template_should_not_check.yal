@@ -1,0 +1,9 @@
+const Foo = func($T: type_id) -> T {
+    #assert false;
+
+    var x: T;
+    return x;
+}
+
+const main = func() -> s32 {
+}

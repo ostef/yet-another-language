@@ -1,0 +1,14 @@
+const Foo = struct {
+    var a: *Foo;
+    #if true {
+        #insert #run func() -> string {
+            return "var b: int;";
+        }()
+    }
+}
+
+const main = func() -> s32 {
+    var foo: Foo;
+    foo.a = &foo;
+    foo.b = 10;
+}

@@ -1,0 +1,11 @@
+#include "basic.yal.ignore";
+
+const main = func() -> s32 {
+    var a = true;
+    var b = (true);
+    var c = ((true));
+
+    Assert(a);
+    Assert(b);
+    Assert(c);
+}

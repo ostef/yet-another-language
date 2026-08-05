@@ -1,0 +1,24 @@
+#include "basic.yal.ignore";
+
+const FooA = func() {
+}
+
+const FooB = func(a: int) -> int {
+    return a + a;
+}
+
+const FooC = func(a: float) -> float {
+    return a * 0.1;
+}
+
+const Foo = func {
+    FooA;
+    FooB;
+    FooC;
+}
+
+const main = func() -> s32 {
+    Foo();
+    Assert(Foo(10) == FooB(10));
+    Assert(Foo(10.0) == FooC(10.0));
+}

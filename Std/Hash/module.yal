@@ -1,0 +1,26 @@
+// This hash module contains hashing functions for non-cryptographic usage (e.g. hash maps/sets)
+//
+// The following hash functions are implemented:
+// * 64-bit Fowler-Noll-Vo (FNV1 and FNV1A):
+// @Todo: describe what the best use case for this hash function is
+
+const FNV64_Offset_Basis: u64 = 0xcbf29ce484222325;
+const FNV64_Prime: u64 = 0x00000100000001b3;
+
+const FNV1 = func(bytes: []u8, offset_basis: u64 = FNV64_Offset_Basis) -> u64 {
+    var hash = offset_basis;
+    for i: 0..<bytes.count {
+        hash = (FNV64_Prime * hash) ^ bytes[i];
+    }
+
+    return hash;
+}
+
+const FNV1A = func(bytes: []u8, offset_basis: u64 = FNV64_Offset_Basis) -> u64 {
+    var hash = offset_basis;
+    for i: 0..<bytes.count {
+        hash = FNV64_Prime * (hash ^ bytes[i]);
+    }
+
+    return hash;
+}

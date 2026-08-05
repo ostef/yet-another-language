@@ -1,0 +1,340 @@
+const File = void;
+
+const OpenFile = func(filename: string, mode: OpenFileMode) -> *File {
+    @external @library(LibC)
+    const fopen = func(filename: *u8, access_mode: *u8) -> *void;
+
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = context.temp_allocator;
+
+    var cfilename = CloneToCStr(filename);
+    if cfilename == null {
+        return null;
+    }
+
+    var mode_str: *u8;
+    if mode == .Read {
+        mode_str = "rb+".data;
+    } else if mode == .Write {
+        mode_str = "wb+".data;
+    } else if mode == .Append {
+        mode_str = "ab".data;
+    } else if mode == .ReadAppend {
+        mode_str = "ab+".data;
+    } else {
+        // Invalid mode
+        return null;
+    }
+
+    return fopen(cfilename, mode_str);
+}
+
+const CloseFile = func(file: *File) {
+    @external @library(LibC)
+    const fclose = func(file: *void);
+
+    if file != null {
+        fclose(file);
+    }
+}
+
+const FileSeek = func(file: *File, position: s64, from: FileSeekFrom) -> bool {
+    @external @library(LibC)
+    const fseeko64 = func(file: *void, offset: s64, whence: s32) -> s32;
+
+    var whence: s32;
+    if from == .Start {
+        whence = 0;
+    } else if from == .Current {
+        whence = 1;
+    } else if from == .End {
+        whence = 2;
+    } else {
+        return false;
+    }
+
+    return fseeko64(file, position, whence) == 0;
+}
+
+const GetFileSize = func(file: *File) -> s64 {
+    var cursor = GetFileCursor(file);
+
+    FileSeek(file, 0, .End);
+
+    var size = GetFileCursor(file);
+
+    FileSeek(file, cursor, .Start);
+
+    return size;
+}
+
+const GetFileCursor = func(file: *File) -> s64 {
+    @external @library(LibC)
+    const ftello64 = func(file: *void) -> s64;
+
+    return ftello64(file);
+}
+
+const FlushFile = func(file: *File) -> bool {
+    @external @library(LibC)
+    const fflush = func(file: *void) -> s32;
+
+    return fflush(file) == 0;
+}
+
+const ReadFile = func(file: *File, buffer: *void, size: s64) -> s64 {
+    @external @library(LibC)
+    const fread = func(buffer: *void, size: u64, count: u64, file: *void) -> u64;
+
+    if size <= 0 {
+        return 0;
+    }
+
+    return cast(s64, fread(buffer, 1, cast(u64, size), file));
+}
+
+const WriteFile = func(file: *File, buffer: *void, size: s64) -> s64 {
+    @external @library(LibC)
+    const fwrite = func(buffer: *void, size: u64, count: u64, file: *void) -> u64;
+
+    if size <= 0 {
+        return 0;
+    }
+
+    return cast(s64, fwrite(buffer, 1, cast(u64, size), file));
+}
+
+const CreateDirectory = func(dirname: string) -> bool {
+    @external @library(LibC)
+    const mkdir = func(path: *u8, mode: u32) -> s32;
+
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = context.temp_allocator;
+
+    var cdirname = CloneToCStr(dirname);
+    if cdirname == null {
+        return false;
+    }
+
+    return mkdir(cdirname, 0o777) == 0;
+}
+
+const DeleteEmptyDirectory = func(dirname: string) -> bool {
+    @external @library(LibC)
+    const rmdir = func(path: *u8) -> s32;
+
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = context.temp_allocator;
+
+    var cdirname = CloneToCStr(dirname);
+    if cdirname == null {
+        return false;
+    }
+
+    return rmdir(cdirname) == 0;
+}
+
+const GetWorkingDirectory = func() -> string {
+    @external @library(LibC)
+    const get_current_dir_name = func() -> *u8;
+
+    // Just in case we forget when we have our own malloc implementation
+    @external @library(LibC)
+    const free = func(ptr: *void);
+
+    var dir = get_current_dir_name();
+    if dir == null {
+        return "";
+    }
+
+    defer free(dir);
+
+    return CloneStr(StrFromCStr(dir));
+}
+
+const GetAbsolutePath = func(path: string) -> string {
+}
+
+const GetFileInfo = func(path: string, follow_symlink: bool) -> FileInfo {
+    // @Todo: this struct changes per platform.
+    #if Target_OS == .Linux {
+        const time_t = struct {
+            var tv_sec: s64;
+            var tv_nsec: s64;
+        }
+
+        const stat_t = struct {
+            var st_dev: u64;     /* ID of device containing file */
+            var st_ino: u64;     /* inode number */
+            var st_mode: u32;    /* protection */
+            var st_nlink: u64;   /* number of hard links */
+            var st_uid: u32;     /* user ID of owner */
+            var st_gid: u32;     /* group ID of owner */
+            var st_rdev: u64;    /* device ID (if special file) */
+            var st_size: s64;    /* total size, in bytes */
+            var st_blksize: s64; /* blocksize for file system I/O */
+            var st_blocks: s64;  /* number of 512B blocks allocated */
+            var st_atime: time_t;   /* time of last access */
+            var st_mtime: time_t;   /* time of last modification */
+            var st_ctime: time_t;   /* time of last status change */
+        }
+    } else {
+        #assert false, "@Todo: implement stat for the current platform";
+    }
+
+    @external @library(LibC)
+    const stat = func(path: *u8, buf: *stat_t) -> s32;
+    @external @library(LibC)
+    const lstat = func(path: *u8, buf: *stat_t) -> s32;
+
+    var result: FileInfo;
+
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = context.temp_allocator;
+
+    var cfilename = CloneToCStr(path);
+    if cfilename == null {
+        return result;
+    }
+
+    var s: stat_t;
+    if follow_symlink {
+        if stat(cfilename, &s) != 0 {
+            return result;
+        }
+    } else {
+        if lstat(cfilename, &s) != 0 {
+            return result;
+        }
+    }
+
+    result.exists = true;
+
+    const File_Type_Mask         = 0o170000;
+    const File_Type_Regular      = 0o100000;
+    const File_Type_Directory    = 0o040000;
+    const File_Type_Sym_Link     = 0o120000;
+    const File_Type_Block_Device = 0o060000;
+    const File_Type_Char_Device  = 0o020000;
+    const File_Type_Socket       = 0o140000;
+    const File_Type_Pipe         = 0o010000;
+
+    var file_type = s.st_mode & File_Type_Mask;
+
+    if file_type == File_Type_Regular {
+        result.type = .File;
+    } else if file_type == File_Type_Directory {
+        result.type = .Directory;
+    } else if file_type == File_Type_Sym_Link {
+        result.type = .SymLink;
+    } else if file_type == File_Type_Block_Device
+        || file_type == File_Type_Char_Device
+        || file_type == File_Type_Socket
+        || file_type == File_Type_Pipe {
+        result.type = .Other;
+    }
+
+    result.size = s.st_size;
+    result.num_hard_links = cast(s64, s.st_nlink);
+
+    return result;
+}
+
+const FileExists = func(path: string) -> bool {
+    @external @library(LibC)
+    const access = func(path: *u8, mode: u32) -> s32;
+
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = context.temp_allocator;
+
+    var cfilename = CloneToCStr(path);
+    if cfilename == null {
+        return false;
+    }
+
+    return access(cfilename, 0) == 0;
+}
+
+const MoveFile = func(filename: string, new_filename: string) -> bool {
+    @external @library(LibC)
+    const rename = func(old: *u8, new: *u8) -> s32;
+
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = context.temp_allocator;
+
+    var cfilename = CloneToCStr(filename);
+    if cfilename == null {
+        return false;
+    }
+
+    var cnew_filename = CloneToCStr(new_filename);
+    if cnew_filename == null {
+        return false;
+    }
+
+    return rename(cfilename, cnew_filename) == 0;
+}
+
+const DeleteFile = func(filename: string) -> bool {
+    @external @library(LibC)
+    const unlink = func(path: *u8) -> s32;
+
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = context.temp_allocator;
+
+    var cfilename = CloneToCStr(filename);
+    if cfilename == null {
+        return false;
+    }
+
+    return unlink(cfilename) == 0;
+}
+
+const CreateSymLink = func(filename: string, linkname: string) -> bool {
+    @external @library(LibC)
+    const symlink = func(to: *u8, linkname: *u8) -> s32;
+
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = context.temp_allocator;
+
+    var cfilename = CloneToCStr(filename);
+    if cfilename == null {
+        return false;
+    }
+
+    var clinkname = CloneToCStr(linkname);
+    if clinkname == null {
+        return false;
+    }
+
+    return symlink(cfilename, clinkname) == 0;
+}
+
+const CreateHardLink = func(filename: string, linkname: string) -> bool {
+    @external @library(LibC)
+    const link = func(to: *u8, linkname: *u8) -> s32;
+
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = context.temp_allocator;
+
+    var cfilename = CloneToCStr(filename);
+    if cfilename == null {
+        return false;
+    }
+
+    var clinkname = CloneToCStr(linkname);
+    if clinkname == null {
+        return false;
+    }
+
+    return link(cfilename, clinkname) == 0;
+}

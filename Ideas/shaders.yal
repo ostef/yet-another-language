@@ -1,0 +1,80 @@
+// I want the language to be used for GPU shader programming.
+// Actual shader programming languages do not provide anything revolutionary and
+// different from e.g. C, and in fact they are mostly more constrained versions of
+// C/C++.
+// I believe we can provide enough information to compile code to SPIR-V using
+// declaration anotations. For specific features we can use intrinsic functions,
+// defined by the compiler.
+
+#import "Yal:ShaderLanguage";
+
+const Vertex = struct {
+    @vertex_attrib(0)
+    var position: float3;
+    @vertex_attrib(1)
+    var normal: float3;
+    @vertex_attrib(2)
+    var tangent: float4;
+    @vertex_attrib(3)
+    var tex_coords: float2;
+}
+
+const VertexOut = struct {
+    @location(0)
+    var position: float3;
+    @location(1)
+    var normal: float3;
+    @location(2)
+    var tangent: float3;
+    @location(3)
+    var bitangent: float3;
+    @location(4)
+    var tex_coords: float2;
+}
+
+const MeshData = struct {
+    var transform: float4x4;
+    var normal_transform: float3x3;
+}
+
+@binding(set=0, binding=0)
+var u_scene_info: UniformBuffer(SceneInfo);
+@binding(set=1, binding=0)
+var u_mesh_data: StorageBuffer(MeshData);
+
+@shader(vertex)
+const VertexMain = func(input: Vertex, @shader_value(instance_id) instance_id: uint) -> VertexOut {
+    var mesh = u_mesh_data[instance_id];
+
+    var result: VertexOut;
+    result.position = (mesh.transform * Float4(input.position, 1)).xyz;
+    result.normal = mesh.normal_transform * input.normal;
+    result.tangent = mesh.normal_transform * input.tangent.xyz;
+    result.bitangent = input.tangent.w * Cross(result.normal, result.tangent);
+    result.tex_coords = input.tex_coords;
+
+    return result;
+}
+
+const FragmentOut = struct {
+    @frag_output(0)
+    var position: float3;
+    @frag_output(1)
+    var normal: float3;
+    @frag_output(2)
+    var base_color: float3;
+}
+
+@binding(set=1, binding=1)
+var u_base_color_texture: Sampler2D;
+
+@shader(fragment)
+const FragmentMain = func(input: VertexOut) -> FragmentOut {
+    var base_color = u_base_color_texture.Sample(input.tex_coords).rgb;
+
+    return .{
+        position=input.position,
+        normal=input.normal,
+        base_color=base_color,
+    };
+}

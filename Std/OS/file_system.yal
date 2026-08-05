@@ -1,0 +1,149 @@
+const String = #import "Std/String";
+
+#if Target_OS == .Linux || Target_OS == .MacOS {
+    #include "POSIX/file_system.yal";
+} else #if Target_OS == .Windows {
+    #include "Windows/file_system.yal";
+}
+
+const FileInfo = struct {
+    var exists: bool;
+
+    var type: enum {
+        Invalid;
+        File;
+        Directory;
+        SymLink;
+        Other;
+    };
+
+    var size: s64;
+    var num_hard_links: int;
+    // @Todo: last access time, last modified time
+    // @Todo: POSIX access permissions
+}
+
+const OpenFileMode = enum {
+    Read;
+    Write;
+    Append;
+    ReadAppend;
+}
+
+const FileSeekFrom = enum {
+    Start;
+    Current;
+    End;
+}
+
+const ReadEntireFile = func(filename: string) -> string {
+    var file = OpenFile(filename, .Read);
+    if file == null {
+        return "";
+    }
+
+    defer CloseFile(file);
+
+    var size = GetFileSize(file);
+
+    var buffer = Mem.Alloc(size);
+    var bytes_read = ReadFile(file, buffer, size);
+
+    var result: string;
+    result.data = cast(*u8, buffer);
+    result.count = bytes_read;
+
+    return result;
+}
+
+const WriteEntireFile = func(filename: string, contents: string) -> int {
+    var file = OpenFile(filename, .Write);
+    if file == null {
+        return 0;
+    }
+
+    defer CloseFile(file);
+
+    return WriteFile(file, contents.data, contents.count);
+}
+
+// Traverse the components of the path, removing '.', '..' and duplicate separators when possible
+// Normalize path separators to '/'
+// Returns a path that leads to the same destination as `path`
+const NormalizePath = func(path: string) -> string {
+    // @Todo: I think for a symlink that points to /some/path/foo, symlink/.. is actually /some/path/foo/..
+    // How should we handle this?
+    // Should we just accept that this function will not work if there are symbolic links in the path?
+    // Should we at least catch this?
+
+    var components: [..]string;
+    components.allocator = context.temp_allocator;
+
+    var path_is_absolute = false;
+    if path.count > 0 {
+        // @Todo: handle Windows absolute paths
+        path_is_absolute = path[0] == '/';
+    }
+
+    {
+        var i = 0;
+        while i < path.count {
+            var component = String.SubString(path, i, path.count - i);
+
+            var next_separator = String.FindFirstOf(component, "/\\");
+            if next_separator >= 0 {
+                component.count = next_separator;
+            }
+
+            i += component.count + 1;
+
+            if component.count == 0 || component == "." {
+                continue;
+            }
+
+            if component == ".." && components.count > 0 && components[components.count - 1] != ".." {
+                Array.Pop(&components);
+            } else {
+                Array.Push(&components, component);
+            }
+        }
+    }
+
+    var total_length = 0;
+
+    if path_is_absolute {
+        total_length += 1;
+    }
+
+    for i: 0..<components.count {
+        if i > 0 {
+            total_length += 1;
+        }
+
+        total_length += components[i].count;
+    }
+
+    var result: string;
+    result.data = Mem.Alloc(total_length);
+    result.count = total_length;
+
+    var offset = 0;
+
+    if path_is_absolute {
+        result[0] = '/';
+        offset += 1;
+    }
+
+    for i: 0..<components.count {
+        if i > 0 {
+            result[offset] = '/';
+            offset += 1;
+        }
+
+        var component = components[i];
+        Mem.Copy(result.data + offset, component.data, component.count);
+        offset += component.count;
+    }
+
+    return result;
+}

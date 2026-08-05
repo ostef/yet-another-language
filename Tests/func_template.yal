@@ -1,0 +1,22 @@
+#include "basic.yal.ignore";
+
+const Foo = func(x: $T) {
+}
+
+const Bar = func($T: type_id, x: T) -> T {
+    return x;
+}
+
+const ArrayPush = func(arr: *[..]$T) -> *T {
+}
+
+const main = func() -> s32 {
+    Foo(10);
+
+    var i = Bar(int, 10);
+    Assert(i == 10);
+
+    var arr: [..][]int;
+    ArrayPush(&arr);
+    ArrayPush(&arr); // Should be deduplicated
+}

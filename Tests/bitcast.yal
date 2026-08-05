@@ -1,0 +1,18 @@
+#include "basic.yal.ignore";
+
+var global_var = "Hello";
+
+const main = func() -> s32 {
+    var a: s32 = 10;
+    var b = bitcast(u32, a);
+    Assert(b == 10);
+
+    var c = bitcast(u64, &a);
+    Assert(bitcast(*void, c) == &a);
+
+    var d = bitcast(u64, &global_var);
+    Assert(bitcast(*void, d) == &global_var);
+
+    var e = bitcast(f32, a);
+    var f = bitcast(f64, c);
+}

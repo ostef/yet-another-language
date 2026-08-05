@@ -1,0 +1,13 @@
+#include "basic.yal.ignore";
+
+const main = func() -> s32 {
+    defer Assert(false);
+
+    defer return 0;
+}
+
+// Resulting code:
+// const main = func() -> s32 {
+//     return 0;
+//     Assert(false); // This statement should not be emitted
+// }

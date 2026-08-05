@@ -1,0 +1,8 @@
+const Vector = struct(T: type_id, N: int) {
+    var values: [N]T;
+}
+
+const main = func() -> s32 {
+    var v: Vector(float, 2);
+    v.values[0] = 10;
+}

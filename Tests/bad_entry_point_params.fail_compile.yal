@@ -1,0 +1,2 @@
+const main = func(a: int, b: float) -> s32 {
+}

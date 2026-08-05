@@ -1,0 +1,8 @@
+#include "basic.yal.ignore";
+
+const A = #import_file "circular_modules_a.yal.ignore";
+
+const main = func() -> s32 {
+    var a = A.Fib(6);
+    Assert(a == 8);
+}

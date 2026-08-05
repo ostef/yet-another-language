@@ -1,0 +1,10 @@
+#include "basic.yal.ignore";
+
+const Foo = func(x: int, y: int, z: int) -> int {
+    return y + x * z;
+}
+
+const main = func() -> s32 {
+    var i = Foo(10, z=2, y=3);
+    Assert(i == 23);
+}

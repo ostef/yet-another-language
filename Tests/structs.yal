@@ -1,0 +1,68 @@
+#include "basic.yal.ignore";
+
+const A = struct {
+    var a : int;
+    var b : float;
+    var c : string;
+}
+
+var global_a : A;
+
+const GetA = func() -> A {
+    return global_a;
+}
+
+const SetA = func(a : A) {
+    global_a = a;
+}
+
+const B = struct {
+    var self_referencing : *B;
+}
+
+const main = func() -> s32 {
+    var a : A;
+    Assert(a.a == 0);
+    Assert(a.b == 0);
+    Assert(a.c.count == 0);
+    Assert(a.c == "");
+
+    a.a = 10;
+    a.b = 123.456;
+    a.c = "Hello World";
+    Assert(a.a == 10);
+    Assert(a.b == 123.456);
+    Assert(a.c == "Hello World");
+
+    SetA(a);
+    a = GetA();
+    Assert(a.a == 10);
+    Assert(a.b == 123.456);
+    Assert(a.c == "Hello World");
+
+    var ptr = &a;
+    Assert(ptr.a == 10);
+    Assert(ptr.b == 123.456);
+    Assert(ptr.c == "Hello World");
+
+    a.a = 28;
+    a.b = -8;
+    a.c = "";
+    Assert(a.a == 28);
+    Assert(a.b == -8);
+    Assert(a.c.count == 0);
+    Assert(a.c == "");
+
+    global_a.a = a.a;
+    global_a.b = a.b;
+    global_a.c = a.c;
+    Assert(global_a.a == 28);
+    Assert(global_a.b == -8);
+    Assert(global_a.c.count == 0);
+    Assert(global_a.c == "");
+
+    var b : B;
+    b.self_referencing = &b;
+    Assert(b.self_referencing == b.self_referencing.self_referencing);
+    Assert(b.self_referencing.self_referencing == b.self_referencing.self_referencing.self_referencing);
+}

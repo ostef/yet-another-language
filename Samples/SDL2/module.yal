@@ -1,0 +1,46 @@
+#include "rect.yal";
+#include "video.yal";
+#include "event.yal";
+#include "surface.yal";
+#include "keyboard.yal";
+#include "joystick.yal";
+
+const Lib_SDL2 = "libSDL2.so";
+
+const Bool = u32;
+const FALSE = 0;
+const TRUE  = 1;
+
+const INIT_FLAGS = u32;
+const INIT_TIMER          = 0x00000001;
+const INIT_AUDIO          = 0x00000010;
+const INIT_VIDEO          = 0x00000020;
+const INIT_JOYSTICK       = 0x00000200;
+const INIT_HAPTIC         = 0x00001000;
+const INIT_GAMECONTROLLER = 0x00002000;
+const INIT_EVENTS         = 0x00004000;
+const INIT_NOPARACHUTE    = 0x00100000;
+const INIT_EVERYTHING = (INIT_TIMER | INIT_AUDIO | INIT_VIDEO | INIT_EVENTS | INIT_JOYSTICK | INIT_HAPTIC | INIT_GAMECONTROLLER);
+
+@external @library(Lib_SDL2) {
+
+@symbol("SDL_Init")
+const Init = func(flags: INIT_FLAGS) -> s32;
+@symbol("SDL_InitSubSystem")
+const InitSubSystem = func(flags: INIT_FLAGS) -> s32;
+@symbol("SDL_QuitSubSystem")
+const QuitSubSystem = func(flags: INIT_FLAGS);
+@symbol("SDL_WasInit")
+const WasInit = func(flags: INIT_FLAGS) -> INIT_FLAGS;
+@symbol("SDL_Quit")
+const Quit = func();
+
+@symbol("SDL_GetPlatform")
+const GetPlatform = func() -> *u8;
+
+@symbol("SDL_GetError")
+const GetError = func() -> *u8;
+@symbol("SDL_ClearError")
+const ClearError = func();
+
+}

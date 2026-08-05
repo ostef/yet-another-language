@@ -1,0 +1,8 @@
+#include "basic.yal.ignore";
+
+const module = #import_file "module_variable_access_module.yal.ignore";
+
+const main = func() -> s32 {
+    module.foo = 10;
+    Assert(module.foo == 10);
+}

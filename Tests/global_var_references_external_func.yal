@@ -1,0 +1,21 @@
+#include "basic.yal.ignore";
+
+#if Target_OS == .Windows {
+    const Lib = "Tests/external_c_lib.dll";
+} else #if Target_OS == .Linux {
+    const Lib = "Tests/external_c_lib.so";
+} else #if Target_OS == .MacOS {
+    const Lib = "Tests/external_c_lib.dylib";
+} else {
+    #assert false, "Unsupported OS";
+}
+
+@external @library(Lib)
+const TakesIntReturnsInt = func(value : s32) -> s32;
+
+var a = TakesIntReturnsInt;
+
+const main = func() -> s32 {
+    Assert(TakesIntReturnsInt(10) == 10);
+    Assert(a(10) == 10);
+}

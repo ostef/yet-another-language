@@ -1,0 +1,57 @@
+const Vector = struct(T: type_id, N: int) {
+    #assert N >= 2, "Vector dimensions must be at least 2";
+
+    #if N <= 2 {
+        var x: T;
+        var y: T;
+    }
+    #if N <= 3 {
+        var z: T;
+    }
+    #if N <= 4 {
+        var w: T;
+    }
+    #if N > 4 {
+        var other_elems: [N - 4]T;
+    }
+}
+
+const Vec2f = Vector(f32, 2);
+const Vec3f = Vector(f32, 3);
+const Vec4f = Vector(f32, 4);
+
+const Vec2d = Vector(f64, 2);
+const Vec3d = Vector(f64, 3);
+const Vec4d = Vector(f64, 4);
+
+const Vec2b = Vector(s8, 2);
+const Vec3b = Vector(s8, 3);
+const Vec4b = Vector(s8, 4);
+
+const Vec2ub = Vector(u8, 2);
+const Vec3ub = Vector(u8, 3);
+const Vec4ub = Vector(u8, 4);
+
+const Vec2s = Vector(s16, 2);
+const Vec3s = Vector(s16, 3);
+const Vec4s = Vector(s16, 4);
+
+const Vec2us = Vector(u16, 2);
+const Vec3us = Vector(u16, 3);
+const Vec4us = Vector(u16, 4);
+
+const Vec2i = Vector(s32, 2);
+const Vec3i = Vector(s32, 3);
+const Vec4i = Vector(s32, 4);
+
+const Vec2ui = Vector(u32, 2);
+const Vec3ui = Vector(u32, 3);
+const Vec4ui = Vector(u32, 4);
+
+const Vec2l = Vector(s64, 2);
+const Vec3l = Vector(s64, 3);
+const Vec4l = Vector(s64, 4);
+
+const Vec2ul = Vector(u64, 2);
+const Vec3ul = Vector(u64, 3);
+const Vec4ul = Vector(u64, 4);

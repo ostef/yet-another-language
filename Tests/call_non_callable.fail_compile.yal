@@ -1,0 +1,8 @@
+const Foo = func(a: int) -> int;
+
+const Bar = func() {
+    const A = Foo;
+
+    Foo(10);
+    A(10);
+}

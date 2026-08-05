@@ -1,0 +1,168 @@
+#include "basic.yal.ignore";
+
+const Foo = enum {
+    A;
+    B;
+    C;
+}
+
+const Foo32 = enum u32 {
+    A;
+    B;
+    C;
+}
+
+const Foo16 = enum u16 {
+    A;
+    B;
+    C;
+}
+
+const Foo8 = enum u8 {
+    A;
+    B;
+    C;
+}
+
+const main = func() -> s32 {
+    {
+        const a = 10.0;
+        const b = bitcast(s32, a);
+    }
+    {
+        const a = 10.0;
+        const b = bitcast(u32, a);
+    }
+    {
+        const a: f64 = 10.0;
+        const b = bitcast(s64, a);
+    }
+    {
+        const a: f64 = 10.0;
+        const b = bitcast(u64, a);
+    }
+    {
+        const a: u64 = 10;
+        const b = bitcast(s64, a);
+        Assert(b == 10);
+    }
+    {
+        const a: s64 = 10;
+        const b = bitcast(u64, a);
+        Assert(b == 10);
+    }
+    {
+        const a: u32 = 10;
+        const b = bitcast(s32, a);
+        Assert(b == 10);
+    }
+    {
+        const a: s32 = 10;
+        const b = bitcast(u32, a);
+        Assert(b == 10);
+    }
+    {
+        const a: u16 = 10;
+        const b = bitcast(s16, a);
+        Assert(b == 10);
+    }
+    {
+        const a: s16 = 10;
+        const b = bitcast(u16, a);
+        Assert(b == 10);
+    }
+    {
+        const a: u8 = 10;
+        const b = bitcast(s8, a);
+        Assert(b == 10);
+    }
+    {
+        const a: s8 = 10;
+        const b = bitcast(u8, a);
+        Assert(b == 10);
+    }
+    {
+        const a: s8 = 10;
+        const b = bitcast(bool, a);
+        Assert(b == true);
+        const c = bitcast(s8, b);
+        Assert(c == a);
+    }
+    {
+        const a: u8 = 10;
+        const b = bitcast(bool, a);
+        Assert(b == true);
+        const c = bitcast(u8, b);
+        Assert(c == a);
+    }
+    {
+        const a = true;
+        const b = bitcast(s8, a);
+        Assert(b == 1);
+    }
+    {
+        const a = true;
+        const b = bitcast(u8, a);
+        Assert(b == 1);
+    }
+    {
+        const a = Foo.A;
+        const b = bitcast(s64, a);
+        Assert(b == 0);
+    }
+    {
+        const a = Foo.A;
+        const b = bitcast(u64, a);
+        Assert(b == 0);
+    }
+    {
+        const a: s64 = 1;
+        const b = bitcast(Foo, a);
+        Assert(b == .B);
+    }
+    {
+        const a: u64 = 1;
+        const b = bitcast(Foo, a);
+        Assert(b == .B);
+    }
+    {
+        const a: s32 = 1;
+        const b = bitcast(Foo32, a);
+        Assert(b == .B);
+    }
+    {
+        const a: u32 = 1;
+        const b = bitcast(Foo32, a);
+        Assert(b == .B);
+    }
+    {
+        const a: s16 = 1;
+        const b = bitcast(Foo16, a);
+        Assert(b == .B);
+    }
+    {
+        const a: u16 = 1;
+        const b = bitcast(Foo16, a);
+        Assert(b == .B);
+    }
+    {
+        const a: s8 = 1;
+        const b = bitcast(Foo8, a);
+        Assert(b == .B);
+    }
+    {
+        const a: u8 = 1;
+        const b = bitcast(Foo8, a);
+        Assert(b == .B);
+    }
+    {
+        const a = Foo8.A;
+        const b = bitcast(bool, a);
+        Assert(b == false);
+    }
+    {
+        const a = true;
+        const b = bitcast(Foo8, a);
+        Assert(b == .B);
+    }
+}

@@ -1,0 +1,19 @@
+#include "basic.yal.ignore";
+
+const Foo = union {
+    var as_u8 : u8;
+    var as_u16 : u16;
+    var as_u32 : u32;
+    var as_u64 : u64;
+    var as_f32 : f32;
+    var as_f64 : f64;
+}
+
+const main = func() -> s32 {
+    var foo : Foo;
+    foo.as_u64 = 0x123456789abcdef0;
+    Assert(foo.as_u8 == 0xf0);
+    Assert(foo.as_u16 == 0xdef0);
+    Assert(foo.as_u32 == 0x9abcdef0);
+    Assert(foo.as_u64 == 0x123456789abcdef0);
+}

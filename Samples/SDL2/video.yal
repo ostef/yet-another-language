@@ -1,0 +1,261 @@
+const DisplayMode = struct {
+    var format: u32;
+    var w: s32;
+    var h: s32;
+    var refresh_rate: s32;
+    var driverdata: *void;
+}
+
+const Window = struct {}
+
+const WindowFlags = u32;
+const WINDOW_FULLSCREEN    = 0x00000001;
+const WINDOW_OPENGL        = 0x00000002;
+const WINDOW_SHOWN         = 0x00000004;
+const WINDOW_HIDDEN        = 0x00000008;
+const WINDOW_BORDERLESS    = 0x00000010;
+const WINDOW_RESIZABLE     = 0x00000020;
+const WINDOW_MINIMIZED     = 0x00000040;
+const WINDOW_MAXIMIZED     = 0x00000080;
+const WINDOW_MOUSE_GRABBED = 0x00000100;
+const WINDOW_INPUT_FOCUS   = 0x00000200;
+const WINDOW_MOUSE_FOCUS   = 0x00000400;
+const WINDOW_FULLSCREEN_DESKTOP = WINDOW_FULLSCREEN | 0x00001000;
+const WINDOW_FOREIGN          = 0x00000800;
+const WINDOW_ALLOW_HIGHDPI    = 0x00002000;
+const WINDOW_MOUSE_CAPTURE    = 0x00004000;
+const WINDOW_ALWAYS_ON_TOP    = 0x00008000;
+const WINDOW_SKIP_TASKBAR     = 0x00010000;
+const WINDOW_UTILITY          = 0x00020000;
+const WINDOW_TOOLTIP          = 0x00040000;
+const WINDOW_POPUP_MENU       = 0x00080000;
+const WINDOW_KEYBOARD_GRABBED = 0x00100000;
+const WINDOW_VULKAN           = 0x10000000;
+const WINDOW_METAL            = 0x20000000;
+
+const WINDOW_INPUT_GRABBED = WINDOW_MOUSE_GRABBED;
+
+const GLContext = *void;
+
+const GLattr = enum u32 {
+    GL_RED_SIZE;
+    GL_GREEN_SIZE;
+    GL_BLUE_SIZE;
+    GL_ALPHA_SIZE;
+    GL_BUFFER_SIZE;
+    GL_DOUBLEBUFFER;
+    GL_DEPTH_SIZE;
+    GL_STENCIL_SIZE;
+    GL_ACCUM_RED_SIZE;
+    GL_ACCUM_GREEN_SIZE;
+    GL_ACCUM_BLUE_SIZE;
+    GL_ACCUM_ALPHA_SIZE;
+    GL_STEREO;
+    GL_MULTISAMPLEBUFFERS;
+    GL_MULTISAMPLESAMPLES;
+    GL_ACCELERATED_VISUAL;
+    GL_RETAINED_BACKING;
+    GL_CONTEXT_MAJOR_VERSION;
+    GL_CONTEXT_MINOR_VERSION;
+    GL_CONTEXT_EGL;
+    GL_CONTEXT_FLAGS;
+    GL_CONTEXT_PROFILE_MASK;
+    GL_SHARE_WITH_CURRENT_CONTEXT;
+    GL_FRAMEBUFFER_SRGB_CAPABLE;
+    GL_CONTEXT_RELEASE_BEHAVIOR;
+    GL_CONTEXT_RESET_NOTIFICATION;
+    GL_CONTEXT_NO_ERROR;
+}
+
+const GLprofile = u32;
+const GL_CONTEXT_PROFILE_CORE           = 0x0001;
+const GL_CONTEXT_PROFILE_COMPATIBILITY  = 0x0002;
+const GL_CONTEXT_PROFILE_ES             = 0x0004;
+
+const GLcontextFlag = u32;
+const GL_CONTEXT_DEBUG_FLAG              = 0x0001;
+const GL_CONTEXT_FORWARD_COMPATIBLE_FLAG = 0x0002;
+const GL_CONTEXT_ROBUST_ACCESS_FLAG      = 0x0004;
+const GL_CONTEXT_RESET_ISOLATION_FLAG    = 0x0008;
+
+const GLcontextReleaseFlag = u32;
+const GL_CONTEXT_RELEASE_BEHAVIOR_NONE   = 0x0000;
+const GL_CONTEXT_RELEASE_BEHAVIOR_FLUSH  = 0x0001;
+
+const GLContextResetNotification = u32;
+const GL_CONTEXT_RESET_NO_NOTIFICATION = 0x0000;
+const GL_CONTEXT_RESET_LOSE_CONTEXT    = 0x0001;
+
+const HitTestResult = enum u32 {
+    NORMAL;
+    DRAGGABLE;
+    RESIZE_TOPLEFT;
+    RESIZE_TOP;
+    RESIZE_TOPRIGHT;
+    RESIZE_RIGHT;
+    RESIZE_BOTTOMRIGHT;
+    RESIZE_BOTTOM;
+    RESIZE_BOTTOMLEFT;
+    RESIZE_LEFT;
+}
+
+const HitTest = type_of(func @call("c") (win: *Window, area: *Point, data: *void) -> HitTestResult);
+
+@external @library(Lib_SDL2) {
+
+@symbol("SDL_GetNumVideoDrivers")
+const GetNumVideoDrivers = func() -> s32;
+@symbol("SDL_GetVideoDriver")
+const GetVideoDriver = func(index: s32) -> *u8;
+@symbol("SDL_VideoInit")
+const VideoInit = func(driver_name: *u8) -> s32;
+@symbol("SDL_VideoQuit")
+const VideoQuit = func();
+@symbol("SDL_GetCurrentVideoDriver")
+const GetCurrentVideoDriver = func() -> *u8;
+@symbol("SDL_GetNumVideoDisplays")
+const GetNumVideoDisplays = func() -> s32;
+@symbol("SDL_GetDisplayName")
+const GetDisplayName = func(displayIndex: s32) -> *u8;
+@symbol("SDL_GetDisplayBounds")
+const GetDisplayBounds = func(displayIndex: s32, rect: *Rect) -> s32;
+@symbol("SDL_GetDisplayDPI")
+const GetDisplayDPI = func(displayIndex: s32, ddpi: *float, hdpi: *float, vdpi: *float) -> s32;
+@symbol("SDL_GetNumDisplayModes")
+const GetNumDisplayModes = func(displayIndex: s32) -> s32;
+@symbol("SDL_GetDisplayMode")
+const GetDisplayMode = func(displayIndex: s32, modeIndex: s32, mode: *DisplayMode) -> s32;
+@symbol("SDL_GetDesktopDisplayMode")
+const GetDesktopDisplayMode = func(displayIndex: s32, mode: *DisplayMode) -> s32;
+@symbol("SDL_GetCurrentDisplayMode")
+const GetCurrentDisplayMode = func(displayIndex: s32, mode: *DisplayMode) -> s32;
+@symbol("SDL_GetClosestDisplayMode")
+const GetClosestDisplayMode = func(displayIndex: s32, mode: *DisplayMode, closest: *DisplayMode) -> *DisplayMode;
+@symbol("SDL_GetWindowDisplayIndex")
+const GetWindowDisplayIndex = func(window: *Window) -> s32;
+@symbol("SDL_SetWindowDisplayMode")
+const SetWindowDisplayMode = func(window: *Window, mode: *DisplayMode) -> s32;
+@symbol("SDL_GetWindowDisplayMode")
+const GetWindowDisplayMode = func(window: *Window, mode: *DisplayMode) -> s32;
+@symbol("SDL_GetWindowPixelFormat")
+const GetWindowPixelFormat = func(window: *Window) -> u32;
+@symbol("SDL_CreateWindow")
+const CreateWindow = func(title: *u8, x: s32, y: s32, w: s32, h: s32, flags: WindowFlags) -> *Window;
+@symbol("SDL_CreateWindowFrom")
+const CreateWindowFrom = func(data: *void) -> *Window;
+@symbol("SDL_GetWindowID")
+const GetWindowID = func(window: *Window) -> u32;
+@symbol("SDL_GetWindowFromID")
+const GetWindowFromID = func(id: u32) -> *Window;
+@symbol("SDL_GetWindowFlags")
+const GetWindowFlags = func(window: *Window) -> WindowFlags;
+@symbol("SDL_SetWindowTitle")
+const SetWindowTitle = func(window: *Window, title: *u8);
+@symbol("SDL_GetWindowTitle")
+const GetWindowTitle = func(window: *Window) -> *u8;
+@symbol("SDL_SetWindowIcon")
+const SetWindowIcon = func(window: *Window, icon: *Surface);
+@symbol("SDL_SetWindowData")
+const SetWindowData = func(window: *Window, name: *u8, userdata: *void) -> *void;
+@symbol("SDL_GetWindowData")
+const GetWindowData = func(window: *Window, name: *u8) -> *void;
+@symbol("SDL_SetWindowPosition")
+const SetWindowPosition = func(window: *Window, x: s32, y: s32);
+@symbol("SDL_GetWindowPosition")
+const GetWindowPosition = func(window: *Window, x: *s32, y: *s32);
+@symbol("SDL_SetWindowSize")
+const SetWindowSize = func(window: *Window, w: s32, h: s32);
+@symbol("SDL_GetWindowSize")
+const GetWindowSize = func(window: *Window, w: *s32, h: *s32);
+@symbol("SDL_GetWindowSizeInPixels")
+const GetWindowSizeInPixels = func(window: *Window, w: *s32, h: *s32);
+@symbol("SDL_SetWindowMinimumSize")
+const SetWindowMinimumSize = func(window: *Window, w: s32, h: s32);
+@symbol("SDL_GetWindowMinimumSize")
+const GetWindowMinimumSize = func(window: *Window, w: *s32, h: *s32);
+@symbol("SDL_SetWindowMaximumSize")
+const SetWindowMaximumSize = func(window: *Window, w: s32, h: s32);
+@symbol("SDL_GetWindowMaximumSize")
+const GetWindowMaximumSize = func(window: *Window, w: *s32, h: *s32);
+@symbol("SDL_SetWindowBordered")
+const SetWindowBordered = func(window: *Window, bordered: Bool);
+@symbol("SDL_SetWindowResizable")
+const SetWindowResizable = func(window: *Window, resizable: Bool);
+@symbol("SDL_ShowWindow")
+const ShowWindow = func(window: *Window);
+@symbol("SDL_HideWindow")
+const HideWindow = func(window: *Window);
+@symbol("SDL_RaiseWindow")
+const RaiseWindow = func(window: *Window);
+@symbol("SDL_MaximizeWindow")
+const MaximizeWindow = func(window: *Window);
+@symbol("SDL_MinimizeWindow")
+const MinimizeWindow = func(window: *Window);
+@symbol("SDL_RestoreWindow")
+const RestoreWindow = func(window: *Window);
+@symbol("SDL_SetWindowFullscreen")
+const SetWindowFullscreen = func(window: *Window, flags: u32 )-> s32;
+@symbol("SDL_GetWindowSurface")
+const GetWindowSurface = func(window: *Window) -> *Surface;
+@symbol("SDL_UpdateWindowSurface")
+const UpdateWindowSurface = func(window: *Window) -> s32;
+@symbol("SDL_UpdateWindowSurfaceRects")
+const UpdateWindowSurfaceRects = func(window: *Window, rects: *Rect, numrects: s32) -> s32;
+@symbol("SDL_SetWindowGrab")
+const SetWindowGrab = func(window: *Window, grabbed: Bool);
+@symbol("SDL_GetWindowGrab")
+const GetWindowGrab = func(window: *Window) -> Bool;
+@symbol("SDL_GetGrabbedWindow")
+const GetGrabbedWindow = func() -> *Window;
+@symbol("SDL_SetWindowBrightness")
+const SetWindowBrightness = func(window: *Window, brightness: float) -> s32;
+@symbol("SDL_GetWindowBrightness")
+const GetWindowBrightness = func(window: *Window) -> float;
+@symbol("SDL_SetWindowGammaRamp")
+const SetWindowGammaRamp = func(window: *Window, red: *u16, green: *u16, blue: *u16) -> s32;
+@symbol("SDL_GetWindowGammaRamp")
+const GetWindowGammaRamp = func(window: *Window, red: *u16, green: *u16, blue: *u16) -> s32;
+@symbol("SDL_SetWindowHitTest")
+const SetWindowHitTest = func(window: *Window, callback: HitTest, callback_data: *void) -> s32;
+@symbol("SDL_DestroyWindow")
+const DestroyWindow = func(window: *Window);
+@symbol("SDL_IsScreenSaverEnabled")
+const IsScreenSaverEnabled = func() -> Bool;
+@symbol("SDL_EnableScreenSaver")
+const EnableScreenSaver = func();
+@symbol("SDL_DisableScreenSaver")
+const DisableScreenSaver = func();
+@symbol("SDL_GL_LoadLibrary")
+const GL_LoadLibrary = func(path: *u8) -> s32;
+@symbol("SDL_GL_GetProcAddress")
+const GL_GetProcAddress = func(name: *u8) -> *void;
+@symbol("SDL_GL_UnloadLibrary")
+const GL_UnloadLibrary = func();
+@symbol("SDL_GL_ExtensionSupported")
+const GL_ExtensionSupported = func(extension: *u8) -> Bool;
+@symbol("SDL_GL_ResetAttributes")
+const GL_ResetAttributes = func();
+@symbol("SDL_GL_SetAttribute")
+const GL_SetAttribute = func(attr: GLattr, value: s32) -> s32;
+@symbol("SDL_GL_GetAttribute")
+const GL_GetAttribute = func(attr: GLattr, value: *s32) -> s32;
+@symbol("SDL_GL_CreateContext")
+const GL_CreateContext = func(window: *Window) -> GLContext;
+@symbol("SDL_GL_MakeCurrent")
+const GL_MakeCurrent = func(window: *Window, ctx: GLContext) -> s32;
+@symbol("SDL_GL_GetCurrentWindow")
+const GL_GetCurrentWindow = func() -> *Window;
+@symbol("SDL_GL_GetCurrentContext")
+const GL_GetCurrentContext = func() -> GLContext;
+@symbol("SDL_GL_GetDrawableSize")
+const GL_GetDrawableSize = func(window: *Window, w: *s32, h: *s32);
+@symbol("SDL_GL_SetSwapInterval")
+const GL_SetSwapInterval = func(interval: s32) -> s32;
+@symbol("SDL_GL_GetSwapInterval")
+const GL_GetSwapInterval = func() -> s32;
+@symbol("SDL_GL_SwapWindow")
+const GL_SwapWindow = func(window: *Window);
+@symbol("SDL_GL_DeleteContext")
+const GL_DeleteContext = func(ctx: GLContext);
+
+}

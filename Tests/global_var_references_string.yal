@@ -1,0 +1,14 @@
+#include "basic.yal.ignore";
+
+var a = "Hello Sailor\n";
+
+const Foo = struct {
+    var name: string;
+}
+
+var b = Foo.{"Foo"};
+
+const main = func() -> s32 {
+    Assert(a == "Hello Sailor\n");
+    Assert(b.name == "Foo");
+}

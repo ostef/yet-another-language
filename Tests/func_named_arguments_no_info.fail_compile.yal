@@ -1,0 +1,6 @@
+var foo = func(x: int, y: int, z: int) {
+}
+
+const main = func() -> s32 {
+    foo(10, z=10, y=10);
+}

@@ -1,0 +1,6 @@
+var a: int;
+
+const Foo = struct {
+    var a: int;
+    var b: string;
+}

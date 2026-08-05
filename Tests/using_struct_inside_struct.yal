@@ -1,0 +1,31 @@
+#include "basic.yal.ignore";
+
+const Base = struct {
+    var name: string;
+    var position: [2]float;
+}
+
+const Object = struct {
+    var weight: float;
+
+    using var base: Base;
+}
+
+const main = func() -> s32 {
+    var obj: Object;
+    obj.name = "Object";
+    obj.position[0] = 13;
+    obj.position[1] = 12;
+    obj.weight = 3.1415;
+
+    var obj_addr = bitcast(u64, &obj);
+    var name_offset = bitcast(u64, &obj.name) - obj_addr;
+    var position0_offset = bitcast(u64, &obj.position[0]) - obj_addr;
+    var position1_offset = bitcast(u64, &obj.position[1]) - obj_addr;
+    var weight_offset = bitcast(u64, &obj.weight) - obj_addr;
+
+    Assert(weight_offset == 0);
+    Assert(name_offset == 8);
+    Assert(position0_offset == 24);
+    Assert(position1_offset == 28);
+}

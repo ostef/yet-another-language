@@ -1,0 +1,154 @@
+const Std    = #import "Std";
+const Mem    = #import "Std/Memory";
+const String = #import "Std/String";
+
+const SDL = #import "SDL2";
+const gl = #import "OpenGL";
+const stbi = #import "stb_image";
+
+var g_shader: gl.GLuint;
+var g_quad_vao: gl.GLuint;
+var g_quad_vbo: gl.GLuint;
+var g_quad_ibo: gl.GLuint;
+
+const Vertex_Shader = """glsl
+#version 330 core
+
+layout(location=0) in vec2 v_position;
+layout(location=1) in vec2 v_tex_coords;
+layout(location=2) in vec4 v_color;
+
+void main() {
+    gl_Position = vec4(v_position, 0, 1);
+}
+glsl;
+
+const Fragment_Shader = """glsl
+#version 330 core
+
+layout(location=0) out vec4 out_color;
+
+void main() {
+    out_color = vec4(1,1,1,1);
+}
+glsl;
+
+const CreateShader = func(type: gl.GLenum, source: *u8) -> gl.GLuint {
+    var shader = gl.CreateShader(type);
+    gl.ShaderSource(shader, 1, cast(**gl.GLchar, &source), null);
+    gl.CompileShader(shader);
+
+    var status: gl.GLint;
+    gl.GetShaderiv(shader, gl.COMPILE_STATUS, &status);
+    if status == 0 {
+        var info_log: [5000]u8;
+        var info_log_length: gl.GLsizei;
+        gl.GetShaderInfoLog(shader, info_log.count, &info_log_length, cast(*gl.GLchar, info_log.data));
+
+        Std.Println("Could not compile shader");
+
+        var info_log_str: string;
+        info_log_str.data = info_log.data;
+        info_log_str.count = info_log_length;
+        Std.Println(info_log_str);
+
+        return 0;
+    }
+
+    return shader;
+}
+
+const InitializeRenderer = func() -> bool {
+    var vertex_shader = CreateShader(gl.VERTEX_SHADER, Vertex_Shader.data);
+    if vertex_shader == 0 {
+        return false;
+    }
+
+    var fragment_shader = CreateShader(gl.FRAGMENT_SHADER, Fragment_Shader.data);
+    if fragment_shader == 0 {
+        return false;
+    }
+
+    var program = gl.CreateProgram();
+    gl.AttachShader(program, vertex_shader);
+    gl.AttachShader(program, fragment_shader);
+    gl.LinkProgram(program);
+
+    var status: gl.GLint;
+    gl.GetProgramiv(program, gl.LINK_STATUS, &status);
+    if status == 0 {
+        var info_log: [5000]u8;
+        var info_log_length: gl.GLsizei;
+        gl.GetProgramInfoLog(program, info_log.count, &info_log_length, cast(*gl.GLchar, info_log.data));
+
+        Std.Println("Could not link shader program");
+
+        var info_log_str: string;
+        info_log_str.data = info_log.data;
+        info_log_str.count = info_log_length;
+        Std.Println(info_log_str);
+
+        return false;
+    }
+
+    return true;
+}
+
+const LoadTexture = func(filename: string) -> gl.GLuint {
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = context.temp_allocator;
+
+    var cfilename = String.CloneToCString(filename);
+
+    var w: s32;
+    var h: s32;
+    var pixels = stbi.load(cfilename, &w, &h, null, 4);
+    if pixels == null {
+        return 0;
+    }
+
+    var texture: gl.GLuint;
+    gl.CreateTextures(gl.TEXTURE_2D, 1, &texture);
+
+    gl.TextureParameteri(texture, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.TextureParameteri(texture, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.TextureParameteri(texture, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.TextureParameteri(texture, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    gl.TextureStorage2D(texture, 1, gl.RGBA8, w, h);
+    gl.TextureSubImage2D(texture, 0, 0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+    return texture;
+}
+
+const main = func() -> s32 {
+    var window = SDL.CreateWindow("Breakout Game".data, 10, 10, 1600, 900, SDL.WINDOW_SHOWN | SDL.WINDOW_OPENGL | SDL.WINDOW_RESIZABLE);
+    defer SDL.DestroyWindow(window);
+
+    var gl_context = SDL.GL_CreateContext(window);
+    defer SDL.GL_DeleteContext(gl_context);
+
+    gl.Load();
+
+    if !InitializeRenderer() {
+        return 1;
+    }
+
+    var quit = false;
+    while !quit {
+        Mem.ResetArena(&Mem.g_temp_arena);
+
+        var event: SDL.Event;
+        while SDL.PollEvent(&event) != 0 {
+            if event.type == .QUIT {
+                quit = true;
+            }
+        }
+
+        gl.ClearColor(1,1,0,1);
+        gl.Clear(gl.COLOR_BUFFER_BIT);
+
+        SDL.GL_SwapWindow(window);
+    }
+}

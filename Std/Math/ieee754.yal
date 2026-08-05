@@ -1,0 +1,199 @@
+const F32_Min_Subnormal = bitcast(f32, cast(u32, 0x00000001));
+const F32_Max_Subnormal = bitcast(f32, cast(u32, 0x007fffff));
+const F32_Min_Normal    = bitcast(f32, cast(u32, 0x00800000));
+const F32_Max_Normal    = bitcast(f32, cast(u32, 0x7f7fffff));
+const F32_Min           = F32_Min_Subnormal;
+const F32_Max           = F32_Max_Normal;
+const F32_Inf           = bitcast(f32, cast(u32, 0x7f800000));
+const F32_NaN           = bitcast(f32, cast(u32, 0x7fffffff));
+const F32_qNaN          = bitcast(f32, cast(u32, 0x7fc00001));
+const F32_sNaN          = bitcast(f32, cast(u32, 0x7f800001));
+
+const F64_Min_Subnormal = bitcast(f64, cast(u64, 0x0000000000000001));
+const F64_Max_Subnormal = bitcast(f64, cast(u64, 0x000fffffffffffff));
+const F64_Min_Normal    = bitcast(f64, cast(u64, 0x0010000000000000));
+const F64_Max_Normal    = bitcast(f64, cast(u64, 0x7fefffffffffffff));
+const F64_Min           = F64_Min_Subnormal;
+const F64_Max           = F64_Max_Normal;
+const F64_Inf           = bitcast(f64, cast(u64, 0x7ff0000000000000));
+const F64_NaN           = bitcast(f64, cast(u64, 0x7fffffffffffffff));
+const F64_qNaN          = bitcast(f64, cast(u64, 0x7ff8000000000001));
+const F64_sNaN          = bitcast(f64, cast(u64, 0x7ff0000000000001));
+
+const Pi = 3.14159265358979323;
+
+const SignBit32 = func(x: f32) -> bool {
+}
+
+const SignBit64 = func(x: f64) -> bool {
+}
+
+const SignBit = func {
+    SignBit32;
+    SignBit64;
+}
+
+const IsInf32 = func(x: f32) -> bool {
+}
+
+const IsInf64 = func(x: f64) -> bool {
+}
+
+const IsInf = func {
+    IsInf32;
+    IsInf64;
+}
+
+const IsNaN32 = func(x: f32) -> bool {
+}
+
+const IsNaN64 = func(x: f64) -> bool {
+}
+
+const IsNaN = func {
+    IsNaN32;
+    IsNaN64;
+}
+
+const FMod32 = func(x: f32, div: f32) -> f32 {
+}
+
+const FMod64 = func(x: f64, div: f64) -> f64 {
+}
+
+const FMod = func {
+    FMod32;
+    FMod64;
+}
+
+const Sin32 = func(x: f32) -> f32 {
+}
+
+const Sin64 = func(x: f64) -> f64 {
+}
+
+const Sin = func {
+    Sin32;
+    Sin64;
+}
+
+const Cos32 = func(x: f32) -> f32 {
+}
+
+const Cos64 = func(x: f64) -> f64 {
+}
+
+const Cos = func {
+    Cos32;
+    Cos64;
+}
+
+const Tan32 = func(x: f32) -> f32 {
+}
+
+const Tan64 = func(x: f64) -> f64 {
+}
+
+const Tan = func {
+    Tan32;
+    Tan64;
+}
+
+const Cot32 = func(x: f32) -> f32 {
+}
+
+const Cot64 = func(x: f64) -> f64 {
+}
+
+const Cot = func {
+    Cot32;
+    Cot64;
+}
+
+const ASin32 = func(x: f32) -> f32 {
+}
+
+const ASin64 = func(x: f64) -> f64 {
+}
+
+const ASin = func {
+    ASin32;
+    ASin64;
+}
+
+const ACos32 = func(x: f32) -> f32 {
+}
+
+const ACos64 = func(x: f64) -> f64 {
+}
+
+const ACos = func {
+    ACos32;
+    ACos64;
+}
+
+const ATan32 = func(x: f32) -> f32 {
+}
+
+const ATan64 = func(x: f64) -> f64 {
+}
+
+const ATan = func {
+    ATan32;
+    ATan64;
+}
+
+const ATan2F32 = func(y: f32, x: f32) -> f32 {
+}
+
+const ATan2F64 = func(y: f64, x: f64) -> f64 {
+}
+
+const ATan2 = func {
+    ATan2F32;
+    ATan2F64;
+}
+
+const Sqrt32 = func(x: f32) -> f32 {
+}
+
+const Sqrt64 = func(x: f64) -> f64 {
+}
+
+const Sqrt = func {
+    Sqrt32;
+    Sqrt64;
+}
+
+const NaturalLog32 = func(x: f32) -> f32 {
+}
+
+const NaturalLog64 = func(x: f64) -> f64 {
+}
+
+const NaturalLog = func {
+    NaturalLog32;
+    NaturalLog64;
+}
+
+const Exp32 = func(x: f32) -> f32 {
+}
+
+const Exp64 = func(x: f64) -> f64 {
+}
+
+const Exp = func {
+    Exp32;
+    Exp64;
+}
+
+const Pow32 = func(x: f32) -> f32 {
+}
+
+const Pow64 = func(x: f64) -> f64 {
+}
+
+const Pow = func {
+    Pow32;
+    Pow64;
+}

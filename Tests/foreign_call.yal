@@ -1,0 +1,53 @@
+#include "basic.yal.ignore";
+
+const Foo = struct {
+    var a : u8;
+    var b : s32;
+    var c : Bar;
+}
+
+const Bar = struct {
+    var ptr : *void;
+}
+
+#if Target_OS == .Windows {
+    const Lib = "Tests/external_c_lib.dll";
+} else #if Target_OS == .Linux {
+    const Lib = "Tests/external_c_lib.so";
+} else #if Target_OS == .MacOS {
+    const Lib = "Tests/external_c_lib.dylib";
+} else {
+    #assert false, "Unsupported OS";
+}
+
+@external @library(Lib) {
+    const TakesStringReturnsVoid = func(str : *u8);
+    const TakesIntReturnsInt = func(value : s32) -> s32;
+    const TakesStructReturnsInt = func(foo : Foo) -> s32;
+    const TakesIntReturnsStruct = func(value : s32) -> Foo;
+    const TakesStructReturnsStruct = func(foo : Foo) -> Foo;
+}
+
+const main = func() -> s32 {
+    var foo : Foo;
+    foo.a = 1;
+    foo.b = 1234;
+
+    TakesStringReturnsVoid("Hello Sailor!".data);
+
+    var i = TakesIntReturnsInt(1234);
+    Assert(i == 1234);
+
+    i = TakesStructReturnsInt(foo);
+    Assert(i == 1234);
+
+    foo = TakesIntReturnsStruct(4567);
+    Assert(foo.a == 10);
+    Assert(foo.b == 4567);
+    Assert(foo.c.ptr == null);
+
+    foo = TakesStructReturnsStruct(foo);
+    Assert(foo.a == 10);
+    Assert(foo.b == 4567);
+    Assert(foo.c.ptr == null);
+}

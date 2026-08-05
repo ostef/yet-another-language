@@ -1,0 +1,7 @@
+#!./yal -interpreter
+
+#include "basic.yal.ignore";
+
+const main = func() -> s32 {
+    WriteString("Hello\n");
+}

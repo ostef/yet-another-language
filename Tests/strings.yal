@@ -1,0 +1,190 @@
+#include "basic.yal.ignore";
+
+const main = func() -> s32 {
+    var str = "Hello";
+    Assert(str.count == 5);
+    Assert(str == "Hello");
+    Assert(str != "hello");
+    Assert(str[0] == 'H');
+    Assert(str[1] == 'e');
+    Assert(str[2] == 'l');
+    Assert(str[3] == 'l');
+    Assert(str[4] == 'o');
+    Assert(str.data[0] == 'H');
+    Assert(str.data[1] == 'e');
+    Assert(str.data[2] == 'l');
+    Assert(str.data[3] == 'l');
+    Assert(str.data[4] == 'o');
+
+    str = "";
+    Assert(str == "");
+    Assert(str != "ABC");
+    Assert(str.count == 0);
+
+    str.data = cast(*u8, malloc(100));
+    str.count = 5;
+    str[0] = 'H';
+    str[1] = 'e';
+    str[2] = 'l';
+    str[3] = 'l';
+    str[4] = 'o';
+    Assert(str == "Hello");
+    Assert(str != "World");
+    Assert(str.count == 5);
+    Assert(str[0] == 'H');
+    Assert(str[1] == 'e');
+    Assert(str[2] == 'l');
+    Assert(str[3] == 'l');
+    Assert(str[4] == 'o');
+
+    str.data = "Hello World".data;
+    str.count = "Hello World".count;
+    Assert(str == "Hello World");
+    Assert(str != "Hello");
+    Assert(str.count == 11);
+    Assert(str[0] == 'H');
+    Assert(str[1] == 'e');
+    Assert(str[2] == 'l');
+    Assert(str[3] == 'l');
+    Assert(str[4] == 'o');
+    Assert(str[5] == ' ');
+    Assert(str[6] == 'W');
+    Assert(str[7] == 'o');
+    Assert(str[8] == 'r');
+    Assert(str[9] == 'l');
+    Assert(str[10] == 'd');
+
+    {
+        const Str = "ABCDEF";
+        Assert(Str[0] == 'A');
+        Assert(Str[1] == 'B');
+        Assert(Str[2] == 'C');
+        Assert(Str[3] == 'D');
+        Assert(Str[4] == 'E');
+        Assert(Str[5] == 'F');
+
+        var str = Str;
+        Assert(str[0] == 'A');
+        Assert(str[1] == 'B');
+        Assert(str[2] == 'C');
+        Assert(str[3] == 'D');
+        Assert(str[4] == 'E');
+        Assert(str[5] == 'F');
+
+        var i = 0;
+        Assert(str[i] == 'A');
+        i += 1;
+        Assert(str[i] == 'B');
+        i += 1;
+        Assert(str[i] == 'C');
+        i += 1;
+        Assert(str[i] == 'D');
+        i += 1;
+        Assert(str[i] == 'E');
+        i += 1;
+        Assert(str[i] == 'F');
+        i += 1;
+    }
+    {
+        var str = "ABCDEF";
+
+        var i : s8 = 0;
+        Assert(str[i] == 'A');
+        i += 1;
+        Assert(str[i] == 'B');
+        i += 1;
+        Assert(str[i] == 'C');
+        i += 1;
+        Assert(str[i] == 'D');
+        i += 1;
+        Assert(str[i] == 'E');
+        i += 1;
+        Assert(str[i] == 'F');
+        i += 1;
+    }
+    {
+        var str = "ABCDEF";
+
+        var i : u8 = 0;
+        Assert(str[i] == 'A');
+        i += 1;
+        Assert(str[i] == 'B');
+        i += 1;
+        Assert(str[i] == 'C');
+        i += 1;
+        Assert(str[i] == 'D');
+        i += 1;
+        Assert(str[i] == 'E');
+        i += 1;
+        Assert(str[i] == 'F');
+        i += 1;
+    }
+    {
+        var str = "ABCDEF";
+
+        var i : s16 = 0;
+        Assert(str[i] == 'A');
+        i += 1;
+        Assert(str[i] == 'B');
+        i += 1;
+        Assert(str[i] == 'C');
+        i += 1;
+        Assert(str[i] == 'D');
+        i += 1;
+        Assert(str[i] == 'E');
+        i += 1;
+        Assert(str[i] == 'F');
+        i += 1;
+    }
+    {
+        var str = "ABCDEF";
+
+        var i : u16 = 0;
+        Assert(str[i] == 'A');
+        i += 1;
+        Assert(str[i] == 'B');
+        i += 1;
+        Assert(str[i] == 'C');
+        i += 1;
+        Assert(str[i] == 'D');
+        i += 1;
+        Assert(str[i] == 'E');
+        i += 1;
+        Assert(str[i] == 'F');
+        i += 1;
+    }
+    {
+        var str = "ABCDEF";
+
+        var i : s32 = 0;
+        Assert(str[i] == 'A');
+        i += 1;
+        Assert(str[i] == 'B');
+        i += 1;
+        Assert(str[i] == 'C');
+        i += 1;
+        Assert(str[i] == 'D');
+        i += 1;
+        Assert(str[i] == 'E');
+        i += 1;
+        Assert(str[i] == 'F');
+        i += 1;
+    }
+    {
+        var str = "ABCDEF";
+
+        var i : u32 = 0;
+        Assert(str[i] == 'A');
+        i += 1;
+        Assert(str[i] == 'B');
+        i += 1;
+        Assert(str[i] == 'C');
+        i += 1;
+        Assert(str[i] == 'D');
+        i += 1;
+        Assert(str[i] == 'E');
+        i += 1;
+        Assert(str[i] == 'F');
+        i += 1;
+    }
+}

@@ -1,0 +1,9 @@
+const Foo = struct {
+    const Hello = "Hello";
+    const World = "World";
+}
+
+const main = func() -> s32 {
+    using Foo;
+    using Foo;
+}

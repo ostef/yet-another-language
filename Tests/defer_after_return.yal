@@ -1,0 +1,7 @@
+#include "basic.yal.ignore";
+
+const main = func() -> s32 {
+    return 0;
+
+    defer Assert(false);
+}

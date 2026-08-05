@@ -1,0 +1,45 @@
+#include "basic.yal.ignore";
+
+const Baz = struct {
+    var e: float;
+    var f: float;
+}
+
+const Bar = struct {
+    var c: string;
+    var d: string;
+
+    using var baz: Baz;
+}
+
+const Foo = struct {
+    var a: int;
+    var b: int;
+
+    using var bar: Bar;
+}
+
+const main = func() -> s32 {
+    using var foo: Foo;
+    a = 10;
+    b = 100;
+    c = "Hello";
+    d = "Sailor";
+    e = 3.1415;
+    f = 2.7182;
+
+    Assert(a == 10);
+    Assert(b == 100);
+    Assert(foo.a == 10);
+    Assert(foo.b == 100);
+    Assert(foo.c == "Hello");
+    Assert(foo.d == "Sailor");
+    Assert(foo.bar.c == "Hello");
+    Assert(foo.bar.d == "Sailor");
+    Assert(foo.e == 3.1415);
+    Assert(foo.f == 2.7182);
+    Assert(foo.bar.e == 3.1415);
+    Assert(foo.bar.f == 2.7182);
+    Assert(foo.bar.baz.e == 3.1415);
+    Assert(foo.bar.baz.f == 2.7182);
+}

@@ -1,0 +1,11 @@
+const B = #import_file "circular_modules_b.yal.ignore";
+
+const Fib = func(n: s64) -> s64 {
+    if n == 0 {
+        return 0;
+    } else if n == 1 {
+        return 1;
+    } else {
+        return B.Fib(n - 1) + B.Fib(n - 2);
+    }
+}

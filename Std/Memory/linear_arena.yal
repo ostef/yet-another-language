@@ -1,0 +1,82 @@
+const LinearArena = struct {
+    const Page = struct {
+        const Min_Size = 4000;
+
+        var prev: *Page;
+        var next: *Page;
+        var size: s64;
+        var used: s64;
+    }
+
+    var first_page: *Page;
+    var last_page: *Page;
+    var page_allocator: Allocator;
+}
+
+var g_temp_arena: LinearArena;
+
+const Temp_Allocator = Allocator.{null, LinearArenaAllocatorFunc};
+
+const AddPageToArena = func(arena: *LinearArena, min_size: s64) {
+    if min_size < LinearArena.Page.Min_Size {
+        min_size = LinearArena.Page.Min_Size;
+    }
+
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = arena.page_allocator;
+
+    var new_page = cast(*LinearArena.Page, Alloc(size_of(LinearArena.Page) + min_size));
+
+    if arena.last_page == null {
+        arena.first_page = new_page;
+        arena.last_page = new_page;
+    } else {
+        new_page.prev = arena.last_page;
+        arena.last_page.next = new_page;
+        arena.last_page = new_page;
+    }
+}
+
+const ResetArena = func(arena: *LinearArena) {
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = arena.page_allocator;
+
+    var page = arena.last_page;
+    while page != arena.first_page {
+        var prev = page.prev;
+        Free(page);
+        page = prev;
+    }
+
+    if page != null {
+        page.used = 0;
+    }
+}
+
+const LinearArenaAllocatorFunc = func(data: *void, op: Allocator.Operation, ptr: *void, size: s64, old_size: s64) -> *void {
+    var arena: *LinearArena;
+    if data == null {
+        arena = &g_temp_arena;
+    } else {
+        arena = cast(*LinearArena, data);
+    }
+
+    if op == .Allocate || op == .Reallocate {
+        var aligned_size = (size + 15) & ^15;
+
+        if arena.last_page == null || arena.last_page.used + aligned_size > arena.last_page.size {
+            AddPageToArena(arena, aligned_size);
+        }
+
+        var ptr = cast(*u8, arena + 1);
+        ptr += arena.last_page.used;
+
+        arena.last_page.used += aligned_size;
+
+        return ptr;
+    }
+
+    return null;
+}

@@ -1,0 +1,26 @@
+// In this language we do not support implicit procedure overloading. The reason
+// for this is that the use case for implicit overloading is filled by having
+// interfaces in the language.
+// We do support overloading though, but the overload set must be explicitly defined
+// (like in Odin for example)
+// A nice property of this is that we do not have to mangle the names of our
+// functions in the output binary.
+
+const PrintString = func(str : string) {
+}
+
+const PrintInteger = func(value : int) {
+}
+
+const PrintFloat = func(value : float) {
+}
+
+const PrintBool = func(value : bool) {
+}
+
+const Print = func {
+    PrintString,
+    PrintInteger,
+    PrintFloat,
+    PrintBool,
+}

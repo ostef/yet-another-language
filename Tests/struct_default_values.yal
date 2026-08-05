@@ -1,0 +1,20 @@
+#include "basic.yal.ignore";
+
+const Foo = struct {
+    var a: float = 1;
+    var b: bool = true;
+    var c: int = 1234;
+}
+
+var global: Foo;
+
+const main = func() -> s32 {
+    var foo: Foo;
+    Assert(foo.a == 1);
+    Assert(foo.b == true);
+    Assert(foo.c == 1234);
+
+    Assert(global.a == 1);
+    Assert(global.b == true);
+    Assert(global.c == 1234);
+}

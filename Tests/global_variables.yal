@@ -1,0 +1,18 @@
+#include "basic.yal.ignore";
+
+const Foo = struct {
+    var a: int;
+    var b: float;
+    var c: bool;
+}
+
+var a: int = 10;
+var b = Foo.{10, 1.234, true};
+
+const main = func() -> s32 {
+    Assert(a == 10);
+
+    Assert(b.a == 10);
+    Assert(b.b == 1.234);
+    Assert(b.c == true);
+}

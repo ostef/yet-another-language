@@ -1,0 +1,45 @@
+#assert size_of(int) == 8;
+#assert size_of(uint) == 8;
+#assert size_of(s8) == 1;
+#assert size_of(u8) == 1;
+#assert size_of(s16) == 2;
+#assert size_of(u16) == 2;
+#assert size_of(s32) == 4;
+#assert size_of(u32) == 4;
+#assert size_of(s64) == 8;
+#assert size_of(u64) == 8;
+#assert size_of(f32) == 4;
+#assert size_of(f64) == 8;
+#assert size_of(bool) == 1;
+#assert size_of(void) == 0;
+#assert size_of(*void) == 8;
+
+#assert size_of(string) == 16;
+
+#assert size_of([]u8) == 16;
+#assert size_of([100]u8) == 100 * size_of(u8);
+#assert size_of([100]*void) == 100 * size_of(*void);
+
+const Foo = struct {
+    var a: u32;
+    var b: u64;
+}
+
+#assert size_of(Foo) == 2 * 8;
+
+const Bar = union {
+    var a: u32;
+    var b: u64;
+}
+
+#assert size_of(Bar) == 8;
+
+const Enum = enum u8 {
+}
+
+#assert size_of(Enum) == 1;
+
+const Enum2 = enum {
+}
+
+#assert size_of(Enum2) == 8;

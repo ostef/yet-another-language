@@ -1,0 +1,26 @@
+const Hash = #import "Std/Hash";
+
+const HashMapEntry = struct(Key: type_id, Value: type_id, Hash_Type: type_id) {
+    var hash: Hash_Type;
+    var key: Key;
+    var value: Value;
+}
+
+const HashMap = struct(
+    Key: type_id,
+    Value: type_id,
+    HashKey: func(Key) -> Hash_Type,
+    CompareKeys: func(Key, Key) -> bool,
+    Hash_Type=u64,
+    Load_Factor=70
+) {
+    #assert Load_Factor > 0 && Load_Factor < 100;
+
+    const Entry = HashMapEntry(Key, Value, Hash_Type);
+
+    var count: s64;
+    var allocated: s64;
+    var occupied: s64;
+    var entries: *Entry;
+    var allocator: Allocator;
+}

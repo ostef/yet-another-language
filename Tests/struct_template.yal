@@ -1,0 +1,19 @@
+#include "basic.yal.ignore";
+
+const StaticArray = struct($T: type_id, $N: int) {
+    var count: int;
+    var data: [N]T;
+}
+
+const main = func() -> s32 {
+    var arr: StaticArray(string, 10);
+
+    arr.data[arr.count] = "Hello";
+    arr.count += 1;
+
+    arr.data[arr.count] = "World";
+    arr.count += 1;
+
+    Assert(arr.data[0] == "Hello");
+    Assert(arr.data[1] == "World");
+}

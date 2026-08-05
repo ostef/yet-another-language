@@ -1,0 +1,67 @@
+const Std = #import "Std";
+
+#include "ieee754.yal";
+#include "vector.yal";
+#include "matrix.yal";
+
+const S8_Min = -128;
+const S8_Max =  127;
+const U8_Max =  255;
+const S16_Min = -32_768;
+const S16_Max =  32_767;
+const U16_Max =  65_535;
+const S32_Min = -2_147_483_648;
+const S32_Max =  2_147_483_647;
+const U32_Max =  4_294_967_295;
+const S64_Min = -9_223_372_036_854_775_808;
+const S64_Max =  9_223_372_036_854_775_807;
+const U64_Max = 18_446_744_073_709_551_615;
+
+const AlignForward = func(x: $T, align: T) -> T {
+    Assert(align > 0);
+
+    return ((x + align - 1) / align) * align;
+}
+
+const Min = func(a: $T, b: T) -> T {
+    if a < b {
+        return a;
+    }
+
+    return b;
+}
+
+const Max = func(a: $T, b: T) -> T {
+    if a > b {
+        return a;
+    }
+
+    return b;
+}
+
+const Clamp = func(x: $T, min: T, max: T) -> T {
+    if x < min {
+        x = min;
+    }
+    if x > max {
+        x = max;
+    }
+
+    return x;
+}
+
+const Abs = func(x: $T) -> T {
+    if x < 0 {
+        return -x;
+    }
+
+    return x;
+}
+
+const Sign = func(x: $T) -> T {
+    if x < 0 {
+        return -1;
+    }
+
+    return 1;
+}

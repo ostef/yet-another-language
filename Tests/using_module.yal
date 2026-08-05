@@ -1,0 +1,20 @@
+#include "basic.yal.ignore";
+
+const module = #import_file "using_module_module.yal.ignore";
+
+const main = func() -> s32 {
+    using module;
+
+    a = 10;
+    Assert(a == 10);
+    Assert(module.a == 10);
+
+    var foo: Foo;
+    foo.a = 11;
+    foo.b == "Hello World";
+    Assert(foo.a == 11);
+    Assert(foo.b == "Hello World");
+
+    var foo2: module.Foo;
+}
+

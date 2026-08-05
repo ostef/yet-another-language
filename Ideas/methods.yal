@@ -1,0 +1,30 @@
+// Methods are procedures that can be executed on an instance of a struct.
+// Languages like Jai and Odin do not have them, but I don't think they particularily
+// harm the design of the code that use them in other languages (unless they are
+// badly implemented in the language). Additionally, almost all languages have
+// methods, so it makes it that much easier to interoperate with them (of particular
+// interest is C++ of course).
+
+const Vertex = struct {
+    var position: Vec3f;
+}
+
+// To implement methods on a type use the impl keyword
+// You can also put the functions inside the struct namespace, but these won't be
+// callable like methods. This exists to reduce cluttering of the struct declaration
+// so it usually only contains data oriented things (types and constant or variable values).
+impl Vertex {
+    SetPosition = func(self: *Vertex, position: Vec3f) {
+        self.position = position;
+    }
+}
+
+// You cannot implement methods on primitive types
+
+// Declared methods get put inside the type's namespace, and we *may* make it
+// possible to call the procedure without using the method syntax.
+
+const main = func(args: []string) > s32 {
+    var vertex: Vertex;
+    vertex.SetPosition(.{10,10,10});
+}

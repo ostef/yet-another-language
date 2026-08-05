@@ -1,0 +1,60 @@
+// @Todo:
+// * is sorted
+// * sorted search
+// * sorted lower and upper bound
+// * unsorted search
+// * unsorted lower and upper bound
+// * unsorted min value
+// * unsorted max value
+
+const QuickSort = func(arr: []$T, $Compare: type_of(func(T, T) -> int)) {
+    QuickSort(arr, null, func(a: T, b: T, user: *void) -> R {
+        return Compare(a, b);
+    });
+}
+
+const QuickSort = func(arr: []$T, user_data: $User, $Compare: type_of(func(T, T, User) -> int)) {
+    const Helper = func(
+        arr: []T,
+        left: s64, right: s64,
+        user_data: User
+    ) {
+        if left < 0 || right <= left {
+            return;
+        }
+
+        var i = left;
+        var j = right;
+
+        var pivot = arr[(j + i) / 2];
+
+        while true {
+            while Compare(arr[i], pivot, user_data) < 0 {
+                i += 1;
+            }
+            while Compare(arr[j], pivot, user_data) > 0 {
+                j -= 1;
+            }
+
+            if i >= j {
+                break;
+            }
+
+            var tmp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = tmp;
+
+            i += 1;
+            j -= 1;
+        }
+
+        Helper(arr, left, j, user_data);
+        Helper(arr, j + 1, right, user_data);
+    }
+
+    if arr.count < 2 {
+        return;
+    }
+
+    Helper(arr, 0, arr.count - 1, user_data);
+}

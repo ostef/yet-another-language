@@ -1,0 +1,65 @@
+#include "basic.yal.ignore";
+
+#if true {
+
+const C = true;
+
+} else {
+
+#include "badfile";
+
+}
+
+const Foo = struct {
+    var a: int;
+    #if true {
+        var b: float;
+
+        // Nested compile time if should work!
+        #if true {
+            const T = int;
+        }
+    }
+    var c: bool;
+    var d: T;
+}
+
+const Bar = struct {
+    var a: int;
+    #if true {
+        const T = bool;
+        var b: float;
+    }
+    var c: T;
+}
+
+const main = func() -> s32 {
+    const A = C;
+
+    // The reason compile time if syntax is so similar to normal
+    // if-else syntax is that we want it to be easy for users to
+    // switch between runtime and compile time versions
+    #if A {
+        Assert(true);
+        // B should be created in main, because the #if does not create a scope
+        const B = !A;
+    } else {
+        Assert(false);
+        should_not_be_typechecked;
+    }
+
+    #if B {
+        Assert(false);
+        should_not_be_typechecked;
+    } else {
+        Assert(true);
+    }
+
+    var foo: Foo;
+    foo.b = 10;
+
+    var bar: Bar;
+    bar.a = 5;
+    bar.b = 10;
+    bar.c = true;
+}

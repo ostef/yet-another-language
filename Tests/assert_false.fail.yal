@@ -1,0 +1,7 @@
+// Basic test to make sure the interpreter actually executes things
+
+#include "basic.yal.ignore";
+
+const main = func() -> s32 {
+    Assert(false);
+}

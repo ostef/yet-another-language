@@ -1,0 +1,107 @@
+const Std = #import "Std";
+
+#include "linear_arena.yal";
+
+const Set = func(dst: *void, value: u8, size: s64) -> *void {
+    for i: 0..<size {
+        cast(*u8, dst)[i] = value;
+    }
+
+    return dst;
+}
+
+const Copy = func(dst: *void, src: *void, size: s64) -> *void {
+    for i: 0..<size {
+        cast(*u8, dst)[i] = cast(*u8, src)[i];
+    }
+
+    return dst;
+}
+
+const Compare = func(a: *void, b: *void, size: s64) -> int {
+    var i = 0;
+    while i < size && cast(*u8, a)[i] == cast(*u8, b)[i] {
+        i += 1;
+    }
+
+    if i == size {
+        return 0;
+    }
+
+    return cast(int, cast(*u8, a)[i]) - cast(int, cast(*u8, b)[i]);
+}
+
+const AllocOrNull = func(size: s64) -> *void {
+    if size <= 0 {
+        return null;
+    }
+
+    return context.allocator.callback(context.allocator.data, .Allocate, null, size, 0);
+}
+
+const Alloc = func(size: s64) -> *void {
+    if size <= 0 {
+        return null;
+    }
+
+    var result = context.allocator.callback(context.allocator.data, .Allocate, null, size, 0);
+    Std.Assert(result != null, "Allocation failure");
+
+    return result;
+}
+
+const AllocArray = func($T: type_id, count: s64) -> []T {
+    var arr: []T;
+    arr.data = auto Alloc(size_of(T) * count);
+    arr.count = count;
+
+    return arr;
+}
+
+const Realloc = func(ptr: *void, old_size: s64, new_size: s64) -> *void {
+    if ptr == null {
+        return Alloc(new_size);
+    }
+
+    if new_size <= 0 {
+        Free(ptr);
+
+        return null;
+    }
+
+    var result = context.allocator.callback(context.allocator.data, .Reallocate, ptr, new_size, old_size);
+    Std.Assert(result != null, "Allocation failure");
+
+    return result;
+}
+
+const Free = func(ptr: *void) {
+    if ptr == null {
+        return;
+    }
+
+    context.allocator.callback(context.allocator.data, .Free, ptr, 0, 0);
+}
+
+const HeapAllocatorFunc = func(data: *void, op: Allocator.Operation, ptr: *void, size: s64, old_size: s64) -> *void {
+    @external @library(Std.LibC)
+    const malloc = func(size: u64) -> *void;
+
+    @external @library(Std.LibC)
+    const realloc = func(ptr: *void, new_size: u64) -> *void;
+
+    @external @library(Std.LibC)
+    const free = func(ptr: *void);
+
+    if op == .Allocate {
+        return malloc(cast(u64, size));
+    } else if op == .Reallocate {
+        return realloc(ptr, cast(u64, size));
+    } else if op == .Free {
+        free(ptr);
+    }
+
+    return null;
+}
+
+const Heap_Allocator = Allocator.{null, HeapAllocatorFunc};

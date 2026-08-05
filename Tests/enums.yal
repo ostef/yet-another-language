@@ -1,0 +1,27 @@
+#include "basic.yal.ignore";
+
+const Foo = enum {
+    A;
+    B;
+    C = A;
+    D;
+}
+
+const BaseType = enum u32 {
+    A;
+    B;
+    C = A;
+    D;
+}
+
+const main = func() -> s32 {
+    Assert(cast(int, Foo.A) == 0);
+    Assert(cast(int, Foo.B) == 1);
+    Assert(cast(int, Foo.C) == 0);
+    Assert(cast(int, Foo.D) == 1);
+
+    Assert(cast(u32, BaseType.A) == 0);
+    Assert(cast(u32, BaseType.B) == 1);
+    Assert(cast(u32, BaseType.C) == 0);
+    Assert(cast(u32, BaseType.D) == 1);
+}

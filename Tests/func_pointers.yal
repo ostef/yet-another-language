@@ -1,0 +1,15 @@
+#include "basic.yal.ignore";
+
+const Foo = func() {
+}
+
+const main = func() -> s32 {
+    var foo: type_of(Foo);
+    Assert(foo == null);
+
+    foo = Foo;
+    Assert(foo != null);
+
+    Assert(Foo != null); // Test constant eval and constant cast
+    Assert(Foo != cast(*void, 0xabcdef)); // Ensure constant cast does not happen with integers
+}

@@ -1,0 +1,163 @@
+// This file was auto-generated when building the compiler
+// CAUTION: You are not supposed to change this file!
+
+const ArrayKind = enum u8 {
+    Invalid;
+    Slice;
+    Dynamic;
+    Static;
+}
+
+const CallingConvention = enum u8 {
+    Unknown;
+    Yal;
+    C;
+}
+
+const OperatingSystem = enum u8 {
+    Freestanding;
+    Linux;
+    Windows;
+    MacOS;
+}
+
+const Allocator = struct {
+    const Operation = enum {
+        Allocate;
+        Reallocate;
+        Free;
+    }
+
+    const Callback = type_of(func(data: *void, op: Operation, ptr: *void, size: s64, old_size: s64) -> *void);
+
+    var data: *void;
+    var callback: Callback;
+}
+
+const Context = struct {
+    var thread_id: u32;
+    var allocator: Allocator;
+    var temp_allocator: Allocator;
+    var logger: Logger;
+    var panic_handler: PanicHandler;
+    var handling_panic: bool;
+}
+
+const Logger = struct {
+    const Callback = type_of(func(data: *void, message: string));
+
+    var data: *void;
+    var callback: Callback;
+}
+
+const PanicHandler = struct {
+    const Callback = type_of(func(data: *void, assertion_failure: bool, message: string));
+
+    var data: *void;
+    var callback: Callback;
+}
+
+const TypeInfo = struct {
+    const Kind = enum u8 {
+        Invalid;
+        Void;
+        Integer;
+        Float;
+        Bool;
+        String;
+        TypeId;
+        Pointer;
+        Array;
+        Function;
+        Struct;
+        Enum;
+        FunctionOverloadSet;
+        Module;
+        TemplateParam;
+    }
+
+    var kind: Kind;
+    var size = -1;
+}
+
+const TypeInfoArray = struct {
+    var base: TypeInfo;
+    // base.kind = .Array;
+    var array_kind: ArrayKind;
+    var element_type: *TypeInfo;
+    var count: s64;
+}
+
+const TypeInfoEnum = struct {
+    var base: TypeInfo;
+    // base.kind = .Enum;
+    var reserved0: u64;
+    var base_type: *TypeInfoInteger;
+    var name: string;
+    var members: []TypeInfoEnumMember;
+}
+
+const TypeInfoEnumMember = struct {
+    var name: string;
+    var value: s64;
+}
+
+const TypeInfoFunction = struct {
+    var base: TypeInfo;
+    // base.kind = .Function;
+    // base.size = 8;
+    var parameters: []*TypeInfo;
+    var result: *TypeInfo;
+    var calling_convention: CallingConvention;
+    var is_c_variadic: bool;
+}
+
+const TypeInfoFunctionOverloadSet = struct {
+    var base: TypeInfo;
+    // base.kind = .FunctionOverloadSet;
+    // base.size = 0;
+    var reserved0: u64;
+    var overload_types: []*TypeInfoFunction;
+}
+
+const TypeInfoInteger = struct {
+    var base: TypeInfo;
+    // base.kind = .Integer;
+    var is_signed: bool;
+}
+
+const TypeInfoPointer = struct {
+    var base: TypeInfo;
+    // base.kind = .Pointer;
+    // base.size = 8;
+    var pointed_type: *TypeInfo;
+}
+
+const TypeInfoStruct = struct {
+    var base: TypeInfo;
+    // base.kind = .Struct;
+    var alignment: s8 = -1;
+    var is_union: bool;
+    var reserved0: u64;
+    var reserved1: u64;
+    var reserved2: u64;
+    var name: string;
+    var template_source: *TypeInfoStruct;
+    var parameters: []*TypeInfo;
+    var members: []TypeInfoStructMember;
+}
+
+const TypeInfoStructMember = struct {
+    var reserved0: u64;
+    var name: string;
+    var byte_offset = -1;
+    var type: *TypeInfo;
+}
+
+const TypeInfoTemplateParam = struct {
+    var base: TypeInfo;
+    // base.kind = .TemplateParam;
+    var name: string;
+    var param_index = -1;
+}
+

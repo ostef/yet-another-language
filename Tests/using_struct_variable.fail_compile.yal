@@ -1,0 +1,8 @@
+const Foo = struct {
+    var a: int;
+}
+
+const main = func() -> s32 {
+    using Foo;
+    a = 10;
+}

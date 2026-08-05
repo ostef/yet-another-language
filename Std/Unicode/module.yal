@@ -1,0 +1,13 @@
+const Mem = #import "Std/Mem";
+
+#include "utf-8.yal";
+
+const Max_Codepoint: u32 = 0x10ffff;
+const Replacement_Codepoint: u32 = 0xfffd;
+
+const ErrorCode = enum u8 {
+    Ok;
+    BufferTooSmall;
+    SourceExhausted;
+    SourceIllegal;
+}

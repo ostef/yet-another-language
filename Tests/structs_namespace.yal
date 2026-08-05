@@ -1,0 +1,19 @@
+#include "basic.yal.ignore";
+
+const Foo = struct {
+    const Bar = struct {
+    }
+
+    const Hello = func() {
+        WriteString("Hello\n");
+    }
+
+    var bar: Bar;
+}
+
+const main = func() -> s32 {
+    var foo: Foo;
+    var bar: Foo.Bar;
+    Foo.Hello();
+    foo.Hello();
+}

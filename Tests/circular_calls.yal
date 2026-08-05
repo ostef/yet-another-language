@@ -1,0 +1,26 @@
+#include "basic.yal.ignore";
+
+const Fib1 = func(n: int) -> int {
+    if n == 0 {
+        return 0;
+    } else if n == 1 {
+        return 1;
+    } else {
+        return Fib2(n - 1) + Fib2(n - 2);
+    }
+}
+
+const Fib2 = func(n: s64) -> s64 {
+    if n == 0 {
+        return 0;
+    } else if n == 1 {
+        return 1;
+    } else {
+        return Fib1(n - 1) + Fib1(n - 2);
+    }
+}
+
+const main = func() -> s32 {
+    var a = Fib1(6);
+    Assert(a == 8);
+}

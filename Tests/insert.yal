@@ -1,0 +1,8 @@
+#include "basic.yal.ignore";
+
+#insert "const a = 10;"
+
+const main = func() -> s32 {
+    const b = a;
+    Assert(b == 10);
+}

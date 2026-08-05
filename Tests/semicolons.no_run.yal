@@ -1,0 +1,14 @@
+var a: int;
+
+var b: struct {
+};
+
+;
+
+const Foo = struct {
+};
+
+const Bar = struct {
+}
+
+;;;;

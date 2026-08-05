@@ -1,0 +1,24 @@
+const Matrix = struct(T: type_id, M: int, N: int) {
+    #assert M >= 2, "Matrix dimensions must be at least 2";
+    #assert N >= 2, "Matrix dimensions must be at least 2";
+
+    var values : [M][N]T;
+    // #insert #run func() -> string {
+    //     var builder: StringBuilder;
+    //     for i: 0..<M {
+    //         for j: 0..<N {
+    //             if i == j {
+    //                 Append(*builder, "r%c%: T = 1;", i, j);
+    //             } else {
+    //                 Append(*builder, "r%c%: T");
+    //             }
+    //         }
+    //     }
+    // }();
+}
+
+const Mat3f = Matrix(f32, 3, 3);
+const Mat4f = Matrix(f32, 4, 4);
+
+const Mat3d = Matrix(f64, 3, 3);
+const Mat4d = Matrix(f64, 4, 4);

@@ -1,0 +1,7 @@
+const main = func() -> s32 {
+    var a: int;
+
+    const Foo = func() {
+        a = 10;
+    }
+}

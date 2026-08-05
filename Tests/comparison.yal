@@ -1,0 +1,93 @@
+#include "basic.yal.ignore";
+
+const A = struct {
+    var a : int;
+    var ptr : *void;
+    var b : B;
+}
+
+const B = struct {
+    var ptr : *void;
+}
+
+const main = func() -> s32 {
+    {
+        var a = 10;
+        var b = 10;
+        Assert(a == b);
+        Assert(!(a < b));
+        Assert(!(a > b));
+
+        b = 2;
+        Assert(a != b);
+        Assert(!(a < b));
+        Assert(a > b);
+
+        b = -10;
+        Assert(a != b);
+        Assert(!(a < b));
+        Assert(a > b);
+    }
+    {
+        var a : uint = 10;
+        var b : uint = 10;
+        Assert(a == b);
+        Assert(!(a < b));
+        Assert(!(a > b));
+
+        b = 2;
+        Assert(a != b);
+        Assert(!(a < b));
+        Assert(a > b);
+    }
+    {
+        var a : float = 10;
+        var b : float = 10;
+        Assert(a == b);
+        Assert(!(a < b));
+        Assert(!(a > b));
+
+        b = 2;
+        Assert(a != b);
+        Assert(!(a < b));
+        Assert(a > b);
+
+        b = -10;
+        Assert(a != b);
+        Assert(!(a < b));
+        Assert(a > b);
+    }
+    {
+        var a = "Hello";
+        var b = "World";
+        Assert(a != b);
+
+        b = "Hello";
+        Assert(a == b);
+
+        // The following does not generate any comparison instructions
+        // because it is constant evaluated
+        Assert("Hello" == "Hello");
+        Assert("Hello" != "World");
+        Assert("" != "World");
+        Assert("" == "");
+
+        a = "";
+        b = "";
+        Assert(a == b);
+
+        a = "";
+        b = "Hello";
+        Assert(a != b);
+
+        Assert("" == a);
+        Assert("Hello" != a);
+        Assert(a == "");
+        Assert(a != "World");
+    }
+    {
+        var a : A;
+        Assert(a.ptr == null);
+        Assert(a.b.ptr == null);
+    }
+}

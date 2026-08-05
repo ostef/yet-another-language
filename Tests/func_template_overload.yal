@@ -1,0 +1,14 @@
+const Foo = func(x: []$T) -> T {
+
+}
+
+const Bar = func(x: int) -> int {
+}
+
+const Baz = func {
+    Foo;
+    Bar;
+}
+
+const main = func() -> s32 {
+}

@@ -1,0 +1,256 @@
+const std = #import "Std";
+
+#assert size_of(*void) == 8, "General purpose allocator only works with 64-bit pointers for now";
+
+const GPA_Page_Size = 4096;
+const GPA_Page_Alignment = 4096;
+const GPA_Num_Pages_In_Book = size_of(u64) * 8;
+const GPA_Book_Size = GPA_Num_Pages_In_Book * GPA_Page_Size;
+const GPA_Min_Size_Class = 16;
+const GPA_Max_Size_Class = ((1024 - size_of(GPAPage)) / GPA_Size_Class_Granularity) * GPA_Size_Class_Granularity;
+const GPA_Size_Class_Granularity = 16;
+const GPA_Num_Size_Classes = (GPA_Max_Size_Class - GPA_Min_Size_Class) / GPA_Size_Class_Granularity;
+
+const GetSizeClass = func(alloc_size: s64) -> s64 {
+    if alloc_size <= GPA_Min_Size_Class {
+        return 0;
+    }
+
+    var index = (alloc_size - GPA_Min_Size_Class - 1) / GPA_Size_Class_Granularity;
+    if index < 0 || index >= GPA_Num_Size_Classes {
+        return -1;
+    }
+
+    return index;
+}
+
+const GetSizeFromClass = func(class: s64) -> s64 {
+    if class < 0 || class >= GPA_Num_Size_Classes {
+        return -1;
+    }
+
+    return GPA_Min_Size_Class + class * GPA_Size_Class_Granularity;
+}
+
+const GPAGlobalContext = struct {
+    var books: *GPABook;
+    var external_allocator: Allocator;
+}
+
+// Manages pages on a per thread basis, to avoid sharing pages between threads
+const GPAThreadContext = struct {
+    var global: *GPAGlobalContext;
+    var pages: [GPA_Num_Size_Classes]*GPAPage;
+    var filled_pages: [GPA_Num_Size_Classes]*GPAPage;
+}
+
+// Manages an OS page of memory
+const GPAPage = struct {
+    var next: *GPAPage;
+    var free_blocks: *GPAFreeBlock;
+    var num_occupied_blocks: u32;
+    var alloc_size: u32;
+    var book: *GPABook;
+}
+
+#assert size_of(GPAPage) % 16 == 0, "GPAPage must have a size divisible by 16";
+
+// Manages a fixed number of pages
+const GPABook = struct {
+    var prev: *GPABook;
+    var next: *GPABook;
+    var used_pages: u64; // Each bit represents a page, if 1 it's used by a thread
+    var data: *void;
+}
+
+const GPAFreeBlock = struct {
+    var prev: *GPAFreeBlock;
+    var next: *GPAFreeBlock;
+}
+
+#assert GPA_Min_Size_Class >= size_of(GPAFreeBlock), "Min size class must be at least as big as GPAFreeBlock";
+
+const CreateBook = func(global: *GPAGlobalContext) -> *GPABook {
+}
+
+const DestroyBook = func(global: *GPAGlobalContext, book: *GPABook) {
+}
+
+const FindBook = func(global: *GPAGlobalContext) -> *GPABook {
+    var book = global.books;
+    while book != null && book.used_pages == 0xffff_ffff_ffff_ffff {
+        book = book.next;
+    }
+
+    return book;
+}
+
+const FindOrCreateBook = func(global: *GPAGlobalContext) -> *GPABook {
+    var book = FindBook(global);
+    if book == null {
+        return CreateBook(global);
+    }
+
+    return book;
+}
+
+const AcquirePage = func(ctx: *GPAThreadContext, book: *GPABook, alloc_size: u64) -> *GPAPage {
+    // @Todo: there is a special instruction to do this
+    var x = book.used_pages;
+    var i: u64 = 64;
+    while i < 64 {
+        if x & (1 << 63) == 0 {
+            break;
+        }
+
+        x <<= 1;
+        i += 1;
+    }
+
+    if i == 64 {
+        return null;
+    }
+
+    book.used_pages |= 1 << i;
+
+    var page = cast(*GPAPage, cast(u64, book.data) + i * GPA_Page_Size);
+    page.next = null;
+    page.num_occupied_blocks = 0;
+    page.alloc_size = cast(u32, alloc_size);
+    page.book = book;
+
+    // Initialize the free blocks list
+    {
+        var prev = cast(*GPAFreeBlock, page + 1);
+        prev.prev = null;
+        prev.next = null;
+
+        page.free_blocks = prev;
+
+        var num_blocks = cast(u64, GPA_Page_Size - size_of(GPAPage)) / alloc_size;
+        for i: cast(u64, 1)..<num_blocks {
+            var block = cast(*GPAFreeBlock, cast(u64, page + 1) + alloc_size * i);
+            prev.next = block;
+            block.prev = prev;
+            block.next = null;
+        }
+    }
+
+    var size_class = GetSizeClass(cast(s64, alloc_size));
+    std.Assert(size_class >= 0);
+
+    page.next = ctx.pages[size_class];
+    ctx.pages[size_class] = page;
+
+    return page;
+}
+
+const ReleasePage = func(ctx: *GPAThreadContext, page: *GPAPage) {
+    std.Assert(page.num_occupied_blocks == 0, "Releasing page that still has occupied blocks");
+
+    var book = page.book;
+    var i = (cast(u64, page) - cast(u64, book.data)) / GPA_Page_Size;
+
+    std.Assert(i < 64, "Invalid page");
+    std.Assert(book.used_pages & (1 << i) != 0, "Page is already free");
+
+    book.used_pages &= ^(1 << i);
+
+    page.alloc_size = 0;
+
+    // @Todo: remove page from the list in the context
+
+    page.next = null;
+}
+
+const GetPageFromPtr = func(ptr: *void) -> *GPAPage {
+    var addr = cast(u64, ptr) % GPA_Page_Alignment;
+
+    return cast(*GPAPage, addr);
+}
+
+const AllocFromPage = func(page: *GPAPage) -> *void {
+    std.Assert(page.free_blocks != null, "Page is full");
+
+    var block = page.free_blocks;
+    page.free_blocks = page.free_blocks.next;
+    if page.free_blocks != null {
+        page.free_blocks.prev = null;
+    }
+
+    page.num_occupied_blocks += 1;
+
+    return block;
+}
+
+const DeallocateFromPage = func(page: *GPAPage, ptr: *void) {
+    std.Assert(page.num_occupied_blocks > 0, "Page has no occupied block");
+
+    var block = cast(*GPAFreeBlock, ptr);
+    block.prev = null;
+    block.next = page.free_blocks;
+    if page.free_blocks != null {
+        page.free_blocks.prev = block;
+    }
+
+    page.free_blocks = block;
+
+    page.num_occupied_blocks -= 1;
+}
+
+const AllocFromThread = func(ctx: *GPAThreadContext, size: s64) -> *void {
+    var size_class = GetSizeClass(size);
+    if size_class < 0 {
+        return null;
+    }
+
+    var class_size = GetSizeFromClass(size_class);
+    std.Assert(class_size > 0, "Invalid size class");
+
+    var page = ctx.pages[size_class];
+    if page == null {
+        var book = FindOrCreateBook(ctx.global);
+        if book == null {
+            return null;
+        }
+
+        page = AcquirePage(ctx, book, cast(u64, class_size));
+        if page == null {
+            return null;
+        }
+    }
+
+    var ptr = AllocFromPage(page);
+    if page.free_blocks == null {
+        ctx.pages[size_class] = ctx.pages[size_class].next;
+        page.next = ctx.filled_pages[size_class];
+        ctx.filled_pages[size_class] = page;
+    }
+
+    return ptr;
+}
+
+const Deallocate = func(ptr: *void) {
+    if ptr == null {
+        return;
+    }
+
+    var page = GetPageFromPtr(ptr);
+    DeallocateFromPage(page, ptr);
+}
+
+const GPAAllocatorFunc = func(data: *void, op: AllocatorOperation, ptr: *void, size: s64, old_size: s64) -> *void {
+    var ctx = cast(*GPAThreadContext, data);
+
+    if op == .Allocate {
+        return AllocFromThread(ctx, size);
+    } else if op == .Reallocate {
+    } else if op == .Free {
+        Deallocate(ptr);
+    }
+
+    return null;
+}
+
+const main = func() -> s32 {
+}

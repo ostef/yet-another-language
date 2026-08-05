@@ -1,0 +1,11 @@
+const Bar = func(a: int) {
+    const Nested = func() {
+        a = 10;
+    }
+
+    Nested();
+}
+
+const main = func() -> s32 {
+    Bar(10);
+}

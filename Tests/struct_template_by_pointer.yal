@@ -1,0 +1,22 @@
+const List = struct($T: type_id) {
+    var prev: *List(T);
+    var next: *List(T);
+    var data: T;
+}
+
+const main = func() -> s32 {
+    var a: List(string);
+    a.data = "Hello";
+
+    var b: List(string);
+    b.data = "Sailor";
+
+    var c: List(string);
+    c.data = "!";
+
+    a.next = &b;
+    b.prev = &a;
+
+    b.next = &c;
+    c.prev = &b;
+}

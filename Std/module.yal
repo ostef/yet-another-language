@@ -1,0 +1,77 @@
+// This module and its submodules contain basic things that almost any program will use or that we
+// wish to be standardized.:
+// * error handling,
+// * general purpose and temporary memory allocation,
+// * logging,
+// * math,
+// * simple string manipulation/building and utilities,
+// * string conversion,
+// * printing,
+// * unicode,
+// * access to the file system (opening/closing/reading/writing files, creating
+// directories, converting paths, ...),
+// * access to system information (number of CPUs, available memory, ...),
+// * multi-threading primitives, maybe even thread groups,
+// * dynamic array manipulation,
+// * hash map and hash set,
+// * getting the time,
+//
+// The standard modules does not contain anything that is necessary for the program to compile.
+// The compiler MUST NOT silently and implicitly import Std or any of its submodules, or use anything
+// from Std implicitly should it be explicitly imported by the user.
+// Things necessary to compile programs such as the Context and TypeInfo structs are contained within
+// the Preload module and exported in the global namespace.
+//
+// However, the Std modules can contain definitions for intrinsic functions implemented by the
+// compiler, although these definitions are not special and the user is able to define them
+// themselves.
+
+#if Target_OS == .Windows {
+    const LibC = "msvcr100.dll";
+} else #if Target_OS == .Linux {
+    const LibC = "libc.so.6";
+} else #if Target_OS == .MacOS {
+    const LibC = "libSystem.dylib";
+} else {
+    #assert false, "Unsupported target OS";
+}
+
+const Print = func(str: string) {
+    @external @library(LibC)
+    const putchar = func(char: u8) -> s32;
+
+    for i: 0..<str.count {
+        putchar(str[i]);
+    }
+}
+
+const Println = func(str: string) {
+    Print(str);
+    Print("\n");
+}
+
+const Assert = func(x: bool, msg="") {
+    if !x && !context.handling_panic {
+        context.handling_panic = true;
+        defer context.handling_panic = false;
+
+        if context.panic_handler.callback != null {
+            context.panic_handler.callback(context.panic_handler.data, true, msg);
+        }
+
+        debug_break;
+    }
+}
+
+const Panic = func(msg="") {
+    if !context.handling_panic {
+        context.handling_panic = true;
+        defer context.handling_panic = false;
+
+        if context.panic_handler.callback != null {
+            context.panic_handler.callback(context.panic_handler.data, false, msg);
+        }
+
+        debug_break;
+    }
+}

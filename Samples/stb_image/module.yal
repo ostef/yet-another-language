@@ -1,0 +1,18 @@
+#if Target_OS == .Windows {
+
+const Lib_Stb_Image = "stb_image.dll";
+
+} else #if Target_OS == .Linux {
+
+const Lib_Stb_Image = "stb_image.so";
+
+}
+
+@external @library(Lib_Stb_Image) {
+
+@symbol("stbi_load")
+const load = func(filename: *u8, x: *s32, y: *s32, channels_in_file: *s32, desired_channels: s32) -> *u8;
+@symbol("stbi_image_free")
+const image_free = func(ptr: *void);
+
+}

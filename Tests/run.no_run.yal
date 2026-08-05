@@ -1,0 +1,13 @@
+#include "basic.yal.ignore";
+
+#run WriteString("A\n");
+
+#if false {
+
+#run Assert(false);
+
+} else {
+
+#run WriteString("B\n");
+
+}

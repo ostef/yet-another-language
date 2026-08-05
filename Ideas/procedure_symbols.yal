@@ -1,0 +1,49 @@
+// Procedures need to be identified by a unique name in the final binary output.
+// C++ has implicit oveloading, and so compilers often solves this by putting the
+// information of the procedure signature inside the name based on a naming
+// convention (including the namespace information).
+// Not only is this absolutely unreadable, it also not standardized, so different
+// compilers do their own thing.
+// I want to take good decisions on this, as doing so greatly improves the
+// language's inter-operability with other languages.
+
+// There are various situations where the name of the procedure has to be different
+// from the name of the declaration, all of these situations have to do with
+// namespacing. A simple solution would be to put namespaces in the name, separated
+// by a dot. Examples:
+
+// File Graphics.yal
+package Graphics // This is why for packages we need to declare it with a name
+
+const Vertex = func {
+}
+
+@symbol("set_position")
+const Vertex.SetPosition = func(vertex: *Vertex, position: Vec3f) {
+}
+
+@full_symbol("get_vertex_position")
+const Vertex.GetPosition = func(vertex: *Vertex) -> Vec3f {
+}
+
+const RenderFrame = func() {
+    const RenderViewpoint = func() {
+    }
+}
+
+const IPrinter = interface {
+    func Print(self: *Self);
+}
+
+impl IPrinter: Vertex {
+    Print = func(self: *Self) {
+    }
+}
+
+// Names of the procedures:
+// Graphics.Vertex.set_position
+// get_vertex_position
+// Graphics.RenderFrame
+// Graphics.RenderFrame.RenderViewpoint
+// Graphics.IPrinter.Vertex.Print
+

@@ -1,0 +1,10 @@
+#include "basic.yal.ignore";
+
+const Foo = func($T: type_id, val: T) -> T {
+    return val;
+}
+
+const main = func() -> s32 {
+    var i = Foo(val=10, T=int);
+    Assert(i == 10);
+}

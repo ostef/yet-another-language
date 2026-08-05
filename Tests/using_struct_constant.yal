@@ -1,0 +1,16 @@
+#include "basic.yal.ignore";
+
+const main = func() -> s32 {
+    using const Foo = struct {
+        const Hello = "Hello";
+    }
+
+    const Bar = struct {
+        const World = "World";
+    }
+
+    using Bar;
+
+    Assert(Hello == "Hello");
+    Assert(World == "World");
+}

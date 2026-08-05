@@ -1,0 +1,29 @@
+#include "basic.yal.ignore";
+
+const Foo = func(val : int) -> int {
+    return val * 100;
+}
+
+const Bar = func(val : int) -> int {
+    return Foo(val - 10) + 30;
+}
+
+const Baz = func(val : int) -> int {
+    if val <= 0 {
+        return val;
+    }
+
+    return Baz(val - 1);
+}
+
+const main = func() -> s32 {
+    var a = 0;
+    a = Foo(10) + 10;
+    a = Foo(10 + 5);
+    a = Foo(Bar(1));
+    a = Foo(Foo(Foo(Foo(1) + 5) * 100 - 2) / 1000 + 19 * 4);
+    a = Foo(Foo(Bar(30)));
+    Assert(a == 20300000);
+    a = Baz(10);
+    Assert(a == 0);
+}

@@ -1,0 +1,12 @@
+#include "basic.yal.ignore";
+
+const Foo = union {
+    var a: float;
+    var b: float;
+}
+
+const main = func() -> s32 {
+    var a = Foo.{10};
+    Assert(a.a == 10);
+    Assert(a.b == 10);
+}

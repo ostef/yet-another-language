@@ -1,0 +1,28 @@
+#include "basic.yal.ignore";
+
+const Bad = func() -> bool {
+    Assert(false);
+    return false;
+}
+
+const main = func() -> s32 {
+    if true || Bad() {
+        Assert(true);
+    }
+
+    if true || Bad() {
+        Assert(true);
+    } else {
+        Assert(false);
+    }
+
+    if false && Bad() {
+        Assert(false);
+    }
+
+    if false && Bad() {
+        Assert(false);
+    } else {
+        Assert(true);
+    }
+}

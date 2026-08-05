@@ -1,0 +1,5 @@
+const a = #run func() -> int {
+    return #run 10 * 10;
+}();
+
+#assert a == 100;

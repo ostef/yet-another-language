@@ -1,0 +1,37 @@
+const Module = #import_file "field_access_module.yal.ignore";
+
+const A = struct {
+    const Foo = func() {
+    }
+
+    var a: int;
+    var b: string;
+}
+
+const main = func() -> s32 {
+    {
+        var a: A;
+        a.Foo();
+        a.a = 1;
+        a.b = "Hello";
+    }
+    {
+        var a = "Hello";
+
+        #assert type_of(a[0]) == u8;
+        #assert type_of(a.data) == *u8;
+        #assert type_of(a.count) == s64;
+    }
+    //{
+    //    var a: []int;
+    //
+    //    #assert type_of(a[0]) == int;
+    //    #assert type_of(a.data) == *int;
+    //    #assert type_of(a.count) == s64;
+    //}
+    {
+        var a: Module.Foo;
+        a.a = 1;
+        #assert type_of(a.a) == int;
+    }
+}

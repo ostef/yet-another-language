@@ -1,0 +1,70 @@
+// Variants or tagged unions
+
+// Variants allow you to define a union type that the compiler understands better
+// than classic unions, where each possible value has a tag assigned to it and is
+// only valid the internal variant's tag matches. They are similar to enums in Rust.
+// Advantages of variants over classic unions include being able to print the value,
+// enabling the compiler to give an error when not all of the variant's cases are
+// handled, etc
+
+const Entity = variant {
+    Player: PlayerEntity;
+    Monster: MonsterEntity;
+}
+
+// The variant is similar to doing:
+const Entity = struct {
+    const Tag = enum {
+        Player;
+        Monster;
+    }
+
+    var tag: Tag;
+    var value: union {
+        var as_player: PlayerEntity;
+        var as_monster: MonsterEntity;
+    }
+}
+
+// One can access the enum type implicitly defined by the variant like so:
+const EntityTypeId = type_of(Entity.tag);
+
+// Variants can also explicit specify their tag type
+// When doing so, all enum values must be handled
+const NumericValueKind = enum {
+    Integer;
+    Real;
+}
+
+const NumericValue = variant NumericValueKind {
+    Integer: int;
+    Real: float;
+}
+
+// When the variant specified tag type is not an enum but an integer, it is used
+// as the base type for the implicitly defined tag enum
+const Event = variant u8 { // Allows for up to 256 variants
+    WindowClosed: struct {}
+
+    WindowMoved: struct {
+        var x: s32;
+        var y: s32;
+    }
+
+    MouseMoved: struct {
+        var x: s32;
+        var y: s32;
+    }
+}
+
+const main = func() -> s32 {
+    var event = Event.WindowMoved.{};
+    switch event {
+    case .WindowMoved(moved);
+        Println("Window moved: % %", moved.x, moved.y);
+    case .WindowClosed(closed);
+        Println("Window closed");
+    case .MouseMoved(moved);
+        Println("Mouse moved: % %", moved.x, moved.y);
+    }
+}

@@ -1,0 +1,26 @@
+#include "basic.yal.ignore";
+
+const main = func() -> s32 {
+    var i = 0;
+    while i < 10 {
+        if i == 5 {
+            break;
+        }
+
+        i += 1;
+    }
+
+    Assert(i == 5);
+
+    var j = 0;
+    while j < 8 {
+        j += 1;
+        if j == 3 {
+            continue;
+        }
+
+        j *= 2;
+    }
+
+    Assert(j == 8);
+}

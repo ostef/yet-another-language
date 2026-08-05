@@ -1,0 +1,119 @@
+const Joystick = void;
+
+const JoystickGUID = struct {
+    var data: [16]u8;
+}
+
+const JoystickID = s32;
+
+const JoystickType = enum s32 {
+    UNKNOWN;
+    GAMECONTROLLER;
+    WHEEL;
+    ARCADE_STICK;
+    FLIGHT_STICK;
+    DANCE_PAD;
+    GUITAR;
+    DRUM_KIT;
+    ARCADE_PAD;
+    THROTTLE;
+}
+
+const JoystickPowerLevel = enum s32 {
+    UNKNOWN = -1;
+    EMPTY;
+    LOW;
+    MEDIUM;
+    FULL;
+    WIRED;
+    MAX;
+}
+
+const JOYSTICK_AXIS_MAX = 32767;
+const JOYSTICK_AXIS_MIN = -32768;
+
+const HAT_CENTERED  = 0x00;
+const HAT_UP        = 0x01;
+const HAT_RIGHT     = 0x02;
+const HAT_DOWN      = 0x04;
+const HAT_LEFT      = 0x08;
+const HAT_RIGHTUP   = (HAT_RIGHT | HAT_UP);
+const HAT_RIGHTDOWN = (HAT_RIGHT | HAT_DOWN);
+const HAT_LEFTUP    = (HAT_LEFT | HAT_UP);
+const HAT_LEFTDOWN  = (HAT_LEFT | HAT_DOWN);
+
+@external @library(Lib_SDL2) {
+
+//@symbol("SDL_LockJoysticks")
+//const LockJoysticks = func();
+//@symbol("SDL_UnlockJoysticks")
+//const UnlockJoysticks = func();
+@symbol("SDL_NumJoysticks")
+const NumJoysticks = func() -> s32;
+@symbol("SDL_JoystickNameForIndex")
+const JoystickNameForIndex = func(device_index: s32) -> *s8;
+@symbol("SDL_JoystickGetDeviceGUID")
+const JoystickGetDeviceGUID = func(device_index: s32) -> JoystickGUID;
+//@symbol("SDL_JoystickGetDeviceVendor")
+//const JoystickGetDeviceVendor = func(device_index: s32) -> u16;
+//@symbol("SDL_JoystickGetDeviceProduct")
+//const JoystickGetDeviceProduct = func(device_index: s32) -> u16;
+//@symbol("SDL_JoystickGetDeviceProductVersion")
+//const JoystickGetDeviceProductVersion = func(device_index: s32) -> u16;
+//@symbol("SDL_JoystickGetDeviceType")
+//const JoystickGetDeviceType = func(device_index: s32) -> JoystickType;
+//@symbol("SDL_JoystickGetDeviceInstanceID")
+//const JoystickGetDeviceInstanceID = func(device_index: s32) -> JoystickID;
+@symbol("SDL_JoystickOpen")
+const JoystickOpen = func(device_index: s32) -> *Joystick;
+@symbol("SDL_JoystickFromInstanceID")
+const JoystickFromInstanceID = func(joyid: JoystickID) -> *Joystick;
+@symbol("SDL_JoystickName")
+const JoystickName = func(joystick: *Joystick) -> *s8;
+@symbol("SDL_JoystickGetGUID")
+const JoystickGetGUID = func(joystick: *Joystick) -> JoystickGUID;
+//@symbol("SDL_JoystickGetVendor")
+//const JoystickGetVendor = func(joystick: *Joystick) -> u16;
+//@symbol("SDL_JoystickGetProduct")
+//const JoystickGetProduct = func(joystick: *Joystick) -> u16;
+//@symbol("SDL_JoystickGetProductVersion")
+//const JoystickGetProductVersion = func(joystick: *Joystick) -> u16;
+//@symbol("SDL_JoystickGetType")
+//const JoystickGetType = func(joystick: *Joystick) -> JoystickType;
+@symbol("SDL_JoystickGetGUIDString")
+const JoystickGetGUIDString = func(guid: JoystickGUID, pszGUID: *s8, cbGUID: s32);
+@symbol("SDL_JoystickGetGUIDFromString")
+const JoystickGetGUIDFromString = func(pchGUID: *s8) -> JoystickGUID;
+@symbol("SDL_JoystickGetAttached")
+const JoystickGetAttached = func(joystick: *Joystick) -> Bool;
+@symbol("SDL_JoystickInstanceID")
+const JoystickInstanceID = func(joystick: *Joystick) -> JoystickID;
+@symbol("SDL_JoystickNumAxes")
+const JoystickNumAxes = func(joystick: *Joystick) -> s32;
+@symbol("SDL_JoystickNumBalls")
+const JoystickNumBalls = func(joystick: *Joystick) -> s32;
+@symbol("SDL_JoystickNumHats")
+const JoystickNumHats = func(joystick: *Joystick) -> s32;
+@symbol("SDL_JoystickNumButtons")
+const JoystickNumButtons = func(joystick: *Joystick) -> s32;
+@symbol("SDL_JoystickUpdate")
+const JoystickUpdate = func();
+@symbol("SDL_JoystickEventState")
+const JoystickEventState = func(state: s32) -> s32;
+@symbol("SDL_JoystickGetAxis")
+const JoystickGetAxis = func(joystick: *Joystick, axis: s32) -> s16;
+//@symbol("SDL_JoystickGetAxisInitialState")
+//const JoystickGetAxisInitialState = func(joystick: *Joystick, axis: s32, state: *s16) -> Bool;
+
+@symbol("SDL_JoystickGetHat")
+const JoystickGetHat = func(joystick: *Joystick, hat: s32) -> u8;
+@symbol("SDL_JoystickGetBall")
+const JoystickGetBall = func(joystick: *Joystick, ball: s32, dx: *s32, dy: *s32) -> s32;
+@symbol("SDL_JoystickGetButton")
+const JoystickGetButton = func(joystick: *Joystick, button: s32) -> u8;
+@symbol("SDL_JoystickClose")
+const JoystickClose = func(joystick: *Joystick);
+@symbol("SDL_JoystickCurrentPowerLevel")
+const JoystickCurrentPowerLevel = func(joystick: *Joystick) -> JoystickPowerLevel;
+
+}

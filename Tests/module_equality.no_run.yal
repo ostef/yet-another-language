@@ -1,0 +1,4 @@
+const A = #import_file "module_equality_module.yal.ignore";
+const B = #import_file "module_equality_module.yal.ignore";
+
+#assert A == B;

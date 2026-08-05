@@ -1,0 +1,13 @@
+#include "basic.yal.ignore";
+
+const main = func() -> s32 {
+    var a = 10;
+
+    defer Assert(a == 1);
+
+    defer {
+        a = 2;
+
+        defer a = 1;
+    }
+}

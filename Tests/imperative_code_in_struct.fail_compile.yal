@@ -1,0 +1,7 @@
+const Foo = struct {
+    if true {
+    }
+}
+
+const main = func() -> s32 {
+}

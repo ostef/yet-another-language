@@ -1,0 +1,32 @@
+const Result = union(T: type_id, Status=void) {
+    variant Error: Status;
+    variant Ok: T;
+}
+
+// Get is a pretty generic name for a function, but this is acceptable since Std is pretty small
+// and it's expected that this function is used often so it needs to be convenient and not too verbose
+const Get = func(result: Result($T, $S)) -> T {
+    Assert(result.kind != .Error, "Result is an error");
+
+    return result.Ok;
+}
+
+#if Target_OS == .Linux || Target_OS == .MacOS {
+    const LibCErrno = func() -> s32 {
+        #if Target_OS == .Linux {
+            const ErrnoPtrSym = "__errno_location";
+        } else #if Target_OS == .MacOS {
+            const ErrnoPtrSym = "__error";
+        }
+
+        @external @library(LibC) @symbol(ErrnoPtrSym)
+        const ErrnoPtr = func() -> *s32;
+
+        var ptr = ErrnoPtr();
+        if ptr == null {
+            return 0;
+        }
+
+        return ptr.*;
+    }
+}

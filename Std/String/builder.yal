@@ -1,0 +1,147 @@
+const Builder = struct {
+    const Page = struct {
+        var prev: *Page;
+        var next: *Page;
+        var length: int;
+        var data: [1000]u8;
+    }
+
+    var allocator: Allocator;
+    var first_page: *Page;
+    var last_page: *Page;
+    var total_length: int;
+    var capacity: int;
+}
+
+const FreeBuilder = func(builder: *Builder) {
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = builder.allocator;
+
+    while builder.last_page != null {
+        var prev = builder.last_page.prev;
+
+        Mem.Free(builder.last_page);
+
+        builder.last_page = prev;
+    }
+
+    builder.first_page = null;
+    builder.total_length = 0;
+    builder.capacity = 0;
+}
+
+const Build = func(builder: *Builder, free=true) -> string {
+    defer if free {
+        FreeBuilder(builder);
+    }
+
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = builder.allocator;
+
+    var result: string;
+    result.data = Mem.Alloc(builder.total_length);
+    result.count = builder.total_length;
+
+    var offset = 0;
+    var page = builder.first_page;
+    while page != null {
+        Mem.Copy(result.data + offset, page.data.data, page.length);
+        offset += page.length;
+        page = page.next;
+    }
+
+    return result;
+}
+
+const AddPage = func(builder: *Builder) {
+    var prev_allocator = context.allocator;
+    defer context.allocator = prev_allocator;
+    context.allocator = builder.allocator;
+
+    var page = cast(*Builder.Page, Mem.Alloc(size_of(Builder.Page)));
+
+    if builder.last_page == null {
+        builder.first_page = page;
+        builder.last_page = page;
+    } else {
+        builder.last_page.next = page;
+        page.prev = builder.last_page;
+        builder.last_page = page;
+    }
+
+    builder.capacity += 1000;
+}
+
+const AppendByte = func(builder: *Builder, byte: u8) {
+    if builder.total_length >= builder.capacity {
+        AddPage(builder);
+    }
+
+    builder.last_page.data[builder.last_page.length] = byte;
+    builder.last_page.length += 1;
+    builder.total_length += 1;
+}
+
+const AppendString = func(builder: *Builder, str: string) {
+    for i: 0..<str.count {
+        AppendByte(builder, str[i]);
+    }
+}
+
+const AppendInt = func(builder: *Builder, x: int) {
+    if x < 0 {
+        AppendByte(builder, '-');
+        x = -x;
+    }
+
+    AppendUInt(builder, cast(uint, x));
+}
+
+const AppendUInt = func(builder: *Builder, x: uint) {
+    var buffer: [65]u8;
+
+    var num_digits = 0;
+    var x2 = x;
+    while num_digits < 1 || x2 > 0 {
+        num_digits += 1;
+        x2 /= 10;
+    }
+
+    for i: 0..<num_digits {
+        var digit = cast(u8, x % 10);
+        x /= 10;
+
+        buffer[num_digits - i - 1] = '0' + digit;
+    }
+
+    for i: 0..<num_digits {
+        AppendByte(builder, buffer[i]);
+    }
+}
+
+const AppendHex = func(builder: *Builder, x: uint) {
+    const Hex_Digits = "0123456789abcdef";
+    var digits = Hex_Digits;
+
+    var buffer: [65]u8;
+
+    var num_digits = 0;
+    var x2 = x;
+    while num_digits < 1 || x2 > 0 {
+        num_digits += 1;
+        x2 /= 16;
+    }
+
+    for i: 0..<num_digits {
+        var digit = cast(u8, x % 16);
+        x /= 16;
+
+        buffer[num_digits - i - 1] = digits[digit];
+    }
+
+    for i: 0..<num_digits {
+        AppendByte(builder, buffer[i]);
+    }
+}

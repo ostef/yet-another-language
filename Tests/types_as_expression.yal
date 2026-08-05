@@ -1,0 +1,24 @@
+#include "basic.yal.ignore";
+
+const Foo = struct {}
+
+const main = func() -> s32 {
+    {
+        const foo = Foo;
+        var a = foo;
+        var b : type_id = Foo;
+        Assert(a == b);
+        Assert(foo == Foo);
+        Assert(foo == a);
+        Assert(foo == b);
+    }
+    {
+        const type = *[10]int;
+        var a : type;
+        var b : type_of(a);
+        Assert(type_of(a) == type);
+        Assert(type_of(a) == *[10]int);
+        Assert(type_of(b) == type);
+        Assert(type_of(type) == type_id);
+    }
+}

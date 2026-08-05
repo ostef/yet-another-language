@@ -1,0 +1,7 @@
+/home/stefan/Desktop/Yet-Another-Language/Source/Modules/Tracy/Source/CMakeFiles/TracyClient.dir
+/home/stefan/Desktop/Yet-Another-Language/Source/Modules/Tracy/Source/CMakeFiles/edit_cache.dir
+/home/stefan/Desktop/Yet-Another-Language/Source/Modules/Tracy/Source/CMakeFiles/rebuild_cache.dir
+/home/stefan/Desktop/Yet-Another-Language/Source/Modules/Tracy/Source/CMakeFiles/list_install_components.dir
+/home/stefan/Desktop/Yet-Another-Language/Source/Modules/Tracy/Source/CMakeFiles/install.dir
+/home/stefan/Desktop/Yet-Another-Language/Source/Modules/Tracy/Source/CMakeFiles/install/local.dir
+/home/stefan/Desktop/Yet-Another-Language/Source/Modules/Tracy/Source/CMakeFiles/install/strip.dir

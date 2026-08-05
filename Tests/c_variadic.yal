@@ -1,0 +1,25 @@
+#include "basic.yal.ignore";
+
+#if Target_OS == .Windows {
+    const Lib = "Tests/external_c_variadic.dll";
+} else #if Target_OS == .Linux {
+    const Lib = "Tests/external_c_variadic.so";
+} else #if Target_OS == .MacOS {
+    const Lib = "Tests/external_c_variadic.dylib";
+} else {
+    #assert false, "Unsupported OS";
+}
+
+@external @library(Lib)
+const Variadic = func(num_params: s32, ...) -> s32;
+
+const main = func() -> s32 {
+    var a = Variadic(2, 1, 2);
+    Assert(a == 3);
+
+    var b = Variadic(0);
+    Assert(b == 0);
+
+    var c = Variadic(10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2);
+    Assert(c == 11);
+}

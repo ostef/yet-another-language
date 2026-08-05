@@ -1,0 +1,8 @@
+const Vec2f = struct {
+    var x: float;
+    var y: float;
+}
+
+const main = func() -> s32 {
+    var a = Vec2f.{1, 2, 3};
+}

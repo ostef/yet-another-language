@@ -1,0 +1,6 @@
+const Foo = func($T: int) {
+}
+
+const main = func() -> s32 {
+    var foo = Foo;
+}

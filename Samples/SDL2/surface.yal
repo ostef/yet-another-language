@@ -1,0 +1,84 @@
+const Surface = struct {
+    var flags: u32;
+    var format: *PixelFormat;
+    var w: s32;
+    var h: s32;
+    var pitch: s32;
+    var pixels: *void;
+    var userdata: *void;
+    var locked: s32;
+    var lock_data: *void;
+    var clip_rect: Rect;
+    var map: *BlitMap;
+    var refcount: s32;
+}
+
+const Color = struct {
+    var r: u8;
+    var g: u8;
+    var b: u8;
+    var a: u8;
+}
+
+const Palette = struct {
+    var ncolors: s32;
+    var colors: *Color;
+    var version: u32;
+    var refcount: s32;
+}
+
+const PixelFormat = struct {
+    var format: u32;
+    var palette: *Palette;
+    var BitsPerPixel: u8;
+    var BytesPerPixel: u8;
+    var padding: [2]u8;
+    var Rmask: u32;
+    var Gmask: u32;
+    var Bmask: u32;
+    var Amask: u32;
+    var Rloss: u8;
+    var Gloss: u8;
+    var Bloss: u8;
+    var Aloss: u8;
+    var Rshift: u8;
+    var Gshift: u8;
+    var Bshift: u8;
+    var Ashift: u8;
+    var refcount: s32;
+    var next: *PixelFormat;
+}
+
+const BlitInfo = struct {
+    var src: *u8;
+    var src_w: s32;
+    var src_h: s32;
+    var src_pitch: s32;
+    var src_skip: s32;
+    var dst: *u8;
+    var dst_w: s32;
+    var dst_h: s32;
+    var dst_pitch: s32;
+    var dst_skip: s32;
+    var src_fmt: *PixelFormat;
+    var dst_fmt: *PixelFormat;
+    var table: *u8;
+    var flags: s32;
+    var colorkey: u32;
+    var r: u8;
+    var g: u8;
+    var b: u8;
+    var a: u8;
+}
+
+const BlitFunc = type_of(func @call("c") (src: *Surface, srcrect: *Rect, dst: *Surface, dstrect: *Rect) -> s32);
+
+const BlitMap = struct {
+    var dst: *Surface;
+    var identity: s32;
+    var blit: BlitFunc;
+    var data: *void;
+    var info: BlitInfo;
+    var dst_palette_version : u32;
+    var src_palette_version : u32;
+}

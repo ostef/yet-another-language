@@ -1,0 +1,27 @@
+#include "basic.yal.ignore";
+
+const main = func() -> s32 {
+    {
+        var a = 10;
+        var b = &a;
+        Assert(b == &a);
+        Assert(b.* == 10);
+
+        b.* = 11;
+        Assert(b.* == 11);
+        Assert(a == 11);
+
+        b[0] = 12;
+        Assert(b.* == 12);
+        Assert(a == 12);
+    }
+    {
+        var a : u32 = 0x12345678;
+        var b : *u8 = cast(*u8, &a);
+
+        Assert(b[3] == 0x12);
+        Assert(b[2] == 0x34);
+        Assert(b[1] == 0x56);
+        Assert(b[0] == 0x78);
+    }
+}

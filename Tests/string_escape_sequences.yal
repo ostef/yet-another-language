@@ -1,0 +1,70 @@
+#include "basic.yal.ignore";
+
+const main = func() -> s32 {
+    var a = "\xab\xcd\xef";
+    Assert(a[0] == 0xab);
+    Assert(a[1] == 0xcd);
+    Assert(a[2] == 0xef);
+
+    // Latin-1 supplement
+    var b = "\u00bc\u00bd\u00be";
+    Assert(b[0] == 0xc2);
+    Assert(b[1] == 0xbc);
+    Assert(b[2] == 0xc2);
+    Assert(b[3] == 0xbd);
+    Assert(b[4] == 0xc2);
+    Assert(b[5] == 0xbe);
+
+    // Greek
+    var c = "\u03A6\u03A7\u03A8\u03A9";
+    Assert(c[0] == 0xCE);
+    Assert(c[1] == 0xA6);
+    Assert(c[2] == 0xCE);
+    Assert(c[3] == 0xA7);
+    Assert(c[4] == 0xCE);
+    Assert(c[5] == 0xA8);
+    Assert(c[6] == 0xCE);
+    Assert(c[7] == 0xA9);
+
+    // Arabic
+    var d = "\u0627\u0644\u0628\u0642\u0644\u0627\u0648\u0629";
+    Assert(d[0] == 0xD8);
+    Assert(d[1] == 0xA7);
+    Assert(d[2] == 0xD9);
+    Assert(d[3] == 0x84);
+    Assert(d[4] == 0xD8);
+    Assert(d[5] == 0xA8);
+    Assert(d[6] == 0xD9);
+    Assert(d[7] == 0x82);
+    Assert(d[8] == 0xD9);
+    Assert(d[9] == 0x84);
+    Assert(d[10] == 0xD8);
+    Assert(d[11] == 0xA7);
+    Assert(d[12] == 0xD9);
+    Assert(d[13] == 0x88);
+    Assert(d[14] == 0xD8);
+    Assert(d[15] == 0xA9);
+
+    // Phoenician
+    var e = "\U00010900\U00010901\U00010902\U00010903";
+    Assert(e[0] == 0xF0);
+    Assert(e[1] == 0x90);
+    Assert(e[2] == 0xA4);
+    Assert(e[3] == 0x80);
+    Assert(e[4] == 0xF0);
+    Assert(e[5] == 0x90);
+    Assert(e[6] == 0xA4);
+    Assert(e[7] == 0x81);
+    Assert(e[8] == 0xF0);
+    Assert(e[9] == 0x90);
+    Assert(e[10] == 0xA4);
+    Assert(e[11] == 0x82);
+    Assert(e[12] == 0xF0);
+    Assert(e[13] == 0x90);
+    Assert(e[14] == 0xA4);
+    Assert(e[15] == 0x83);
+
+    Assert('\x12' == 0x12);
+    Assert('\u0627' == 0x627);
+    Assert('\U00010900' == 0x10900);
+}

@@ -1,0 +1,4 @@
+Commit id: cae9f0740f8a42497ab44b8eb9077590d8b79d40
+Compiler version: Release dev, built on 5 March 2026, 00:31:30 UTC
+
+Samples/breakout.yal	6977/48.54/56.49/50.87/49.90 ms (lines processed/min/max/avg/median)

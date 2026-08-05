@@ -1,0 +1,14 @@
+const FooA = func() {
+}
+
+const FooB = func(x: int) {
+}
+
+const Foo = func {
+    #if true {
+        FooA;
+    }
+
+    FooB;
+    var omg_variables_are_not_allowed: int;
+}

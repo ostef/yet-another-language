@@ -1,0 +1,10 @@
+const main = func() -> s32 {
+    var a: [..]int;
+    var allocator = a.allocator;
+
+    var data = allocator.data;
+    #assert type_of(data) == *void;
+
+    var callback = allocator.callback;
+    #assert type_of(callback) == Allocator.Callback;
+}
